@@ -23,7 +23,7 @@ dependencies {
   testImplementation(libs.test.assertj)
 }
 
-group = "com.atlassian.prosemirror"
+group = "com.atlassian"
 version = "1.0.0"
 description = "prosemirror"
 
