@@ -29,7 +29,6 @@ data class ReplaceStep(
     val slice: Slice,
     internal val structure: Boolean = false
 ) : Step() {
-
     override fun apply(doc: Node): StepResult {
         if (this.structure && contentBetween(doc, this.from, this.to)) {
             return StepResult.fail("Structure replace would overwrite content")

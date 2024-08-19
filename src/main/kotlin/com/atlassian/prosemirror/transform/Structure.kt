@@ -184,15 +184,15 @@ fun canChangeType(doc: Node, pos: Int, type: NodeType): Boolean {
 
 fun setNodeMarkup(tr: Transform, pos: Int, type: NodeType?, attrs: Attrs?, marks: List<Mark>?): Transform {
     val node = tr.doc.nodeAt(pos) ?: throw RangeError("No node at given position")
-    val type = type ?: node.type
-    val newNode = type.create(attrs, null as Fragment?, marks ?: node.marks)
+    val thisType = type ?: node.type
+    val newNode = thisType.create(attrs, null as Fragment?, marks ?: node.marks)
     if (node.isLeaf) {
         return tr.replaceWith(pos, pos + node.nodeSize, newNode)
     }
 
-    if (!type.validContent(node.content)) {
+    if (!thisType.validContent(node.content)) {
         throw RangeError(
-            "Invalid content for node type ${type.name}: ${node.content}"
+            "Invalid content for node type ${thisType.name}: ${node.content}"
         )
     }
 
@@ -243,16 +243,16 @@ fun canSplit(doc: Node, pos: Int, depth: Int = 1, typesAfter: List<NodeBase?>? =
 }
 
 fun split(tr: Transform, pos: Int, depth: Int = 1, typesAfter: List<NodeBase?>?): Transform {
-    val _pos = tr.doc.resolveAndLog(pos) ?: return tr
+    val thisPos = tr.doc.resolveAndLog(pos) ?: return tr
     var before = Fragment.empty
     var after = Fragment.empty
-    var d = _pos.depth
-    val e = _pos.depth - depth
+    var d = thisPos.depth
+    val e = thisPos.depth - depth
     var i = depth - 1
     while (d > e) {
-        before = Fragment.from(_pos.node(d).copy(before))
+        before = Fragment.from(thisPos.node(d).copy(before))
         val typeAfter = typesAfter?.get(i)
-        after = Fragment.from(typeAfter?.type?.create(typeAfter.attrs, after) ?: _pos.node(d).copy(after))
+        after = Fragment.from(typeAfter?.type?.create(typeAfter.attrs, after) ?: thisPos.node(d).copy(after))
         d--
         i--
     }
@@ -261,9 +261,9 @@ fun split(tr: Transform, pos: Int, depth: Int = 1, typesAfter: List<NodeBase?>?)
 
 // Test whether the blocks before and after a given position can be joined.
 fun canJoin(doc: Node, pos: Int): Boolean {
-    val _pos = doc.resolve(pos)
-    val index = _pos.index()
-    return joinable(_pos.nodeBefore, _pos.nodeAfter) && _pos.parent.canReplace(index, index + 1)
+    val thisPos = doc.resolve(pos)
+    val index = thisPos.index()
+    return joinable(thisPos.nodeBefore, thisPos.nodeAfter) && thisPos.parent.canReplace(index, index + 1)
 }
 
 fun joinable(a: Node?, b: Node?) = a != null && b != null && !a.isLeaf && a.canAppend(b)
@@ -272,30 +272,30 @@ fun joinable(a: Node?, b: Node?) = a != null && b != null && !a.isLeaf && a.canA
 // is positive). Returns the joinable point, if any.
 fun joinPoint(doc: Node, pos: Int, dir: Int = -1): Int? {
     var pos = pos
-    val _pos = doc.resolve(pos)
-    var d = _pos.depth
+    val thisPos = doc.resolve(pos)
+    var d = thisPos.depth
     while (true) {
         var before: Node?
         val after: Node?
-        var index = _pos.index(d)
-        if (d == _pos.depth) {
-            before = _pos.nodeBefore
-            after = _pos.nodeAfter
+        var index = thisPos.index(d)
+        if (d == thisPos.depth) {
+            before = thisPos.nodeBefore
+            after = thisPos.nodeAfter
         } else if (dir > 0) {
-            before = _pos.node(d + 1)
+            before = thisPos.node(d + 1)
             index++
-            after = _pos.node(d).maybeChild(index)
+            after = thisPos.node(d).maybeChild(index)
         } else {
-            before = _pos.node(d).maybeChild(index - 1)
-            after = _pos.node(d + 1)
+            before = thisPos.node(d).maybeChild(index - 1)
+            after = thisPos.node(d + 1)
         }
         if (before != null && !before.isTextblock && joinable(before, after) &&
-            _pos.node(d).canReplace(index, index + 1)
+            thisPos.node(d).canReplace(index, index + 1)
         ) {
             return pos
         }
         if (d == 0) break
-        pos = if (dir < 0) _pos.before(d) else _pos.after(d)
+        pos = if (dir < 0) thisPos.before(d) else thisPos.after(d)
         d--
     }
     return null
@@ -310,21 +310,21 @@ fun join(tr: Transform, pos: Int, depth: Int): Transform {
 // the node hierarchy when `pos` itself isn't a valid place but is at the start or end of a node.
 // Return null if no position was found.
 fun insertPoint(doc: Node, pos: Int, nodeType: NodeType): Int? {
-    val _pos = doc.resolve(pos)
-    if (_pos.parent.canReplaceWith(_pos.index(), _pos.index(), nodeType)) return pos
+    val thisPos = doc.resolve(pos)
+    if (thisPos.parent.canReplaceWith(thisPos.index(), thisPos.index(), nodeType)) return pos
 
-    if (_pos.parentOffset == 0) {
-        for (d in _pos.depth - 1 downTo 0) {
-            val index = _pos.index(d)
-            if (_pos.node(d).canReplaceWith(index, index, nodeType)) return _pos.before(d + 1)
+    if (thisPos.parentOffset == 0) {
+        for (d in thisPos.depth - 1 downTo 0) {
+            val index = thisPos.index(d)
+            if (thisPos.node(d).canReplaceWith(index, index, nodeType)) return thisPos.before(d + 1)
             if (index > 0) return null
         }
     }
-    if (_pos.parentOffset == _pos.parent.content.size) {
-        for (d in _pos.depth - 1 downTo 0) {
-            val index = _pos.indexAfter(d)
-            if (_pos.node(d).canReplaceWith(index, index, nodeType)) return _pos.after(d + 1)
-            if (index < _pos.node(d).childCount) return null
+    if (thisPos.parentOffset == thisPos.parent.content.size) {
+        for (d in thisPos.depth - 1 downTo 0) {
+            val index = thisPos.indexAfter(d)
+            if (thisPos.node(d).canReplaceWith(index, index, nodeType)) return thisPos.after(d + 1)
+            if (index < thisPos.node(d).childCount) return null
         }
     }
     return null
@@ -335,7 +335,7 @@ fun insertPoint(doc: Node, pos: Int, nodeType: NodeType): Int? {
 // the start or end of that node. Returns null when no position was found.
 @Suppress("NestedBlockDepth", "ComplexMethod")
 fun dropPoint(doc: Node, pos: Int, slice: Slice): Int? {
-    val _pos = doc.resolve(pos)
+    val thisPos = doc.resolve(pos)
     if (slice.content.size == 0) return pos
     var content = slice.content
     for (i in 0 until slice.openStart) {
@@ -343,17 +343,17 @@ fun dropPoint(doc: Node, pos: Int, slice: Slice): Int? {
     }
     var pass = 1
     while (pass <= (if (slice.openStart == 0 && slice.size != 0) 2 else 1)) {
-        for (d in _pos.depth downTo 0) {
+        for (d in thisPos.depth downTo 0) {
             val bias =
-                if (d == _pos.depth) {
+                if (d == thisPos.depth) {
                     0
-                } else if (_pos.pos <= (_pos.start(d + 1) + _pos.end(d + 1)) / 2) {
+                } else if (thisPos.pos <= (thisPos.start(d + 1) + thisPos.end(d + 1)) / 2) {
                     -1
                 } else {
                     1
                 }
-            val insertPos = _pos.index(d) + (if (bias > 0) 1 else 0)
-            val parent = _pos.node(d)
+            val insertPos = thisPos.index(d) + (if (bias > 0) 1 else 0)
+            val parent = thisPos.node(d)
             val fits: Boolean? = if (pass == 1) {
                 parent.canReplace(insertPos, insertPos, content)
             } else {
@@ -361,7 +361,7 @@ fun dropPoint(doc: Node, pos: Int, slice: Slice): Int? {
                 wrapping?.let { parent.canReplaceWith(insertPos, insertPos, it.first()) }
             }
             if (fits == true) {
-                return if (bias == 0) _pos.pos else if (bias < 0) _pos.before(d + 1) else _pos.after(d + 1)
+                return if (bias == 0) thisPos.pos else if (bias < 0) thisPos.before(d + 1) else thisPos.after(d + 1)
             }
         }
         pass++

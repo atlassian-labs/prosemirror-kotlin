@@ -5,9 +5,10 @@ import kotlin.math.min
 
 const val GOOD_LEAF_SIZE = 200
 
-// :: class<T> A rope sequence is a persistent sequence data structure
+/** A rope sequence is a persistent sequence data structure
 // that supports appending, prepending, and slicing without doing a
 // full copy. It is represented as a mostly-balanced tree.
+ */
 abstract class RopeSequence<T> {
     // length:: number
     // The length of the rope.
@@ -25,14 +26,14 @@ abstract class RopeSequence<T> {
 
     abstract fun sliceInner(from: Int, to: Int): RopeSequence<T>
 
-    // flatten:: () → [T]
-    // Return the content of this rope as an array.
+    /** Return the content of this rope as an array. */
     abstract fun flatten(): List<T>
 
     abstract fun getInner(i: Int): T?
 
-    // :: (union<[T], RopeSequence<T>>) → RopeSequence<T>
-    // Append an array or other rope to this one, returning a new rope.
+    /** (union<[T], RopeSequence<T>>) → RopeSequence<T>
+     * Append an array or other rope to this one, returning a new rope.
+     */
     @Suppress("ReturnCount")
     open fun append(other: RopeSequence<T>): RopeSequence<T> {
         if (other.length == 0) return this
@@ -57,11 +58,12 @@ abstract class RopeSequence<T> {
         return append(from(other))
     }
 
-    // :: (union<[T], RopeSequence<T>>) → RopeSequence<T>
-    // Prepend an array or other rope to this one, returning a new rope.
+    /** (union<[T], RopeSequence<T>>) → RopeSequence<T>
+     *Prepend an array or other rope to this one, returning a new rope.
+     */
     fun prepend(other: RopeSequence<T>): RopeSequence<T> {
         if (other.length == 0) return this
-        return RopeSequence.from(other).append(this)
+        return from(other).append(this)
     }
 
     open fun appendInner(other: RopeSequence<T>): Append<T> {
@@ -187,7 +189,7 @@ class Leaf<T>(val values: List<T>) : RopeSequence<T>() {
     }
 }
 
-class Append<T> (
+class Append<T>(
     val left: RopeSequence<T>,
     val right: RopeSequence<T>
 ) : RopeSequence<T>() {

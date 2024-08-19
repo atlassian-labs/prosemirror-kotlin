@@ -12,13 +12,13 @@ Check the latest package at Maven central on: https://mvnrepository.com/artifact
 <dependency>
     <groupId>com.atlassian</groupId>
     <artifactId>prosemirror</artifactId>
-    <version>0.0.1</version>
+    <version>1.0.0</version>
 </dependency>
 ```
 
 ### Gradle:
 ```kotlin
-implementation("com.atlassian:prosemirror:0.0.1")
+implementation("com.atlassian:prosemirror:1.0.0")
 ```
 ## Documentation
 

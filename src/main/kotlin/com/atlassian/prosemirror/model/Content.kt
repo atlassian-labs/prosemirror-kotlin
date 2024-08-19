@@ -2,6 +2,11 @@ package com.atlassian.prosemirror.model
 
 data class MatchEdge(val type: NodeType, val next: ContentMatch)
 
+/** Instances of this class represent a match state of a node type's
+ * [content expression](#model.NodeSpec.content), and can be used to
+ * find out whether further content matches here, and whether a given
+ * position is a valid end of the node.
+ */
 class ContentMatch internal constructor(
     // True when this match state represents a valid end of the node.
     val validEnd: Boolean
@@ -57,7 +62,7 @@ class ContentMatch internal constructor(
         search = fun(match: ContentMatch, types: List<NodeType>): Fragment? {
             val finished = match.matchFragment(after, startIndex)
             if (finished != null && (!toEnd || finished.validEnd)) {
-                return Fragment.Companion.from(types.mapNotNull { tp -> tp.createAndFill(null, null as Node?, null) })
+                return Fragment.from(types.mapNotNull { tp -> tp.createAndFill(null, null as Node?, null) })
             }
 
             for (nextMatch in match.next) {
@@ -327,12 +332,12 @@ fun connect(edges: List<Edge>, to: Int) {
 }
 
 fun compile(nfa: MutableList<MutableList<Edge>>, expr: Expr, from: Int): List<Edge> {
-    var from = from
+    var thisFrom = from
     when (expr) {
         is Expr.Choice -> {
             val res = mutableListOf<Edge>()
-            for (expr in expr.exprs) {
-                res.addAll(compile(nfa, expr, from))
+            for (thisExpr in expr.exprs) {
+                res.addAll(compile(nfa, thisExpr, thisFrom))
             }
             return res
         }
@@ -340,34 +345,34 @@ fun compile(nfa: MutableList<MutableList<Edge>>, expr: Expr, from: Int): List<Ed
         is Expr.Seq -> {
             var i = 0
             while (true) {
-                val next = compile(nfa, expr.exprs[i], from)
+                val next = compile(nfa, expr.exprs[i], thisFrom)
                 if (i == expr.exprs.size - 1) return next
-                from = node(nfa)
-                connect(next, from)
+                thisFrom = node(nfa)
+                connect(next, thisFrom)
                 i++
             }
         }
 
         is Expr.Star -> {
             val loop = node(nfa)
-            edge(nfa, from, loop)
+            edge(nfa, thisFrom, loop)
             connect(compile(nfa, expr.expr, loop), loop)
             return listOf(edge(nfa, loop))
         }
 
         is Expr.Plus -> {
             val loop = node(nfa)
-            connect(compile(nfa, expr.expr, from), loop)
+            connect(compile(nfa, expr.expr, thisFrom), loop)
             connect(compile(nfa, expr.expr, loop), loop)
             return listOf(edge(nfa, loop))
         }
 
         is Expr.Opt -> {
-            return listOf(edge(nfa, from)) + compile(nfa, expr.expr, from)
+            return listOf(edge(nfa, thisFrom)) + compile(nfa, expr.expr, thisFrom)
         }
 
         is Expr.Range -> {
-            var cur = from
+            var cur = thisFrom
             for (i in 0 until expr.min) {
                 val next = node(nfa)
                 connect(compile(nfa, expr.expr, cur), next)
@@ -387,7 +392,7 @@ fun compile(nfa: MutableList<MutableList<Edge>>, expr: Expr, from: Int): List<Ed
         }
 
         is Expr.Name -> {
-            return listOf(edge(nfa, from, null, expr.value))
+            return listOf(edge(nfa, thisFrom, null, expr.value))
         }
     }
 }
@@ -401,12 +406,12 @@ fun cmp(a: Int, b: Int): Int {
 fun nullFrom(nfa: List<List<Edge>>, node: Int): List<Int> {
     val result = mutableListOf<Int>()
     var scan: ((node: Int) -> Unit)? = null
-    scan = { node: Int ->
-        val edges = nfa[node]
+    scan = { thisNode: Int ->
+        val edges = nfa[thisNode]
         if (edges.size == 1 && edges[0].term == null) {
             scan?.invoke(edges.first().to!!)
         } else {
-            result.add(node)
+            result.add(thisNode)
             edges.forEach {
                 val term = it.term
                 val to = it.to
@@ -455,11 +460,11 @@ fun explore(nfa: List<List<Edge>>, labeled: MutableMap<String, ContentMatch>, st
     val state = ContentMatch(states.indexOf(nfa.size - 1) > -1)
     labeled[states.joinToString(",")] = state
     for (i in 0 until out.size) {
-        val states = out[i].second.sortedWith(::cmp)
+        val thisStates = out[i].second.sortedWith(::cmp)
         state.next.add(
             MatchEdge(
                 type = out[i].first,
-                next = labeled[states.joinToString(",")] ?: explore(nfa, labeled, states)
+                next = labeled[thisStates.joinToString(",")] ?: explore(nfa, labeled, thisStates)
             )
         )
     }
