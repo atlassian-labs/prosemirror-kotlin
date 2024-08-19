@@ -11,188 +11,188 @@ import kotlin.test.Test
 import com.atlassian.prosemirror.testbuilder.schema as testSchema
 
 val schemaWithComment = Schema(
-  SchemaSpec(
-    nodes = testSchema.spec.nodes + mapOf(
-      "doc" to (testSchema.spec.nodes["doc"] as NodeSpecImpl).copy(marks = "comment")
-    ),
-    marks = testSchema.spec.marks + mapOf(
-      "comment" to MarkSpecImpl(
-        parseDOM = listOf(ParseRuleImpl(tag = "div.comment")),
-        toDOM = { _, _ ->
-          DOMOutputSpec.ArrayDOMOutputSpec(listOf("div", mapOf("class" to "comment"), 0))
-        }
-      )
+    SchemaSpec(
+        nodes = testSchema.spec.nodes + mapOf(
+            "doc" to (testSchema.spec.nodes["doc"] as NodeSpecImpl).copy(marks = "comment")
+        ),
+        marks = testSchema.spec.marks + mapOf(
+            "comment" to MarkSpecImpl(
+                parseDOM = listOf(ParseRuleImpl(tag = "div.comment")),
+                toDOM = { _, _ ->
+                    DOMOutputSpec.ArrayDOMOutputSpec(listOf("div", mapOf("class" to "comment"), 0))
+                }
+            )
+        )
     )
-  )
 )
 
 fun NodeBuilder<CommentNodeBuilder>.comment(func: NodeBuilder<CommentNodeBuilder>.() -> Unit) = mark("comment", func)
 
 class CommentNodeBuilder(
-  pos: Int = 0,
-  marks: List<Mark> = emptyList(),
-  override val schema: Schema = schemaWithComment
+    pos: Int = 0,
+    marks: List<Mark> = emptyList(),
+    override val schema: Schema = schemaWithComment
 ) : NodeBuilder<CommentNodeBuilder>(pos, marks, schema) {
 
-  override val checked: Boolean
-    get() = false
-
-  override fun create(pos: Int, marks: List<Mark>, schema: Schema): NodeBuilder<CommentNodeBuilder> {
-    return CommentNodeBuilder(pos, marks, schema)
-  }
-
-  companion object : NodeBuildCompanion<CommentNodeBuilder>(schemaWithComment) {
     override val checked: Boolean
-      get() = false
+        get() = false
 
-    override fun create(): CommentNodeBuilder {
-      return CommentNodeBuilder()
+    override fun create(pos: Int, marks: List<Mark>, schema: Schema): NodeBuilder<CommentNodeBuilder> {
+        return CommentNodeBuilder(pos, marks, schema)
     }
-  }
+
+    companion object : NodeBuildCompanion<CommentNodeBuilder>(schemaWithComment) {
+        override val checked: Boolean
+            get() = false
+
+        override fun create(): CommentNodeBuilder {
+            return CommentNodeBuilder()
+        }
+    }
 }
 
 class DomTest {
-  fun test(doc: Node, html: String) {
-    val schema = doc.type.schema
-    val innerHTML = DOMSerializer.fromSchema(schema).serializeFragmentToHtml(doc.content)
-    assertThat(innerHTML).isEqualTo(html)
-    val parsedDoc = DOMParser.fromSchema(schema).parseHtml(innerHTML)
-    assertThat(parsedDoc).isEqualTo(doc)
-  }
-
-  @Test
-  fun `can represent simple node`() {
-    test(doc { p { +"hello" } }, "<p>hello</p>")
-  }
-
-  @Test
-  fun `can represent a line break`() {
-    test(doc { p { +"hi" + br {} + "there" } }, "<p>hi<br>there</p>")
-  }
-
-  @Test
-  fun `can represent an image`() {
-    test(
-      doc { p { +"hi" + img(mapOf("alt" to "x")) {} + "there" } },
-      "<p>hi<img src=\"img.png\" alt=\"x\">there</p>"
-    )
-  }
-
-  @Test
-  fun `joins styles`() {
-    test(
-      doc { p { +"one" + strong { +"two" + em { +"three" } } + em { +"four" } + "five" } },
-      "<p>one<strong>two</strong><em><strong>three</strong>four</em>five</p>"
-    )
-  }
-
-  @Ignore("This test is failing - fix code")
-  @Test
-  fun `can represent links`() {
-    test(
-      doc { p { +"a " + a(href = "foo") { +"big " + a(href = "bar") { +"nested" } + " link" } } },
-      "<p>a <a href=\"foo\">big </a><a href=\"bar\">nested</a><a href=\"foo\"> link</a></p>"
-    )
-  }
-
-  @Test
-  fun `can represent and unordered list`() {
-    test(
-      doc {
-        ul {
-          li { p { +"one" } } +
-            li { p { +"two" } } +
-            li { p { +"three" + strong { +"!" } } }
-        } +
-          p { +"after" }
-      },
-      "<ul><li><p>one</p></li><li><p>two</p></li><li><p>three<strong>!</strong></p></li></ul><p>after</p>"
-    )
-  }
-
-  @Test
-  fun `can represent an ordered list`() {
-    test(
-      doc {
-        ol {
-          li { p { +"one" } } +
-            li { p { +"two" } } +
-            li { p { +"three" + strong { +"!" } } }
-        } +
-          p { +"after" }
-      },
-      "<ol><li><p>one</p></li><li><p>two</p></li><li><p>three<strong>!</strong></p></li></ol><p>after</p>"
-    )
-  }
-
-  @Test
-  fun `can represent a blockquote`() {
-    test(
-      doc { blockquote { p { +"hello" } + p { +"bye" } } },
-      "<blockquote><p>hello</p><p>bye</p></blockquote>"
-    )
-  }
-
-  @Test
-  fun `can represent a nested blockquote`() {
-    test(
-      doc { blockquote { blockquote { blockquote { p { +"he said" } } } + p { +"i said" } } },
-      "<blockquote><blockquote><blockquote><p>he said</p></blockquote></blockquote><p>i said</p></blockquote>"
-    )
-  }
-
-  @Test
-  fun `can represent headings`() {
-    test(
-      doc { h1 { +"one" } + h2 { +"two" } + p { +"text" } },
-      "<h1>one</h1><h2>two</h2><p>text</p>"
-    )
-  }
-
-  @Test
-  fun `can represent inline code`() {
-    test(
-      doc { p { +"text and " + code { +"code that is " + em { +"emphasized" } + "..." } } },
-      "<p>text and <code>code that is </code><em><code>emphasized</code></em><code>...</code></p>"
-    )
-  }
-
-  @Test
-  fun `can represent a code block`() {
-    test(
-      doc { blockquote { pre { +"some code" } } + p { +"and" } },
-      "<blockquote><pre><code>some code</code></pre></blockquote><p>and</p>"
-    )
-  }
-
-  @Test
-  fun `supports leaf nodes in marks`() {
-    test(
-      doc { p { em { +"hi" + br {} + "x" } } },
-      "<p><em>hi<br>x</em></p>"
-    )
-  }
-
-  @Test
-  fun `doesn't collapse non-breaking spaces`() {
-    test(
-      doc { p { +"\u00a0 \u00a0hello\u00a0" } },
-      "<p>&nbsp; &nbsp;hello&nbsp;</p>"
-    )
-  }
-
-  @Test
-  fun `can parse marks on block nodes`() {
-    val doc = CommentNodeBuilder.doc {
-      p { +"one" } + this.comment { p { +"two" } + p { strong { +"three" } } } + p { +"four" }
+    fun test(doc: Node, html: String) {
+        val schema = doc.type.schema
+        val innerHTML = DOMSerializer.fromSchema(schema).serializeFragmentToHtml(doc.content)
+        assertThat(innerHTML).isEqualTo(html)
+        val parsedDoc = DOMParser.fromSchema(schema).parseHtml(innerHTML)
+        assertThat(parsedDoc).isEqualTo(doc)
     }
-    test(
-      doc,
-      "<p>one</p><div class=\"comment\"><p>two</p><p><strong>three</strong></p></div><p>four</p>"
-    )
-  }
 
-  // TODO convert tests below
+    @Test
+    fun `can represent simple node`() {
+        test(doc { p { +"hello" } }, "<p>hello</p>")
+    }
+
+    @Test
+    fun `can represent a line break`() {
+        test(doc { p { +"hi" + br {} + "there" } }, "<p>hi<br>there</p>")
+    }
+
+    @Test
+    fun `can represent an image`() {
+        test(
+            doc { p { +"hi" + img(mapOf("alt" to "x")) {} + "there" } },
+            "<p>hi<img src=\"img.png\" alt=\"x\">there</p>"
+        )
+    }
+
+    @Test
+    fun `joins styles`() {
+        test(
+            doc { p { +"one" + strong { +"two" + em { +"three" } } + em { +"four" } + "five" } },
+            "<p>one<strong>two</strong><em><strong>three</strong>four</em>five</p>"
+        )
+    }
+
+    @Ignore("This test is failing - fix code")
+    @Test
+    fun `can represent links`() {
+        test(
+            doc { p { +"a " + a(href = "foo") { +"big " + a(href = "bar") { +"nested" } + " link" } } },
+            "<p>a <a href=\"foo\">big </a><a href=\"bar\">nested</a><a href=\"foo\"> link</a></p>"
+        )
+    }
+
+    @Test
+    fun `can represent and unordered list`() {
+        test(
+            doc {
+                ul {
+                    li { p { +"one" } } +
+                        li { p { +"two" } } +
+                        li { p { +"three" + strong { +"!" } } }
+                } +
+                    p { +"after" }
+            },
+            "<ul><li><p>one</p></li><li><p>two</p></li><li><p>three<strong>!</strong></p></li></ul><p>after</p>"
+        )
+    }
+
+    @Test
+    fun `can represent an ordered list`() {
+        test(
+            doc {
+                ol {
+                    li { p { +"one" } } +
+                        li { p { +"two" } } +
+                        li { p { +"three" + strong { +"!" } } }
+                } +
+                    p { +"after" }
+            },
+            "<ol><li><p>one</p></li><li><p>two</p></li><li><p>three<strong>!</strong></p></li></ol><p>after</p>"
+        )
+    }
+
+    @Test
+    fun `can represent a blockquote`() {
+        test(
+            doc { blockquote { p { +"hello" } + p { +"bye" } } },
+            "<blockquote><p>hello</p><p>bye</p></blockquote>"
+        )
+    }
+
+    @Test
+    fun `can represent a nested blockquote`() {
+        test(
+            doc { blockquote { blockquote { blockquote { p { +"he said" } } } + p { +"i said" } } },
+            "<blockquote><blockquote><blockquote><p>he said</p></blockquote></blockquote><p>i said</p></blockquote>"
+        )
+    }
+
+    @Test
+    fun `can represent headings`() {
+        test(
+            doc { h1 { +"one" } + h2 { +"two" } + p { +"text" } },
+            "<h1>one</h1><h2>two</h2><p>text</p>"
+        )
+    }
+
+    @Test
+    fun `can represent inline code`() {
+        test(
+            doc { p { +"text and " + code { +"code that is " + em { +"emphasized" } + "..." } } },
+            "<p>text and <code>code that is </code><em><code>emphasized</code></em><code>...</code></p>"
+        )
+    }
+
+    @Test
+    fun `can represent a code block`() {
+        test(
+            doc { blockquote { pre { +"some code" } } + p { +"and" } },
+            "<blockquote><pre><code>some code</code></pre></blockquote><p>and</p>"
+        )
+    }
+
+    @Test
+    fun `supports leaf nodes in marks`() {
+        test(
+            doc { p { em { +"hi" + br {} + "x" } } },
+            "<p><em>hi<br>x</em></p>"
+        )
+    }
+
+    @Test
+    fun `doesn't collapse non-breaking spaces`() {
+        test(
+            doc { p { +"\u00a0 \u00a0hello\u00a0" } },
+            "<p>&nbsp; &nbsp;hello&nbsp;</p>"
+        )
+    }
+
+    @Test
+    fun `can parse marks on block nodes`() {
+        val doc = CommentNodeBuilder.doc {
+            p { +"one" } + this.comment { p { +"two" } + p { strong { +"three" } } } + p { +"four" }
+        }
+        test(
+            doc,
+            "<p>one</p><div class=\"comment\"><p>two</p><p><strong>three</strong></p></div><p>four</p>"
+        )
+    }
+
+    // TODO convert tests below
 //        it("parses unique, non-exclusive, same-typed marks", () => {
 //            let commentSchema = new Schema({
 //                nodes: schema.spec.nodes,
@@ -255,180 +255,180 @@ class DomTest {
 //            ist(dom.querySelector('use').attributes[0].namespaceURI, 'http://www.w3.org/1999/xlink')
 //        })
 
-  fun recover(html: String, doc: Node, options: ParseOptions = ParseOptionsImpl()) {
-    val schema = doc.type.schema
-    val parsedDoc = DOMParser.fromSchema(schema).parseHtml(html, options)
-    assertThat(parsedDoc).isEqualTo(doc)
-  }
+    fun recover(html: String, doc: Node, options: ParseOptions = ParseOptionsImpl()) {
+        val schema = doc.type.schema
+        val parsedDoc = DOMParser.fromSchema(schema).parseHtml(html, options)
+        assertThat(parsedDoc).isEqualTo(doc)
+    }
 
-  @Test
-  fun `can recover a list item`() {
-    recover(
-      "<ol><p>Oh no</p></ol>",
-      doc { ol { li { p { +"Oh no" } } } }
-    )
-  }
+    @Test
+    fun `can recover a list item`() {
+        recover(
+            "<ol><p>Oh no</p></ol>",
+            doc { ol { li { p { +"Oh no" } } } }
+        )
+    }
 
-  @Test
-  fun `wraps a list item in a list`() {
-    recover(
-      "<li>hey</li>",
-      doc { ol { li { p { +"hey" } } } }
-    )
-  }
+    @Test
+    fun `wraps a list item in a list`() {
+        recover(
+            "<li>hey</li>",
+            doc { ol { li { p { +"hey" } } } }
+        )
+    }
 
-  @Test
-  fun `can turn divs into paragraphs`() {
-    recover(
-      "<div>hi</div><div>bye</div>",
-      doc { p { +"hi" } + p { +"bye" } }
-    )
-  }
+    @Test
+    fun `can turn divs into paragraphs`() {
+        recover(
+            "<div>hi</div><div>bye</div>",
+            doc { p { +"hi" } + p { +"bye" } }
+        )
+    }
 
-  @Test
-  fun `interprets i and b as emphasis and strong`() {
-    recover(
-      "<p><i>hello <b>there</b></i></p>",
-      doc { p { em { +"hello " + strong { +"there" } } } }
-    )
-  }
+    @Test
+    fun `interprets i and b as emphasis and strong`() {
+        recover(
+            "<p><i>hello <b>there</b></i></p>",
+            doc { p { em { +"hello " + strong { +"there" } } } }
+        )
+    }
 
-  @Test
-  fun `wraps stray text in a paragraph`() {
-    recover(
-      "hi",
-      doc { p { +"hi" } }
-    )
-  }
+    @Test
+    fun `wraps stray text in a paragraph`() {
+        recover(
+            "hi",
+            doc { p { +"hi" } }
+        )
+    }
 
-  @Test
-  fun `ignores an extra wrapping _div_`() {
-    recover(
-      "<div><p>one</p><p>two</p></div>",
-      doc { p { +"one" } + p { +"two" } }
-    )
-  }
+    @Test
+    fun `ignores an extra wrapping _div_`() {
+        recover(
+            "<div><p>one</p><p>two</p></div>",
+            doc { p { +"one" } + p { +"two" } }
+        )
+    }
 
-  @Test
-  fun `ignores meaningless whitespace`() {
-    recover(
-      " <blockquote> <p>woo  \n  <em> hooo</em></p> </blockquote> ",
-      doc { blockquote { p { +"woo " + em { +"hooo" } } } }
-    )
-  }
+    @Test
+    fun `ignores meaningless whitespace`() {
+        recover(
+            " <blockquote> <p>woo  \n  <em> hooo</em></p> </blockquote> ",
+            doc { blockquote { p { +"woo " + em { +"hooo" } } } }
+        )
+    }
 
-  @Test
-  fun `removes whitespace after a hard break`() {
-    recover(
-      "<p>hello<br>\n  world</p>",
-      doc { p { +"hello" + br {} + "world" } }
-    )
-  }
+    @Test
+    fun `removes whitespace after a hard break`() {
+        recover(
+            "<p>hello<br>\n  world</p>",
+            doc { p { +"hello" + br {} + "world" } }
+        )
+    }
 
-  @Test
-  fun `converts br nodes to newlines when they would otherwise be ignored`() {
-    recover(
-      "<pre>foo<br>bar</pre>",
-      doc { pre { +"foo\nbar" } }
-    )
-  }
+    @Test
+    fun `converts br nodes to newlines when they would otherwise be ignored`() {
+        recover(
+            "<pre>foo<br>bar</pre>",
+            doc { pre { +"foo\nbar" } }
+        )
+    }
 
-  @Test
-  fun `finds a valid place for invalid content`() {
-    recover(
-      "<ul><li>hi</li><p>whoah</p><li>again</li></ul>",
-      doc { ul { li { p { +"hi" } } + li { p { +"whoah" } } + li { p { +"again" } } } }
-    )
-  }
+    @Test
+    fun `finds a valid place for invalid content`() {
+        recover(
+            "<ul><li>hi</li><p>whoah</p><li>again</li></ul>",
+            doc { ul { li { p { +"hi" } } + li { p { +"whoah" } } + li { p { +"again" } } } }
+        )
+    }
 
-  @Test
-  fun `moves nodes up when they don't fit the current context`() {
-    recover(
-      "<div>hello<hr/>bye</div>",
-      doc { p { +"hello" } + hr {} + p { +"bye" } }
-    )
-  }
+    @Test
+    fun `moves nodes up when they don't fit the current context`() {
+        recover(
+            "<div>hello<hr/>bye</div>",
+            doc { p { +"hello" } + hr {} + p { +"bye" } }
+        )
+    }
 
-  @Test
-  fun `doesn't ignore whitespace-only text nodes`() {
-    recover(
-      "<p><em>one</em> <strong>two</strong></p>",
-      doc { p { em { +"one" } + " " + strong { +"two" } } }
-    )
-  }
+    @Test
+    fun `doesn't ignore whitespace-only text nodes`() {
+        recover(
+            "<p><em>one</em> <strong>two</strong></p>",
+            doc { p { em { +"one" } + " " + strong { +"two" } } }
+        )
+    }
 
-  @Test
-  fun `can handle stray tab characters`() {
-    recover(
-      "<p> <b>&#09;</b></p>",
-      doc { p { } }
-    )
-  }
+    @Test
+    fun `can handle stray tab characters`() {
+        recover(
+            "<p> <b>&#09;</b></p>",
+            doc { p { } }
+        )
+    }
 
-  @Test
-  fun `normalizes random spaces`() {
-    recover(
-      "<p><b>1 </b>  </p>",
-      doc { p { strong { +"1" } } }
-    )
-  }
+    @Test
+    fun `normalizes random spaces`() {
+        recover(
+            "<p><b>1 </b>  </p>",
+            doc { p { strong { +"1" } } }
+        )
+    }
 
-  @Test
-  fun `can parse an empty code block`() {
-    recover(
-      "<pre></pre>",
-      doc { pre { } }
-    )
-  }
+    @Test
+    fun `can parse an empty code block`() {
+        recover(
+            "<pre></pre>",
+            doc { pre { } }
+        )
+    }
 
-  @Test
-  fun `preserves trailing space in a code block`() {
-    recover(
-      "<pre>foo\n</pre>",
-      doc { pre { +"foo\n" } }
-    )
-  }
+    @Test
+    fun `preserves trailing space in a code block`() {
+        recover(
+            "<pre>foo\n</pre>",
+            doc { pre { +"foo\n" } }
+        )
+    }
 
-  @Test
-  fun `normalizes newlines when preserving whitespace`() {
-    recover(
-      "<p>foo  bar\nbaz</p>",
-      doc { p { +"foo  bar baz" } },
-      options = ParseOptionsImpl(preserveWhitespace = PreserveWhitespace.YES)
-    )
-  }
+    @Test
+    fun `normalizes newlines when preserving whitespace`() {
+        recover(
+            "<p>foo  bar\nbaz</p>",
+            doc { p { +"foo  bar baz" } },
+            options = ParseOptionsImpl(preserveWhitespace = PreserveWhitespace.YES)
+        )
+    }
 
-  @Test
-  fun `ignores script tags`() {
-    recover(
-      "<p>hello<script>alert('x')</script>!</p>",
-      doc { p { +"hello!" } }
-    )
-  }
+    @Test
+    fun `ignores script tags`() {
+        recover(
+            "<p>hello<script>alert('x')</script>!</p>",
+            doc { p { +"hello!" } }
+        )
+    }
 
-  @Test
-  fun `can handle a head body input structure`() {
-    recover(
-      "<head><title>T</title><meta charset='utf8'/></head><body>hi</body>",
-      doc { p { +"hi" } }
-    )
-  }
+    @Test
+    fun `can handle a head body input structure`() {
+        recover(
+            "<head><title>T</title><meta charset='utf8'/></head><body>hi</body>",
+            doc { p { +"hi" } }
+        )
+    }
 
-  @Test
-  fun `only applies a mark once`() {
-    recover(
-      "<p>A <strong>big <strong>strong</strong> monster</strong>.</p>",
-      doc { p { +"A " + strong { +"big strong monster" } + "." } }
-    )
-  }
+    @Test
+    fun `only applies a mark once`() {
+        recover(
+            "<p>A <strong>big <strong>strong</strong> monster</strong>.</p>",
+            doc { p { +"A " + strong { +"big strong monster" } + "." } }
+        )
+    }
 
-  @Test
-  fun `interprets font-style italic as em`() {
-    recover(
-      "<p><span style='font-style: italic'>Hello</span>!</p>",
-      doc { p { em { +"Hello" } + "!" } }
-    )
-  }
+    @Test
+    fun `interprets font-style italic as em`() {
+        recover(
+            "<p><span style='font-style: italic'>Hello</span>!</p>",
+            doc { p { em { +"Hello" } + "!" } }
+        )
+    }
 }
 
 //        it("interprets font-weight: bold as strong",

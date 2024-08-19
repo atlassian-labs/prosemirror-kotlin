@@ -8,31 +8,12 @@ import org.assertj.core.api.Assertions.assertThat
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
-// import {TextSelection} from "prosemirror-state"
-
-// import {schema, eq, doc, blockquote, pre, p, li, ul, img, em, a, br, hr} from "prosemirror-test-builder"
-// import {TestState} from "./state.js"
-// import ist from "ist"
-
-// describe("Selection", () => {
 class SelectionTest {
     @BeforeTest
     fun beforeTest() {
         PMNodeBuilder.clean()
     }
 
-//    it("should follow changes", () => {
-//        let state = new TestState({doc: doc(p("hi")), schema})
-//        state.apply(state.tr.insertText("xy", 1))
-//        ist(state.selection.head, 3)
-//        ist(state.selection.anchor, 3)
-//        state.apply(state.tr.insertText("zq", 1))
-//        ist(state.selection.head, 5)
-//        ist(state.selection.anchor, 5)
-//        state.apply(state.tr.insertText("uv", 7))
-//        ist(state.selection.head, 5)
-//        ist(state.selection.anchor, 5)
-//    })
     @Test
     fun `should follow changes`() {
         val state = TestState(EditorStateConfigImpl(doc = doc { p { +"hi" } }, schema = schema))
@@ -47,13 +28,6 @@ class SelectionTest {
         assertThat(state.selection.anchor).isEqualTo(5)
     }
 
-//    it("should move after inserted content", () => {
-//        let state = new TestState({doc: doc(p("hi")), schema})
-//        state.textSel(2, 3)
-//        state.apply(state.tr.insertText("o"))
-//        ist(state.selection.head, 3)
-//        ist(state.selection.anchor, 3)
-//    })
     @Test
     fun `should move after inserted content`() {
         val state = TestState(EditorStateConfigImpl(doc = doc { p { +"hi" } }, schema = schema))
@@ -63,17 +37,6 @@ class SelectionTest {
         assertThat(state.selection.anchor).isEqualTo(3)
     }
 
-//    it("moves after an inserted leaf node", () => {
-//        let state = new TestState({doc: doc(p("foobar")), schema})
-//        state.textSel(4)
-//        state.apply(state.tr.replaceSelectionWith(schema.node("horizontal_rule")))
-//        ist(state.doc, doc(p("foo"), hr(), p("bar")), eq)
-//        ist(state.selection.head, 7)
-//        state.textSel(10)
-//        state.apply(state.tr.replaceSelectionWith(schema.node("horizontal_rule")))
-//        ist(state.doc, doc(p("foo"), hr(), p("bar"), hr()), eq)
-//        ist(state.selection.from, 11)
-//    })
     @Test
     fun `moves after an inserted leaf node`() {
         val state = TestState(EditorStateConfigImpl(doc = doc { p { +"foobar" } }, schema = schema))
@@ -87,14 +50,6 @@ class SelectionTest {
         assertThat(state.selection.from).isEqualTo(11)
     }
 
-//    it("allows typing over a leaf node", () => {
-//        let state = new TestState({doc: doc(p("a"), "<a>", hr(), p("b")), schema})
-//        state.nodeSel(3)
-//        state.apply(state.tr.replaceSelectionWith(schema.text("x")))
-//        ist(state.doc, doc(p("a"), p("x"), p("b")), eq)
-//        ist(state.selection.head, 5)
-//        ist(state.selection.anchor, 5)
-//    })
     @Test
     fun `allows typing over a leaf node`() {
         val state =
@@ -106,24 +61,6 @@ class SelectionTest {
         assertThat(state.selection.anchor).isEqualTo(5)
     }
 
-//    it("allows deleting a selected block", () => {
-//        let state = new TestState({doc: doc(p("foo"), ul(li(p("bar")), li(p("baz")), li(p("quux")))), schema})
-//        state.nodeSel(0)
-//        state.deleteSelection()
-//        ist(state.doc, doc(ul(li(p("bar")), li(p("baz")), li(p("quux")))), eq)
-//        ist(state.selection.head, 3)
-//        state.nodeSel(2)
-//        state.deleteSelection()
-//        ist(state.doc, doc(ul(li(p("baz")), li(p("quux")))), eq)
-//        ist(state.selection.head, 3)
-//        state.nodeSel(9)
-//        state.deleteSelection()
-//        ist(state.doc, doc(ul(li(p("baz")))), eq)
-//        ist(state.selection.head, 6)
-//        state.nodeSel(0)
-//        state.deleteSelection()
-//        ist(state.doc, doc(p()), eq)
-//    })
     @Test
     fun `allows deleting a selected block`() {
         val state = TestState(
@@ -149,11 +86,6 @@ class SelectionTest {
         assertThat(state.doc).isEqualTo(doc { p {} })
     }
 
-//    it("preserves the marks of a deleted selection", () => {
-//        let state = new TestState({doc: doc(p("foo", em("<a>bar<b>"), "baz"))})
-//        state.deleteSelection()
-//        ist(state.state.storedMarks!.length, 1)
-//    })
     @Test
     fun `preserves the marks of a deleted selection`() {
         val state = TestState(EditorStateConfigImpl(doc = doc { p { +"foo" + em { +"<a>bar<b>" } + "baz" } }))
@@ -161,11 +93,6 @@ class SelectionTest {
         assertThat(state.state.storedMarks!!.size).isEqualTo(1)
     }
 
-//    it("doesn't preserve non-inclusive marks of a deleted selection", () => {
-//        let state = new TestState({doc: doc(p("foo", a(em("<a>bar<b>")), "baz"))})
-//        state.deleteSelection()
-//        ist(state.state.storedMarks!.length, 1)
-//    })
     @Test
     fun `doesn't preserve non-inclusive marks of a deleted selection`() {
         val state = TestState(EditorStateConfigImpl(doc = doc { p { +"foo" + a { em { +"<a>bar<b>" } } + "baz" } }))
@@ -173,11 +100,6 @@ class SelectionTest {
         assertThat(state.state.storedMarks!!.size).isEqualTo(1)
     }
 
-//    it("doesn't preserve marks when deleting a selection at the end of a block", () => {
-//        let state = new TestState({doc: doc(p("foo", em("bar<a>")), p("b<b>az"))})
-//        state.deleteSelection()
-//        ist(!state.state.storedMarks)
-//    })
     @Test
     fun `doesn't preserve marks when deleting a selection at the end of a block`() {
         val state = TestState(EditorStateConfigImpl(doc = doc { p { +"foo" + em { +"bar<a>" } } + p { +"b<b>az" } }))
@@ -185,11 +107,6 @@ class SelectionTest {
         assertThat(state.state.storedMarks).isNull()
     }
 
-//    it("drops non-inclusive marks at the end of a deleted span when appropriate", () => {
-//        let state = new TestState({doc: doc(p("foo", a("ba", em("<a>r<b>")), "baz"))})
-//        state.deleteSelection()
-//        ist(state.state.storedMarks!.map(x => x.type.name).join(), "em")
-//    })
     @Test
     fun `drops non-inclusive marks at the end of a deleted span when appropriate`() {
         val state =
@@ -198,11 +115,6 @@ class SelectionTest {
         assertThat(state.state.storedMarks!!.joinToString { it.type.name }).isEqualTo("em")
     }
 
-//    it("keeps non-inclusive marks when still inside them", () => {
-//        let state = new TestState({doc: doc(p("foo", a("b", em("<a>a<b>"), "r"), "baz"))})
-//        state.deleteSelection()
-//        ist(state.state.storedMarks!.length, 2)
-//    })
     @Test
     fun `keeps non-inclusive marks when still inside them`() {
         val state =
@@ -211,13 +123,6 @@ class SelectionTest {
         assertThat(state.state.storedMarks!!.size).isEqualTo(2)
     }
 
-//    it("preserves marks when typing over marked text", () => {
-//        let state = new TestState({doc: doc(p("foo ", em("<a>bar<b>"), " baz"))})
-//        state.apply(state.tr.insertText("quux"))
-//        ist(state.doc, doc(p("foo ", em("quux"), " baz")), eq)
-//        state.apply(state.tr.insertText("bar", 5, 9))
-//        ist(state.doc, doc(p("foo ", em("bar"), " baz")), eq)
-//    })
     @Test
     fun `preserves marks when typing over marked text`() {
         val state = TestState(EditorStateConfigImpl(doc = doc { p { +"foo " + em { +"<a>bar<b>" } + " baz" } }))
@@ -227,16 +132,6 @@ class SelectionTest {
         assertThat(state.doc).isEqualTo(doc { p { +"foo " + em { +"bar" } + " baz" } })
     }
 
-//    it("allows deleting a leaf", () => {
-//        let state = new TestState({doc: doc(p("a"), hr(), hr(), p("b")), schema})
-//        state.nodeSel(3)
-//        state.deleteSelection()
-//        ist(state.doc, doc(p("a"), hr(), p("b")), eq)
-//        ist(state.selection.from, 3)
-//        state.deleteSelection()
-//        ist(state.doc, doc(p("a"), p("b")), eq)
-//        ist(state.selection.head, 4)
-//    })
     @Test
     fun `allows deleting a leaf`() {
         val state =
@@ -250,21 +145,6 @@ class SelectionTest {
         assertThat(state.selection.head).isEqualTo(4)
     }
 
-//    it("properly handles deleting the selection", () => {
-//        let state = new TestState({doc: doc(p("foo", img(), "bar"), blockquote(p("hi")), p("ay")), schema})
-//        state.nodeSel(4)
-//        state.apply(state.tr.deleteSelection())
-//        ist(state.doc, doc(p("foobar"), blockquote(p("hi")), p("ay")), eq)
-//        ist(state.selection.head, 4)
-//        state.nodeSel(9)
-//        state.apply(state.tr.deleteSelection())
-//        ist(state.doc, doc(p("foobar"), p("ay")), eq)
-//        ist(state.selection.from, 9)
-//        state.nodeSel(8)
-//        state.apply(state.tr.deleteSelection())
-//        ist(state.doc, doc(p("foobar")), eq)
-//        ist(state.selection.from, 7)
-//    })
     @Test
     fun `properly handles deleting the selection`() {
         val state = TestState(
@@ -287,22 +167,6 @@ class SelectionTest {
         assertThat(state.selection.from).isEqualTo(7)
     }
 
-//    it("can replace inline selections", () => {
-//        let state = new TestState({doc: doc(p("foo", img(), "bar", img(), "baz")), schema})
-//        state.nodeSel(4)
-//        state.apply(state.tr.replaceSelectionWith(schema.node("hard_break")))
-//        ist(state.doc, doc(p("foo", br(), "bar", img(), "baz")), eq)
-//        ist(state.selection.head, 5)
-//        ist(state.selection.empty)
-//        state.nodeSel(8)
-//        state.apply(state.tr.insertText("abc"))
-//        ist(state.doc, doc(p("foo", br(), "barabcbaz")), eq)
-//        ist(state.selection.head, 11)
-//        ist(state.selection.empty)
-//        state.nodeSel(0)
-//        state.apply(state.tr.insertText("xyz"))
-//        ist(state.doc, doc(p("xyz")), eq)
-//    })
     @Test
     fun `can replace inline selections`() {
         val state = TestState(
@@ -326,17 +190,6 @@ class SelectionTest {
         assertThat(state.doc).isEqualTo(doc { p { +"xyz" } })
     }
 
-//    it("can replace a block selection", () => {
-//        let state = new TestState({doc: doc(p("abc"), hr(), hr(), blockquote(p("ow"))), schema})
-//        state.nodeSel(5)
-//        state.apply(state.tr.replaceSelectionWith(schema.node("code_block")))
-//        ist(state.doc, doc(p("abc"), pre(), hr(), blockquote(p("ow"))), eq)
-//        ist(state.selection.from, 7)
-//        state.nodeSel(8)
-//        state.apply(state.tr.replaceSelectionWith(schema.node("paragraph")))
-//        ist(state.doc, doc(p("abc"), pre(), hr(), p()), eq)
-//        ist(state.selection.from, 9)
-//    })
     @Test
     fun `can replace a block selection`() {
         val state = TestState(
@@ -355,12 +208,6 @@ class SelectionTest {
         assertThat(state.selection.from).isEqualTo(9)
     }
 
-//    it("puts the cursor after the inserted text when inserting a list item", () => {
-//        let state = new TestState({doc: doc(p("<a>abc"))})
-//        let source = doc(ul(li(p("<a>def<b>"))))
-//        state.apply(state.tr.replaceSelection(source.slice((source as any).tag.a, (source as any).tag.b, true)))
-//        ist(state.selection.from, 6)
-//    })
     @Test
     fun `puts the cursor after the inserted text when inserting a list item`() {
         val state = TestState(EditorStateConfigImpl(doc = doc { p { +"<a>abc" } }))
@@ -369,15 +216,6 @@ class SelectionTest {
         assertThat(state.selection.from).isEqualTo(6)
     }
 
-// })
-//
-// describe("TextSelection.between", () => {
-//     it("uses arguments when possible", () => {
-//         let d = doc(p("f<a>o<b>o"))
-//         let s = TextSelection.between(d.resolve((d as any).tag.b), d.resolve((d as any).tag.a))
-//         ist(s.anchor, (d as any).tag.b)
-//         ist(s.head, (d as any).tag.a)
-//     })
     @Test
     fun `uses arguments when possible`() {
         val d = doc { p { +"f<a>o<b>o" } }
@@ -386,11 +224,6 @@ class SelectionTest {
         assertThat(s.head).isEqualTo(pos("a")!!)
     }
 
-//    it("will adjust when necessary", () => {
-//        let d = doc("<a>", p("foo"))
-//        let s = TextSelection.between(d.resolve((d as any).tag.a), d.resolve((d as any).tag.a))
-//        ist(s.anchor, 1)
-//    })
     @Test
     fun `will adjust when necessary`() {
         val d = doc { +"<a>" + p { +"foo" } }
@@ -398,13 +231,6 @@ class SelectionTest {
         assertThat(s.anchor).isEqualTo(1)
     }
 
-//    it("uses bias when adjusting", () => {
-//        let d = doc(p("foo"), "<a>", p("bar")), pos = d.resolve((d as any).tag.a)
-//        let sUp = TextSelection.between(pos, pos, -1)
-//        ist(sUp.anchor, 4)
-//        let sDown = TextSelection.between(pos, pos, 1)
-//        ist(sDown.anchor, 6)
-//    })
     @Test
     fun `uses bias when adjusting`() {
         val d = doc { p { +"foo" } + "<a>" + p { +"bar" } }
@@ -415,11 +241,6 @@ class SelectionTest {
         assertThat(sDown.anchor).isEqualTo(6)
     }
 
-//    it("will fall back to a node selection", () => {
-//        let d = doc(hr, "<a>")
-//        let s = TextSelection.between(d.resolve((d as any).tag.a), d.resolve((d as any).tag.a))
-//        ist((s as any).node, d.firstChild)
-//    })
     @Test
     fun `will fall back to a node selection`() {
         val d = doc { hr {} + "<a>" }
@@ -427,15 +248,6 @@ class SelectionTest {
         assertThat(d.firstChild).isEqualTo((s as NodeSelection).node)
     }
 
-//    it("will collapse towards the other argument", () => {
-//        let d = doc("<a>", p("foo"), "<b>")
-//        let s = TextSelection.between(d.resolve((d as any).tag.a), d.resolve((d as any).tag.b))
-//        ist(s.anchor, 1)
-//        ist(s.head, 4)
-//        s = TextSelection.between(d.resolve((d as any).tag.b), d.resolve((d as any).tag.a))
-//        ist(s.anchor, 4)
-//        ist(s.head, 1)
-//    })
     @Test
     fun `will collapse towards the other argument`() {
         val d = doc { +"<a>" + p { +"foo" } + "<b>" }
@@ -446,5 +258,4 @@ class SelectionTest {
         assertThat(s.anchor).isEqualTo(4)
         assertThat(s.head).isEqualTo(1)
     }
-// })
 }
