@@ -17,14 +17,14 @@ java {
 
 dependencies {
   implementation(libs.kotlin.stdlib)
-  implementation(libs.jsoup)
   implementation(libs.kotlinx.serialization.json)
+  api(libs.jsoup)
   testImplementation(kotlin("test"))
   testImplementation(libs.test.assertj)
 }
 
 group = "com.atlassian"
-version = "1.0.0"
+version = "1.0.1"
 description = "prosemirror"
 
 val javaVersion = JavaVersion.VERSION_17

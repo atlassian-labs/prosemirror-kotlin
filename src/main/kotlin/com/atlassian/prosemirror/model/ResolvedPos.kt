@@ -253,8 +253,8 @@ class ResolvedPos(
             var node = doc
             while (true) {
                 val ind = node.content.findIndex(parentOffset)
-                val index = Index.index
-                val offset = Index.offset
+                val index = ind.index
+                val offset = ind.offset
                 val rem = parentOffset - offset
                 path.add(node)
                 path.add(index)

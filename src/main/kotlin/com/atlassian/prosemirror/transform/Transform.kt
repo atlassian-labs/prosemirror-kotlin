@@ -10,6 +10,7 @@ import com.atlassian.prosemirror.model.NodeBase
 import com.atlassian.prosemirror.model.NodeRange
 import com.atlassian.prosemirror.model.NodeType
 import com.atlassian.prosemirror.model.Slice
+import com.atlassian.prosemirror.util.safeMode
 
 class TransformError(message: String, cause: Throwable? = null) : Error(message, cause)
 
@@ -39,11 +40,15 @@ open class Transform(
     val docChanged: Boolean
         get() = this.steps.isNotEmpty()
 
+    var error: Throwable? = null
+
     // Apply a new step in this transform, saving the result. Throws an error when the step fails.
     fun step(step: Step): Transform {
         val result = this.maybeStep(step)
         if (result.failed != null) {
-            throw TransformError(result.failed)
+            val exception = TransformError(result.failed)
+            this.error = exception
+            if (!safeMode) throw exception
         }
         return this
     }

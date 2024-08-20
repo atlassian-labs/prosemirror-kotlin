@@ -201,8 +201,8 @@ open class DOMSerializer(
         fun fromSchema(schema: Schema): DOMSerializer {
             return schema.cached.getOrPut("domSerializer") {
                 DOMSerializer(
-                    nodesFromSchema(schema),
-                    marksFromSchema(schema)
+                    this.nodesFromSchema(schema),
+                    this.marksFromSchema(schema)
                 )
             } as DOMSerializer
         }
