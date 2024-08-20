@@ -5,6 +5,7 @@ import com.atlassian.prosemirror.model.Node
 import com.atlassian.prosemirror.model.RangeError
 import com.atlassian.prosemirror.model.Schema
 import com.atlassian.prosemirror.transform.Transform
+import com.atlassian.prosemirror.util.safeMode
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
@@ -106,6 +107,10 @@ internal class EmptyEditorStateConfig(
     override val plugins: List<Plugin<*>> = emptyList()
 ) : EditorStateConfig
 
+// The state of a ProseMirror editor is represented by an object of this type. A state is a
+// persistent data structure—it isn't updated, but rather a new state value is computed from an old
+// one using the [`apply`](#state.EditorState.apply) method.
+//
 // A state holds a number of built-in fields, and plugins can [define](#state.PluginSpec.state)
 // additional fields.
 class PMEditorState internal constructor(
@@ -166,8 +171,18 @@ class PMEditorState internal constructor(
     // Verbose variant of [`apply`](#state.EditorState.apply) that returns the precise transactions
     // that were applied (which might be influenced by the
     // [transaction hooks](#state.PluginSpec.filterTransaction) of plugins) along with the new state.
+    @Suppress("TooGenericExceptionCaught")
+    fun applyTransaction(rootTr: Transaction): ApplyTransactionResult {
+        return try {
+            applyTransactionInternal(rootTr)
+        } catch (e: Exception) {
+            if (!safeMode) throw e
+            ApplyTransactionResult(state = this, transactions = emptyList()) // empty transaction result
+        }
+    }
+
     @Suppress("NestedBlockDepth", "ComplexMethod")
-    private fun applyTransaction(rootTr: Transaction): ApplyTransactionResult {
+    private fun applyTransactionInternal(rootTr: Transaction): ApplyTransactionResult {
         if (!this.filterTransaction(rootTr)) return ApplyTransactionResult(state = this, transactions = emptyList())
 
         val trs = mutableListOf(rootTr)

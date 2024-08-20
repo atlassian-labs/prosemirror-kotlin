@@ -106,9 +106,9 @@ data class Slice(
 }
 
 fun removeRange(content: Fragment, from: Int, to: Int): Fragment {
-    val (index, offset) = content.findIndex(from).run { Index.index to Index.offset }
+    val (index, offset) = content.findIndex(from).run { index to offset }
     val child = content.maybeChild(index)
-    val (indexTo, offsetTo) = content.findIndex(to).run { Index.index to Index.offset }
+    val (indexTo, offsetTo) = content.findIndex(to).run { this.index to this.offset }
     if (offset == from || child!!.isText) {
         if (offsetTo != to && !content.child(indexTo).isText) throw RangeError("Removing non-flat range")
         return content.cut(0, from).append(content.cut(to))
@@ -119,7 +119,7 @@ fun removeRange(content: Fragment, from: Int, to: Int): Fragment {
 
 @Suppress("ReturnCount")
 fun insertInto(content: Fragment, dist: Int, insert: Fragment, parent: Node? = null): Fragment? {
-    val (index, offset) = content.findIndex(dist).run { Index.index to Index.offset }
+    val (index, offset) = content.findIndex(dist).run { index to offset }
     val child = content.maybeChild(index)
     if (offset == dist || child!!.isText) {
         if (parent != null && !parent.canReplace(index, index, insert)) return null

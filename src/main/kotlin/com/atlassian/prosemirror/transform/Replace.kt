@@ -7,7 +7,7 @@ import com.atlassian.prosemirror.model.Node
 import com.atlassian.prosemirror.model.NodeType
 import com.atlassian.prosemirror.model.ResolvedPos
 import com.atlassian.prosemirror.model.Slice
-import com.atlassian.prosemirror.util.resolveAndLog
+import com.atlassian.prosemirror.util.resolveSafe
 import kotlin.math.max
 import kotlin.math.min
 
@@ -16,7 +16,7 @@ import kotlin.math.min
 // it would be a no-op (an empty slice over an empty range).
 fun replaceStep(doc: Node, from: Int, to: Int = from, slice: Slice = Slice.empty): Step? {
     if (from == to && slice.size == 0) return null
-    val (resolvedFrom, resolvedTo) = doc.resolveAndLog(from, to) ?: return null
+    val (resolvedFrom, resolvedTo) = doc.resolveSafe(from, to) ?: return null
     // Optimization -- avoid work if it's obvious that it's not needed.
     if (fitsTrivially(resolvedFrom, resolvedTo, slice)) return ReplaceStep(from, to, slice)
     return Fitter(resolvedFrom, resolvedTo, slice).fit()
@@ -439,7 +439,7 @@ fun definesContent(type: NodeType) = type.spec.defining == true || type.spec.def
 @Suppress("LongMethod", "ComplexMethod")
 fun replaceRange(tr: Transform, from: Int, to: Int, slice: Slice): Transform? {
     if (slice.size == 0) return tr.deleteRange(from, to)
-    val (_from, _to) = tr.doc.resolveAndLog(from, to) ?: return null
+    val (_from, _to) = tr.doc.resolveSafe(from, to) ?: return null
     if (fitsTrivially(_from, _to, slice)) {
         return tr.step(ReplaceStep(from, to, slice))
     }
@@ -570,7 +570,7 @@ fun replaceRangeWith(tr: Transform, from: Int, to: Int, node: Node) {
 }
 
 fun deleteRange(tr: Transform, from: Int, to: Int): Transform {
-    val (_from, _to) = tr.doc.resolveAndLog(from, to) ?: return tr
+    val (_from, _to) = tr.doc.resolveSafe(from, to) ?: return tr
     val covered = coveredDepths(_from, _to)
     for (i in 0 until covered.size) {
         val depth = covered[i]
