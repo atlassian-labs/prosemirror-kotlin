@@ -10,7 +10,7 @@ import com.atlassian.prosemirror.model.NodeRange
 import com.atlassian.prosemirror.model.NodeType
 import com.atlassian.prosemirror.model.RangeError
 import com.atlassian.prosemirror.model.Slice
-import com.atlassian.prosemirror.util.resolveAndLog
+import com.atlassian.prosemirror.util.resolveSafe
 
 fun canCut(node: Node, start: Int, end: Int) =
     (start == 0 || node.canReplace(start, node.childCount)) && (end == node.childCount || node.canReplace(0, end))
@@ -182,6 +182,8 @@ fun canChangeType(doc: Node, pos: Int, type: NodeType): Boolean {
     return resolvedPos.parent.canReplaceWith(index, index + 1, type)
 }
 
+// Change the type, attributes, and/or marks of the node at `pos`. When `type` isn't given, the
+// existing node type is preserved,
 fun setNodeMarkup(tr: Transform, pos: Int, type: NodeType?, attrs: Attrs?, marks: List<Mark>?): Transform {
     val node = tr.doc.nodeAt(pos) ?: throw RangeError("No node at given position")
     val thisType = type ?: node.type
@@ -243,7 +245,7 @@ fun canSplit(doc: Node, pos: Int, depth: Int = 1, typesAfter: List<NodeBase?>? =
 }
 
 fun split(tr: Transform, pos: Int, depth: Int = 1, typesAfter: List<NodeBase?>?): Transform {
-    val thisPos = tr.doc.resolveAndLog(pos) ?: return tr
+    val thisPos = tr.doc.resolveSafe(pos) ?: return tr
     var before = Fragment.empty
     var after = Fragment.empty
     var d = thisPos.depth

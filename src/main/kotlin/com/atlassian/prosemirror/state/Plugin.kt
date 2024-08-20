@@ -57,7 +57,7 @@ open class Plugin<PluginState>(
      * transactions, i.e. it won't be passed transactions that it
      * already saw.
      */
-    internal open val appendTransaction: ((List<Transaction>, PMEditorState, PMEditorState) -> Transaction?)? = null
+    open val appendTransaction: ((List<Transaction>, PMEditorState, PMEditorState) -> Transaction?)? = null
 
     /**
      * When present, this will be called before a transaction is

@@ -58,7 +58,8 @@ class Fragment {
                     max(0, from - start),
                     min(child.content.size, to - start),
                     f,
-                    nodeStart + start
+                    nodeStart + start,
+                    terminate
                 )
             }
             if (terminate()) return

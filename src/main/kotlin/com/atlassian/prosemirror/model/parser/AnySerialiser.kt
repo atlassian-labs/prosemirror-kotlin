@@ -20,7 +20,7 @@ import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
 
 @Suppress("UNCHECKED_CAST")
-internal val JSON: Json by lazy {
+val JSON: Json by lazy {
   Json {
     ignoreUnknownKeys = true
     serializersModule = SerializersModule {

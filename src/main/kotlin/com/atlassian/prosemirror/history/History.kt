@@ -14,6 +14,7 @@ import com.atlassian.prosemirror.transform.Mapping
 import com.atlassian.prosemirror.transform.Step
 import com.atlassian.prosemirror.transform.StepMap
 import com.atlassian.prosemirror.transform.Transform
+import com.atlassian.prosemirror.util.safeMode
 
 import kotlin.math.max
 import kotlin.math.min
@@ -586,22 +587,27 @@ class HistoryPluginSpec(conf: HistoryOptionsConfig) : PluginSpec<HistoryState>()
 @Suppress("TooGenericExceptionCaught", "NestedBlockDepth")
 fun buildCommand(redo: Boolean, scroll: Boolean): Command {
     return { state, dispatch ->
-        val hist = historyKey.getState(state)
-        if (hist == null || (if (redo) hist.undone else hist.done).eventCount == 0) {
-            false
-        } else {
-            if (dispatch != null) {
-                histTransaction(hist, state, redo)?.let {
-                    dispatch(
-                        if (scroll) {
-                            it.scrollIntoView()
-                        } else {
-                            it
-                        }
-                    )
+        try {
+            val hist = historyKey.getState(state)
+            if (hist == null || (if (redo) hist.undone else hist.done).eventCount == 0) {
+                false
+            } else {
+                if (dispatch != null) {
+                    histTransaction(hist, state, redo)?.let {
+                        dispatch(
+                            if (scroll) {
+                                it.scrollIntoView()
+                            } else {
+                                it
+                            }
+                        )
+                    }
                 }
+                true
             }
-            true
+        } catch (ex: Exception) {
+            if (!safeMode) throw ex
+            false
         }
     }
 }
