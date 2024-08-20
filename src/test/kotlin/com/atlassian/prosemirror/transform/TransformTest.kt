@@ -13,6 +13,8 @@ import com.atlassian.prosemirror.testbuilder.NodeSpecImpl
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.doc
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.pos
 import com.atlassian.prosemirror.testbuilder.schema
+import com.atlassian.prosemirror.util.safeMode
+import kotlin.test.BeforeTest
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown
 import kotlin.test.Test
@@ -20,6 +22,10 @@ import kotlin.test.Test
 @Suppress("LargeClass")
 class TransformTest {
 
+    @BeforeTest
+    fun setup() {
+        safeMode = true
+    }
 
     // region addMark
     fun add(doc: Node, mark: Mark, expect: Node) {
@@ -510,13 +516,17 @@ class TransformTest {
         )
 
     @Test
-    fun `preserves content constraints before`() =
+    fun `preserves content constraints before`() {
+        safeMode = false
         splitFail(doc { blockquote { +"<a>" + p { +"x" } } })
+    }
 
     @Test
-    fun `preserves content constraints after`() =
+    fun `preserves content constraints after`() {
+        safeMode = false
         splitFail(doc { blockquote { p { +"x" } + "<a>" } })
-// endregion
+    }
+    // endregion
 
     // region lift
     fun lift(doc: Node, expect: Node) {
