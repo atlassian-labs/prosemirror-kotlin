@@ -182,6 +182,8 @@ fun canChangeType(doc: Node, pos: Int, type: NodeType): Boolean {
     return resolvedPos.parent.canReplaceWith(index, index + 1, type)
 }
 
+// Change the type, attributes, and/or marks of the node at `pos`. When `type` isn't given, the
+// existing node type is preserved,
 fun setNodeMarkup(tr: Transform, pos: Int, type: NodeType?, attrs: Attrs?, marks: List<Mark>?): Transform {
     val node = tr.doc.nodeAt(pos) ?: throw RangeError("No node at given position")
     val thisType = type ?: node.type

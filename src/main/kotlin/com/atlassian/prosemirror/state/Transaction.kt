@@ -91,10 +91,13 @@ class Transaction : Transform {
         if (selection._from.doc.nodeId != this.doc.nodeId) {
             throw RangeError("Selection passed to setSelection must point at the current document")
         }
+        val changed = this.curSelection != selection
         this.curSelection = selection
         this.curSelectionFor = this.steps.size
         this.updated = (this.updated or UPDATED_SEL) and UPDATED_MARKS.inv()
-        this.storedMarks = null
+        if (changed) {
+            this.storedMarks = null
+        }
     }
 
     // Whether the selection was explicitly updated by this transaction.
