@@ -6,7 +6,7 @@ import com.atlassian.prosemirror.model.ResolvedPos
 
 fun getMilliseconds() = System.currentTimeMillis()
 
-fun Node.resolveAndLog(from: Int, to: Int): Pair<ResolvedPos, ResolvedPos>? {
+fun Node.resolveSafe(from: Int, to: Int): Pair<ResolvedPos, ResolvedPos>? {
     try {
         val resolvedFrom = resolve(from)
         val resolvedTo = resolve(to)
@@ -17,7 +17,7 @@ fun Node.resolveAndLog(from: Int, to: Int): Pair<ResolvedPos, ResolvedPos>? {
     }
 }
 
-fun Node.resolveAndLog(pos: Int): ResolvedPos? {
+fun Node.resolveSafe(pos: Int): ResolvedPos? {
     try {
         return resolve(pos)
     } catch (e: RangeError) {

@@ -10,7 +10,7 @@ import com.atlassian.prosemirror.model.NodeRange
 import com.atlassian.prosemirror.model.NodeType
 import com.atlassian.prosemirror.model.RangeError
 import com.atlassian.prosemirror.model.Slice
-import com.atlassian.prosemirror.util.resolveAndLog
+import com.atlassian.prosemirror.util.resolveSafe
 
 fun canCut(node: Node, start: Int, end: Int) =
     (start == 0 || node.canReplace(start, node.childCount)) && (end == node.childCount || node.canReplace(0, end))
@@ -243,7 +243,7 @@ fun canSplit(doc: Node, pos: Int, depth: Int = 1, typesAfter: List<NodeBase?>? =
 }
 
 fun split(tr: Transform, pos: Int, depth: Int = 1, typesAfter: List<NodeBase?>?): Transform {
-    val thisPos = tr.doc.resolveAndLog(pos) ?: return tr
+    val thisPos = tr.doc.resolveSafe(pos) ?: return tr
     var before = Fragment.empty
     var after = Fragment.empty
     var d = thisPos.depth
