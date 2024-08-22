@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<baseline version="1.0">
+    <file name="build.gradle.kts">
+        <error line="28" column="1" source="standard:no-consecutive-blank-lines" />
+    </file>
+    <file name="src/main/kotlin/com/atlassian/prosemirror/util/Tools.kt">
+        <error line="8" column="18" source="standard:function-signature" />
+        <error line="8" column="29" source="standard:function-signature" />
+        <error line="8" column="36" source="standard:function-signature" />
+    </file>
+</baseline>
