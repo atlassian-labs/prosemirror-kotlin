@@ -53,3 +53,21 @@ transformations or determining whether they are even possible.
 @joinPoint
 @insertPoint
 @dropPoint
+
+## Maven / Gradle dependency
+
+Check the latest package at Maven central on: https://packages.atlassian.com/maven-central/com/atlassian/prosemirror/transform.
+
+### Maven:
+```xml
+<dependency>
+    <groupId>com.atlassian.prosemirror</groupId>
+    <artifactId>transform</artifactId>
+    <version>1.0.1</version>
+</dependency>
+```
+
+### Gradle:
+```kotlin
+implementation("com.atlassian.prosemirror:transform:1.0.1")
+```
