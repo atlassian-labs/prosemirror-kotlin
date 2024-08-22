@@ -132,7 +132,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
-Prosemirror test builder](https://github.com/ProseMirror/prosemirror-test-builder)
+[Prosemirror test builder](https://github.com/ProseMirror/prosemirror-test-builder)
 
 Copyright (C) 2015-2017 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
 
