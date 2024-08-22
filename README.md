@@ -3,30 +3,14 @@
 
 Java/Kotlin implementation of [Prosemirror](https://prosemirror.net/)
 
-## Maven / Gradle dependency
-
-Check the latest package at Maven central on: https://mvnrepository.com/artifact/com.atlassian/prosemirror-kotlin.
-
-### Maven:
-```xml
-<dependency>
-    <groupId>com.atlassian</groupId>
-    <artifactId>prosemirror</artifactId>
-    <version>1.0.0</version>
-</dependency>
-```
-
-### Gradle:
-```kotlin
-implementation("com.atlassian:prosemirror:1.0.0")
-```
 ## Documentation
 
-- [collab](src/main/kotlin/com/atlassian/prosemirror/collab/README.md)
-- [history](src/main/kotlin/com/atlassian/prosemirror/history/README.md)
-- [model](src/main/kotlin/com/atlassian/prosemirror/model/README.md)
-- [state](src/main/kotlin/com/atlassian/prosemirror/state/README.md)
-- [transform](src/main/kotlin/com/atlassian/prosemirror/transform/README.md)
+- [collab](collab/README.md)
+- [history](history/README.md)
+- [model](model/README.md)
+- [state](state/README.md)
+- [test-builder](test-builder/README.md)
+- [transform](transform/README.md)
 
 ## Contributions
 

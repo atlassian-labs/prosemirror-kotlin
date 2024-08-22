@@ -4,17 +4,23 @@ previous state but can undo some changes while keeping other, later
 changes intact. (This is necessary for collaborative editing, and
 comes up in other situations as well.)
 
-@history
+## Maven / Gradle dependency
 
-@undo
+Check the latest package at Maven central on: https://packages.atlassian.com/maven-central/com/atlassian/prosemirror/history.
 
-@redo
+### Maven:
+```xml
+<dependency>
+    <groupId>com.atlassian.prosemirror</groupId>
+    <artifactId>history</artifactId>
+    <version>1.0.1</version>
+</dependency>
+```
 
-@undoDepth
-
-@redoDepth
-
-@closeHistory
+### Gradle:
+```kotlin
+implementation("com.atlassian.prosemirror:history:1.0.1")
+```
 
 ### Versioning
 
