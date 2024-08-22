@@ -7,3 +7,10 @@ dependencyResolutionManagement {
     }
   }
 }
+include("model")
+include("state")
+include("transform")
+include("util")
+include("collab")
+include("history")
+include("test-builder")

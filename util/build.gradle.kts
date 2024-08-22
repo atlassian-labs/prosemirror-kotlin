@@ -17,7 +17,6 @@ dependencies {
   implementation(libs.kotlin.stdlib)
 }
 
-
 val javaVersion = JavaVersion.VERSION_17
 
 tasks.withType<JavaCompile> {
@@ -25,3 +24,4 @@ tasks.withType<JavaCompile> {
   sourceCompatibility = javaVersion.toString()
   targetCompatibility = javaVersion.toString()
 }
+
