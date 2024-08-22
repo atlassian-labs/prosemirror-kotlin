@@ -2,6 +2,8 @@ plugins {
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.ktlint)
   alias(libs.plugins.dokka)
+  id("maven-publish")
+  id("signing")
 }
 
 repositories {
@@ -17,6 +19,10 @@ dependencies {
   implementation(libs.kotlin.stdlib)
 }
 
+group = "com.atlassian.prosemirror"
+version = "1.0.0"
+description = "prosemirror-util"
+
 val javaVersion = JavaVersion.VERSION_17
 
 tasks.withType<JavaCompile> {
@@ -25,3 +31,68 @@ tasks.withType<JavaCompile> {
   targetCompatibility = javaVersion.toString()
 }
 
+tasks {
+
+  jar {
+    archiveBaseName.set("prosemirror-util")
+  }
+
+  // This task is added by Gradle when we use java.withJavadocJar()
+  named<Jar>("javadocJar") {
+    from(dokkaJavadoc)
+  }
+
+  test {
+    useJUnitPlatform()
+  }
+
+  publishing {
+    publications {
+      create<MavenPublication>("release") {
+        from(project.components["java"])
+        pom {
+          packaging = "jar"
+          name.set(project.name)
+          description.set("ProseMirror utilities")
+          url.set("https://github.com/atlassian-labs/prosemirror-kotlin/tree/util/")
+          scm {
+            connection.set("git@github.com:atlassian-labs/prosemirror-kotlin.git")
+            url.set("https://github.com/atlassian-labs/prosemirror-kotlin.git")
+          }
+          developers {
+            developer {
+              id.set("dmarques")
+              name.set("Douglas Marques")
+              email.set("dmarques@atlassian.com")
+            }
+          }
+          licenses {
+            license {
+              name.set("Apache License 2.0")
+              url.set("https://www.apache.org/licenses/LICENSE-2.0")
+              distribution.set("repo")
+            }
+          }
+        }
+      }
+    }
+
+    repositories {
+      maven {
+        url = uri("https://packages.atlassian.com/maven-central")
+        credentials {
+          username = System.getenv("ARTIFACTORY_USERNAME")
+          password = System.getenv("ARTIFACTORY_API_KEY")
+        }
+      }
+    }
+  }
+
+  signing {
+    useInMemoryPgpKeys(
+      System.getenv("SIGNING_KEY"),
+      System.getenv("SIGNING_PASSWORD"),
+    )
+    sign(publishing.publications["release"])
+  }
+}
