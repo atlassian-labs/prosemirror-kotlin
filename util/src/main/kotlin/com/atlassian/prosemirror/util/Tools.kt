@@ -6,5 +6,6 @@ import kotlin.math.min
 var safeMode = true
 
 fun String.slice(from: Int, to: Int): String {
-    return substring(max(0, from), min(to, length))
+    val start = max(0, from)
+    return substring(start, max(start, min(to, length)))
 }
