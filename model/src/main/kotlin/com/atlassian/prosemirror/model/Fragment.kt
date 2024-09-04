@@ -1,6 +1,7 @@
 package com.atlassian.prosemirror.model
 
 import com.atlassian.prosemirror.util.slice
+import com.atlassian.prosemirror.util.verbose
 import kotlin.math.max
 import kotlin.math.min
 import kotlinx.serialization.json.JsonArray
@@ -275,7 +276,11 @@ class Fragment {
 
     // Return a debugging string that describes this fragment.
     override fun toString(): String {
-        return "<${toStringInner()}>"
+        return if (verbose) {
+            "<${toStringInner()}>"
+        } else {
+            "Fragment#${System.identityHashCode(this)} content size: ${content.size}"
+        }
     }
 
     internal fun toStringInner(): String = this.content.joinToString(", ")

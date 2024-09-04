@@ -2,6 +2,7 @@
 
 package com.atlassian.prosemirror.model
 
+import com.atlassian.prosemirror.util.verbose
 import kotlinx.serialization.json.JsonObject
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
@@ -136,27 +137,45 @@ class NodeType internal constructor(
     // Like [`create`](#model.NodeType.create), but check the given content against the node type's
     // content restrictions, and throw an error if it doesn't match.
     fun createChecked(attrs: Attrs? = null, content: Fragment? = null, marks: List<Mark>? = null): Node {
-        val content = Fragment.from(content)
-        if (!this.validContent(content)) {
-            throw RangeError("Invalid content for node type $name: $content")
+        val thisContent = Fragment.from(content)
+        if (!this.validContent(thisContent)) {
+            throw RangeError(
+                if (verbose) {
+                    "Invalid content for node type $name: $thisContent"
+                } else {
+                    "Invalid content for node type $name"
+                }
+            )
         }
-        return creator.create(this, this.computeAttrs(attrs), content, Mark.setFrom(marks))
+        return creator.create(this, this.computeAttrs(attrs), thisContent, Mark.setFrom(marks))
     }
 
     fun createChecked(attrs: Attrs? = null, content: Node?, marks: List<Mark>? = null): Node {
-        val content = Fragment.from(content)
-        if (!this.validContent(content)) {
-            throw RangeError("Invalid content for node type $name: $content")
+        val thisContent = Fragment.from(content)
+        if (!this.validContent(thisContent)) {
+            throw RangeError(
+                if (verbose) {
+                    "Invalid content for node type $name: $thisContent"
+                } else {
+                    "Invalid content for node type $name"
+                }
+            )
         }
-        return creator.create(this, computeAttrs(attrs), content, Mark.setFrom(marks))
+        return creator.create(this, computeAttrs(attrs), thisContent, Mark.setFrom(marks))
     }
 
     fun createChecked(attrs: Attrs? = null, content: List<Node>?, marks: List<Mark>? = null): Node {
-        val content = Fragment.from(content)
-        if (!this.validContent(content)) {
-            throw RangeError("Invalid content for node type $name: $content")
+        val thisContent = Fragment.from(content)
+        if (!this.validContent(thisContent)) {
+            throw RangeError(
+                if (verbose) {
+                    "Invalid content for node type $name: $thisContent"
+                } else {
+                    "Invalid content for node type $name"
+                }
+            )
         }
-        return creator.create(this, this.computeAttrs(attrs), content, Mark.setFrom(marks))
+        return creator.create(this, this.computeAttrs(attrs), thisContent, Mark.setFrom(marks))
     }
 
     // Like [`create`](#model.NodeType.create), but see if it is necessary to add nodes to the start
