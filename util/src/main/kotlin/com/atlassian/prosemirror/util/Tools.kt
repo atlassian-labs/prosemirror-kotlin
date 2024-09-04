@@ -4,6 +4,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 var safeMode = true
+var verbose = false
 
 fun String.slice(from: Int, to: Int): String {
     val start = max(0, from)
