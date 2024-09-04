@@ -63,11 +63,11 @@ Check the latest package at Maven central on: https://packages.atlassian.com/mav
 <dependency>
     <groupId>com.atlassian.prosemirror</groupId>
     <artifactId>transform</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
 </dependency>
 ```
 
 ### Gradle:
 ```kotlin
-implementation("com.atlassian.prosemirror:transform:1.0.1")
+implementation("com.atlassian.prosemirror:transform:1.0.2")
 ```
