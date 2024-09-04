@@ -10,6 +10,7 @@ import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.doc
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.p
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.pos
 import com.atlassian.prosemirror.testbuilder.schema
+import com.atlassian.prosemirror.util.verbose
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.assertj.core.api.Assertions.assertThat
@@ -42,6 +43,7 @@ private val customSchema = Schema(customSchemaSpec)
 class NodeTest {
     @BeforeTest
     fun beforeTest() {
+        verbose = true
         PMNodeBuilder.clean()
     }
 
