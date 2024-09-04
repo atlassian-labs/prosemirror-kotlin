@@ -11,6 +11,7 @@ import com.atlassian.prosemirror.model.NodeType
 import com.atlassian.prosemirror.model.RangeError
 import com.atlassian.prosemirror.model.Slice
 import com.atlassian.prosemirror.model.util.resolveSafe
+import com.atlassian.prosemirror.util.verbose
 
 fun canCut(node: Node, start: Int, end: Int) =
     (start == 0 || node.canReplace(start, node.childCount)) && (end == node.childCount || node.canReplace(0, end))
@@ -194,7 +195,11 @@ fun setNodeMarkup(tr: Transform, pos: Int, type: NodeType?, attrs: Attrs?, marks
 
     if (!thisType.validContent(node.content)) {
         throw RangeError(
-            "Invalid content for node type ${thisType.name}: ${node.content}"
+            if (verbose) {
+                "Invalid content for node type ${thisType.name}: ${node.content}"
+            } else {
+                "Invalid content for node type ${thisType.name}"
+            }
         )
     }
 

@@ -1,5 +1,6 @@
 package com.atlassian.prosemirror.model
 
+import com.atlassian.prosemirror.util.verbose
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.int
@@ -201,7 +202,11 @@ fun addRange(_start: ResolvedPos?, _end: ResolvedPos?, depth: Int, target: Mutab
 
 fun close(node: Node, content: Fragment): Node {
     if (!node.type.validContent(content)) {
-        throw ReplaceError("Invalid content for node ${node.type.name} content: ${content.toJSON()}")
+        if (verbose) {
+            throw ReplaceError("Invalid content for node ${node.type.name} content: ${content.toJSON()}")
+        } else {
+            throw ReplaceError("Invalid content for node ${node.type.name}")
+        }
     }
     return node.copy(content)
 }

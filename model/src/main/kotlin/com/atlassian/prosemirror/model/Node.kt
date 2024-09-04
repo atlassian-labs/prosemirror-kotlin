@@ -4,6 +4,7 @@ package com.atlassian.prosemirror.model
 
 import com.atlassian.prosemirror.model.parser.JSON
 import com.atlassian.prosemirror.util.slice
+import com.atlassian.prosemirror.util.verbose
 import java.io.Serializable
 import java.util.*
 import kotlinx.serialization.encodeToString
@@ -478,15 +479,19 @@ open class Node constructor(
 
     // Return a string representation of this node for debugging purposes.
     override fun toString(): String {
-        this.type.spec.toDebugString?.let { return it.invoke(this) }
-        var name = this.type.name
-        if (this.attrs.isNotEmpty()) {
-            name += "(${this.attrs.entries.joinToString()})"
+        return if (verbose) {
+            this.type.spec.toDebugString?.let { return it.invoke(this) }
+            var name = this.type.name
+            if (this.attrs.isNotEmpty()) {
+                name += "(${this.attrs.entries.joinToString()})"
+            }
+            if (this.content.size != 0) {
+                name += "{" + this.content.toStringInner() + "}"
+            }
+            wrapMarks(this.marks, name)
+        } else {
+            "Node#$nodeId content size: ${content.size}"
         }
-        if (this.content.size != 0) {
-            name += "{" + this.content.toStringInner() + "}"
-        }
-        return wrapMarks(this.marks, name)
     }
 
     // Get the content match in this node at the given index.
