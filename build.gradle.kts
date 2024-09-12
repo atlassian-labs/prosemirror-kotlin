@@ -1,4 +1,5 @@
 plugins {
+  alias(libs.plugins.kotlinMultiplatform).apply(false)
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.ktlint)
   alias(libs.plugins.dokka)
@@ -17,6 +18,10 @@ dependencies {
   implementation(libs.kotlin.stdlib)
 }
 
+allprojects {
+  group = "com.atlassian.prosemirror"
+  version = "1.0.3"
+}
 
 val javaVersion = JavaVersion.VERSION_17
 
