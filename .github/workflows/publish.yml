@@ -35,4 +35,4 @@ jobs:
 
       # Publishes to Artifactory only on push to the "release" branch.
       - name: "Publish"
-        run: ./gradlew assemble && ./gradlew publish --stacktrace
+        run: ./gradlew assemble --no-configuration-cache && ./gradlew publish --no-configuration-cache --stacktrace
