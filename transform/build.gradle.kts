@@ -25,8 +25,6 @@ dependencies {
   testImplementation(libs.test.assertj)
 }
 
-group = "com.atlassian.prosemirror"
-version = "1.0.2"
 description = "prosemirror-transform"
 
 val javaVersion = JavaVersion.VERSION_17

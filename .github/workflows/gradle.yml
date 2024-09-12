@@ -2,7 +2,7 @@ name: Run Gradle on PRs
 on: pull_request
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -16,7 +16,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build with Gradle
-        run: ./gradlew build
+        run: ./gradlew build --no-configuration-cache
 
         # Populates ARTIFACTORY_USERNAME and ARTIFACTORY_API_KEY with
         # temporary username/password for publishing to packages.atlassian.com
