@@ -1,5 +1,11 @@
-.gradle/
-.idea/
-build/
-/*.asc
-**/.DS_Store
+*.iml
+.gradle
+.idea
+.kotlin
+.DS_Store
+build
+captures
+.externalNativeBuild
+.cxx
+local.properties
+xcuserdata

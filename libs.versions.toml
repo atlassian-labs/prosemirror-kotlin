@@ -5,18 +5,20 @@ kotlin = "2.0.0"
 ktlintPlugin = "12.1.1"
 kotlinxJson = "1.6.3"
 
-[bundles]
-
 [libraries]
 # kotlin
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxJson" }
 jsoup = { module = "org.jsoup:jsoup", version = "1.17.2" }
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+test-assertk = { module = "com.willowtreeapps.assertk:assertk", version = "0.28.1" }
 
 # test
 test-assertj = { module = "org.assertj:assertj-core", version = "1.7.1" } # ignore-update
 
 [plugins]
+kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlinCocoapods = { id = "org.jetbrains.kotlin.native.cocoapods", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintPlugin" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokkaPlugin" }

@@ -26,8 +26,6 @@ dependencies {
 
 }
 
-group = "com.atlassian.prosemirror"
-version = "1.0.2"
 description = "prosemirror-collab"
 
 val javaVersion = JavaVersion.VERSION_17
