@@ -20,7 +20,7 @@ dependencies {
 
 allprojects {
   group = "com.atlassian.prosemirror"
-  version = "1.0.3"
+  version = "1.0.4"
 }
 
 val javaVersion = JavaVersion.VERSION_17
