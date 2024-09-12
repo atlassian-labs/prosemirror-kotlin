@@ -19,7 +19,7 @@ dependencies {
   implementation(libs.kotlin.stdlib)
   implementation(libs.kotlinx.serialization.json)
   implementation(project(":util"))
-  api(libs.jsoup)
+  api(libs.ksoup)
   testImplementation(project(":test-builder"))
   testImplementation(kotlin("test"))
   testImplementation(libs.test.assertj)

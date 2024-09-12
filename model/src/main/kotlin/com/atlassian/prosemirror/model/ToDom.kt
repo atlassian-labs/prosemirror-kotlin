@@ -1,9 +1,9 @@
 package com.atlassian.prosemirror.model
 
-import org.jsoup.nodes.Document
-import org.jsoup.nodes.Element
-import org.jsoup.nodes.Node as DOMNode
-import org.jsoup.nodes.TextNode
+import com.fleeksoft.ksoup.nodes.Document
+import com.fleeksoft.ksoup.nodes.Element
+import com.fleeksoft.ksoup.nodes.Node as DOMNode
+import com.fleeksoft.ksoup.nodes.TextNode
 
 // A description of a DOM structure. Can be either a string, which is
 // interpreted as a text node, a DOM node, which is interpreted as
