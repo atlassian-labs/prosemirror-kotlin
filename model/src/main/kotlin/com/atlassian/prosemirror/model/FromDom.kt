@@ -1,12 +1,12 @@
 package com.atlassian.prosemirror.model
 
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Element
+import com.fleeksoft.ksoup.Ksoup
+import com.fleeksoft.ksoup.nodes.Element
 import java.util.Locale
 import javax.xml.xpath.XPathConstants
 import javax.xml.xpath.XPathFactory
 import kotlin.math.max
-import org.jsoup.nodes.Node as DOMNode
+import com.fleeksoft.ksoup.nodes.Node as DOMNode
 
 // TODO move all regex patterns here to avoid parsing multiple times
 object RegexPatterns {
@@ -265,7 +265,7 @@ class DOMParser(
 
     @Suppress("UnusedPrivateMember")
     fun parseHtml(html: String, options: ParseOptions = ParseOptionsImpl()): Node {
-        val derivedDOM = Jsoup.parse(html).body()
+        val derivedDOM = Ksoup.parse(html).body()
         return parse(derivedDOM, options)
     }
 
@@ -561,7 +561,7 @@ class ParseContext(
     // otherwise, the node is passed to `addElement` or, if it has a
     // `style` attribute, `addElementWithStyles`.
     fun addDOM(dom: DOMNode) {
-        if (dom is org.jsoup.nodes.TextNode) {
+        if (dom is com.fleeksoft.ksoup.nodes.TextNode) {
             this.addTextNode(dom)
         } else if (dom is Element) {
             this.addElement(dom)
@@ -590,8 +590,8 @@ class ParseContext(
     }
 
     @Suppress("NestedBlockDepth", "ComplexCondition")
-    fun addTextNode(dom: org.jsoup.nodes.TextNode) {
-        var value = dom.wholeText
+    fun addTextNode(dom: com.fleeksoft.ksoup.nodes.TextNode) {
+        var value = dom.getWholeText()
         val top = this.top
         if (
             (top.options and OPT_PRESERVE_WS_FULL) != 0 ||
@@ -690,7 +690,7 @@ class ParseContext(
     // Called for leaf DOM nodes that would otherwise be ignored
     fun leafFallback(dom: DOMNode) {
         if (dom.nodeName().equals("br", true) && this.top.type?.inlineContent == true) {
-            this.addTextNode(org.jsoup.nodes.TextNode("\n"))
+            this.addTextNode(com.fleeksoft.ksoup.nodes.TextNode("\n"))
         }
     }
 
@@ -943,10 +943,10 @@ class ParseContext(
 //        }
     }
 
-    fun findInText(textNode: org.jsoup.nodes.TextNode) {
+    fun findInText(textNode: com.fleeksoft.ksoup.nodes.TextNode) {
         this.find?.forEach {
             if (it.node == textNode) {
-                it.pos = this.currentPos - (textNode.wholeText.length - it.offset)
+                it.pos = this.currentPos - (textNode.getWholeText().length - it.offset)
             }
         }
     }

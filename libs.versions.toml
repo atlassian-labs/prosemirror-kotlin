@@ -2,14 +2,15 @@
 
 dokkaPlugin = "1.9.20"
 kotlin = "2.0.0"
-ktlintPlugin = "12.1.1"
 kotlinxJson = "1.6.3"
+ktlintPlugin = "12.1.1"
+ksoup="0.1.6-alpha1"
 
 [libraries]
 # kotlin
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxJson" }
-jsoup = { module = "org.jsoup:jsoup", version = "1.17.2" }
+ksoup = { module = "com.fleeksoft.ksoup:ksoup", version.ref = "ksoup" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 test-assertk = { module = "com.willowtreeapps.assertk:assertk", version = "0.28.1" }
 
