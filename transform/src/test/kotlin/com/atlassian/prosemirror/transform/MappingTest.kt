@@ -1,7 +1,8 @@
 package com.atlassian.prosemirror.transform
 
+import assertk.assertThat
+import assertk.assertions.isEqualTo
 import kotlin.test.Test
-import org.assertj.core.api.Assertions.assertThat
 
 data class Case(val from: Int, val to: Int, val bias: Int = 0, val lossy: Boolean = false)
 

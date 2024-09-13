@@ -1,5 +1,9 @@
 package com.atlassian.prosemirror.model
 
+import assertk.assertThat
+import assertk.assertions.isEqualTo
+import assertk.assertions.isNotEqualTo
+import assertk.assertions.isTrue
 import com.atlassian.prosemirror.testbuilder.AttributeSpecImpl
 import com.atlassian.prosemirror.testbuilder.MarkSpecImpl
 import com.atlassian.prosemirror.testbuilder.NodeSpecImpl
@@ -7,7 +11,6 @@ import com.atlassian.prosemirror.testbuilder.PMNodeBuilder
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.doc
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.pos
 import com.atlassian.prosemirror.testbuilder.schema
-import org.assertj.core.api.Assertions.assertThat
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
@@ -65,32 +68,32 @@ class MarkTest {
 
     @Test
     fun `returns true for two empty sets`() {
-        assertThat(Mark.sameSet(emptyList(), emptyList())).isTrue
+        assertThat(Mark.sameSet(emptyList(), emptyList())).isTrue()
     }
 
     @Test
     fun `returns true for simple identical sets`() {
-        assertThat(Mark.sameSet(listOf(em_, strong), listOf(em_, strong))).isTrue
+        assertThat(Mark.sameSet(listOf(em_, strong), listOf(em_, strong))).isTrue()
     }
 
     @Test
     fun `returns false for different sets`() {
-        assertThat(!Mark.sameSet(listOf(em_, strong), listOf(em_, code))).isTrue
+        assertThat(!Mark.sameSet(listOf(em_, strong), listOf(em_, code))).isTrue()
     }
 
     @Test
     fun `returns false when set size differs`() {
-        assertThat(!Mark.sameSet(listOf(em_, strong), listOf(em_, strong, code))).isTrue
+        assertThat(!Mark.sameSet(listOf(em_, strong), listOf(em_, strong, code))).isTrue()
     }
 
     @Test
     fun `recognizes identical links in set`() {
-        assertThat(Mark.sameSet(listOf(link("http://foo"), code), listOf(link("http://foo"), code))).isTrue
+        assertThat(Mark.sameSet(listOf(link("http://foo"), code), listOf(link("http://foo"), code))).isTrue()
     }
 
     @Test
     fun `recognizes different links in set`() {
-        assertThat(!Mark.sameSet(listOf(link("http://foo"), code), listOf(link("http://bar"), code))).isTrue
+        assertThat(!Mark.sameSet(listOf(link("http://foo"), code), listOf(link("http://bar"), code))).isTrue()
     }
 
     @Test
@@ -110,22 +113,22 @@ class MarkTest {
 
     @Test
     fun `can add to the empty set`() {
-        assertThat(Mark.sameSet(em_.addToSet(emptyList()), listOf(em_))).isTrue
+        assertThat(Mark.sameSet(em_.addToSet(emptyList()), listOf(em_))).isTrue()
     }
 
     @Test
     fun `is a no-op when the added thing is in set`() {
-        assertThat(Mark.sameSet(em_.addToSet(listOf(em_)), listOf(em_))).isTrue
+        assertThat(Mark.sameSet(em_.addToSet(listOf(em_)), listOf(em_))).isTrue()
     }
 
     @Test
     fun `adds marks with lower rank before others`() {
-        assertThat(Mark.sameSet(em_.addToSet(listOf(strong)), listOf(em_, strong))).isTrue
+        assertThat(Mark.sameSet(em_.addToSet(listOf(strong)), listOf(em_, strong))).isTrue()
     }
 
     @Test
     fun `adds marks with higher rank after others`() {
-        assertThat(Mark.sameSet(strong.addToSet(listOf(em_)), listOf(em_, strong))).isTrue
+        assertThat(Mark.sameSet(strong.addToSet(listOf(em_)), listOf(em_, strong))).isTrue()
     }
 
     @Test
@@ -135,7 +138,7 @@ class MarkTest {
                 link("http://bar").addToSet(listOf(link("http://foo"), em_)),
                 listOf(link("http://bar"), em_)
             )
-        ).isTrue
+        ).isTrue()
     }
 
     @Test
@@ -145,7 +148,7 @@ class MarkTest {
                 link("http://foo").addToSet(listOf(em_, link("http://foo"))),
                 listOf(em_, link("http://foo"))
             )
-        ).isTrue
+        ).isTrue()
     }
 
     @Test
@@ -155,69 +158,69 @@ class MarkTest {
                 code.addToSet(listOf(em_, strong, link("http://foo"))),
                 listOf(em_, strong, link("http://foo"), code)
             )
-        ).isTrue
+        ).isTrue()
     }
 
     @Test
     fun `puts marks with middle rank in the middle`() {
-        assertThat(Mark.sameSet(strong.addToSet(listOf(em_, code)), listOf(em_, strong, code))).isTrue
+        assertThat(Mark.sameSet(strong.addToSet(listOf(em_, code)), listOf(em_, strong, code))).isTrue()
     }
 
     @Test
     fun `allows nonexclusive instances of marks with the same type`() {
-        assertThat(Mark.sameSet(remark2.addToSet(listOf(remark1)), listOf(remark1, remark2))).isTrue
+        assertThat(Mark.sameSet(remark2.addToSet(listOf(remark1)), listOf(remark1, remark2))).isTrue()
     }
 
     @Test
     fun `doesn't duplicate identical instances of nonexclusive marks`() {
-        assertThat(Mark.sameSet(remark1.addToSet(listOf(remark1)), listOf(remark1))).isTrue
+        assertThat(Mark.sameSet(remark1.addToSet(listOf(remark1)), listOf(remark1))).isTrue()
     }
 
     @Test
     fun `clears all others when adding a globally-excluding mark`() {
-        assertThat(Mark.sameSet(user1.addToSet(listOf(remark1, customEm)), listOf(user1))).isTrue
+        assertThat(Mark.sameSet(user1.addToSet(listOf(remark1, customEm)), listOf(user1))).isTrue()
     }
 
     @Test
     fun `does not allow adding another mark to a globally-excluding mark`() {
-        assertThat(Mark.sameSet(customEm.addToSet(listOf(user1)), listOf(user1))).isTrue
+        assertThat(Mark.sameSet(customEm.addToSet(listOf(user1)), listOf(user1))).isTrue()
     }
 
     @Test
     fun `does overwrite a globally-excluding mark when adding another instance`() {
-        assertThat(Mark.sameSet(user2.addToSet(listOf(user1)), listOf(user2))).isTrue
+        assertThat(Mark.sameSet(user2.addToSet(listOf(user1)), listOf(user2))).isTrue()
     }
 
     @Test
     fun `doesn't add anything when another mark excludes the added mark`() {
-        assertThat(Mark.sameSet(customEm.addToSet(listOf(remark1, customStrong)), listOf(remark1, customStrong))).isTrue
+        assertThat(Mark.sameSet(customEm.addToSet(listOf(remark1, customStrong)), listOf(remark1, customStrong))).isTrue()
     }
 
     @Test
     fun `remove excluded marks when adding a mark`() {
-        assertThat(Mark.sameSet(customStrong.addToSet(listOf(remark1, customEm)), listOf(remark1, customStrong))).isTrue
+        assertThat(Mark.sameSet(customStrong.addToSet(listOf(remark1, customEm)), listOf(remark1, customStrong))).isTrue()
     }
 
     @Test
     fun `is a no-op for the empty set`() {
-        assertThat(Mark.sameSet(em_.removeFromSet(emptyList()), emptyList())).isTrue
+        assertThat(Mark.sameSet(em_.removeFromSet(emptyList()), emptyList())).isTrue()
     }
 
     @Test
     fun `can remove the last mark from a set`() {
-        assertThat(Mark.sameSet(em_.removeFromSet(listOf(em_)), emptyList())).isTrue
+        assertThat(Mark.sameSet(em_.removeFromSet(listOf(em_)), emptyList())).isTrue()
     }
 
     @Test
     fun `is a no-op when the mark isn't in the set`() {
-        assertThat(Mark.sameSet(strong.removeFromSet(listOf(em_)), listOf(em_))).isTrue
+        assertThat(Mark.sameSet(strong.removeFromSet(listOf(em_)), listOf(em_))).isTrue()
     }
 
     @Test
     fun `can remove a mark with attributes`() {
         assertThat(
             Mark.sameSet(link("http://foo").removeFromSet(listOf(link("http://foo"))), emptyList())
-        ).isTrue
+        ).isTrue()
     }
 
     @Test
@@ -227,7 +230,7 @@ class MarkTest {
                 link("http://foo", "title").removeFromSet(listOf(link("http://foo"))),
                 listOf(link("http://foo"))
             )
-        ).isTrue
+        ).isTrue()
     }
 
     fun isAt(doc: Node, mark: Mark, result: Boolean) {
@@ -286,26 +289,26 @@ class MarkTest {
 
     @Test
     fun `omits non-inclusive marks at end of mark`() {
-        assertThat(Mark.sameSet(customDoc.resolve(4).marks(), listOf(customStrong))).isTrue
+        assertThat(Mark.sameSet(customDoc.resolve(4).marks(), listOf(customStrong))).isTrue()
     }
 
     @Test
     fun `includes non-inclusive marks inside a text node`() {
-        assertThat(Mark.sameSet(customDoc.resolve(3).marks(), listOf(remark1, customStrong))).isTrue
+        assertThat(Mark.sameSet(customDoc.resolve(3).marks(), listOf(remark1, customStrong))).isTrue()
     }
 
     @Test
     fun `omits non-inclusive marks at the end of a line`() {
-        assertThat(Mark.sameSet(customDoc.resolve(20).marks(), emptyList())).isTrue
+        assertThat(Mark.sameSet(customDoc.resolve(20).marks(), emptyList())).isTrue()
     }
 
     @Test
     fun `includes non-inclusive marks between two marked nodes`() {
-        assertThat(Mark.sameSet(customDoc.resolve(15).marks(), listOf(remark1))).isTrue
+        assertThat(Mark.sameSet(customDoc.resolve(15).marks(), listOf(remark1))).isTrue()
     }
 
     @Test
     fun `excludes non-inclusive marks at a point where mark attrs change`() {
-        assertThat(Mark.sameSet(customDoc.resolve(25).marks(), emptyList())).isTrue
+        assertThat(Mark.sameSet(customDoc.resolve(25).marks(), emptyList())).isTrue()
     }
 }

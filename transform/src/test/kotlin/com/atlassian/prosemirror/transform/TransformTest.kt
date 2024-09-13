@@ -1,5 +1,7 @@
 package com.atlassian.prosemirror.transform
 
+import assertk.assertThat
+import assertk.assertions.isEqualTo
 import com.atlassian.prosemirror.model.Attrs
 import com.atlassian.prosemirror.model.Mark
 import com.atlassian.prosemirror.model.Node
@@ -15,9 +17,8 @@ import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.pos
 import com.atlassian.prosemirror.testbuilder.schema
 import com.atlassian.prosemirror.util.safeMode
 import kotlin.test.BeforeTest
-import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 
 @Suppress("LargeClass")
 class TransformTest {
@@ -429,11 +430,8 @@ class TransformTest {
 
     @Suppress("SwallowedException")
     fun splitFail(doc: Node, depth: Int = 1, typesAfter: List<NodeBase>? = null) {
-        try {
+        assertFailsWith(TransformError::class) {
             Transform(doc).split(pos(doc, "a")!!, depth, typesAfter)
-            failBecauseExceptionWasNotThrown(TransformError::class.java)
-        } catch (ex: TransformError) {
-            // noice
         }
     }
 

@@ -1,9 +1,13 @@
 package com.atlassian.prosemirror.model
 
+import assertk.assertThat
+import assertk.assertions.isEqualTo
+import assertk.assertions.isFalse
+import assertk.assertions.isNull
+import assertk.assertions.isTrue
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.doc
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.p
 import com.atlassian.prosemirror.testbuilder.schema
-import org.assertj.core.api.Assertions.assertThat
 import kotlin.test.Test
 
 fun get(expr: String) = ContentMatch.parse(expr, schema.nodes)
@@ -21,11 +25,11 @@ fun match(expr: String, types: String): Boolean {
 }
 
 fun valid(expr: String, types: String) {
-    assertThat(match(expr, types)).isTrue
+    assertThat(match(expr, types)).isTrue()
 }
 
 fun invalid(expr: String, types: String) {
-    assertThat(match(expr, types)).isFalse
+    assertThat(match(expr, types)).isFalse()
 }
 
 fun fill(expr: String, before: Node, after: Node, result: Node?) {

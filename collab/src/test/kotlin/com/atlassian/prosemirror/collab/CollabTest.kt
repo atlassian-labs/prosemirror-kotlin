@@ -1,5 +1,7 @@
 package com.atlassian.prosemirror.collab
 
+import assertk.assertThat
+import assertk.assertions.isEqualTo
 import com.atlassian.prosemirror.model.Node
 import com.atlassian.prosemirror.state.EmptyEditorStateConfig
 import com.atlassian.prosemirror.state.PMEditorState
@@ -10,7 +12,6 @@ import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.doc
 import com.atlassian.prosemirror.testbuilder.schema
 import com.atlassian.prosemirror.transform.Step
 import kotlin.test.Test
-import org.assertj.core.api.Assertions.assertThat
 
 class DummyServer {
     val states = mutableListOf<PMEditorState>()
@@ -25,7 +26,7 @@ class DummyServer {
             this.plugins.add(plugin)
             this.states.add(
                 PMEditorState.create(
-                  EmptyEditorStateConfig(doc = doc, schema = schema, plugins = listOf(plugin))
+                    EmptyEditorStateConfig(doc = doc, schema = schema, plugins = listOf(plugin))
                 )
             )
         }

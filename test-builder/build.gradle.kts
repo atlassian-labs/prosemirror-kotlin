@@ -22,7 +22,7 @@ dependencies {
   implementation(project(":transform"))
   implementation(project(":util"))
   testImplementation(kotlin("test"))
-  testImplementation(libs.test.assertj)
+  testImplementation(libs.test.assertk)
 }
 
 description = "prosemirror-test-builder"

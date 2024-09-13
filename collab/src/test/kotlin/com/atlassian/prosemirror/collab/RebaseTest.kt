@@ -1,5 +1,7 @@
 package com.atlassian.prosemirror.collab
 
+import assertk.assertThat
+import assertk.assertions.isEqualTo
 import com.atlassian.prosemirror.model.Node
 import com.atlassian.prosemirror.model.NodeBase
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.doc
@@ -7,7 +9,6 @@ import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.pos
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.tags
 import com.atlassian.prosemirror.testbuilder.schema
 import com.atlassian.prosemirror.transform.Transform
-import org.assertj.core.api.Assertions.assertThat
 import kotlin.test.Test
 
 fun runRebase(transforms: List<Transform>, expected: Node) {

@@ -1,9 +1,10 @@
 package com.atlassian.prosemirror.state
 
+import assertk.assertThat
+import assertk.assertions.isEqualTo
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.doc
 import com.atlassian.prosemirror.testbuilder.schema
-import org.assertj.core.api.Assertions.assertThat
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 

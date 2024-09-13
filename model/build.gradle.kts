@@ -22,7 +22,7 @@ dependencies {
   api(libs.ksoup)
   testImplementation(project(":test-builder"))
   testImplementation(kotlin("test"))
-  testImplementation(libs.test.assertj)
+  testImplementation(libs.test.assertk)
 
 }
 

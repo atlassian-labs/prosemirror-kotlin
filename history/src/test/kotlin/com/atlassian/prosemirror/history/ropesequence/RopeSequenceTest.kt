@@ -1,10 +1,11 @@
 package com.atlassian.prosemirror.history.ropesequence
 
-import org.assertj.core.api.Assertions.assertThat
-import kotlin.test.Test
+import assertk.assertThat
+import assertk.assertions.isEqualTo
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.min
+import kotlin.test.Test
 
 class RopeSequenceTest {
 
@@ -40,33 +41,36 @@ class RopeSequenceTest {
     fun checkForEach(rope: RopeSequence<Int>, name: String, start: Int, end: Int, offset: Int) {
         var cur = start
         rope.forEach({ elt, i ->
-            assertThat(elt).overridingErrorMessage("Proper element at $cur in $name").isEqualTo(cur + offset)
-            assertThat(cur).overridingErrorMessage("Accurate index passed").isEqualTo(i)
+            assertThat(elt, displayActual = { "Proper element at $cur in $name. Expected ${cur + offset} but was $it." })
+                .isEqualTo(cur + offset)
+            assertThat(cur, displayActual = { "Accurate index passed. Expected $i but was $it." }).isEqualTo(i)
             cur += 1
             true
         }, start, end)
-        assertThat(cur).overridingErrorMessage("Enough elements iterated in $name").isEqualTo(end)
+        assertThat(cur, displayActual = { "Enough elements iterated in $name. Expected $end but was $it." }).isEqualTo(end)
         rope.forEach({ elt, i ->
             cur -= 1
-            assertThat(elt)
-                .overridingErrorMessage("Proper element during reverse iter at $cur in $name")
-                .isEqualTo(cur + offset)
-            assertThat(cur)
-                .overridingErrorMessage("Accurate index passed by reverse iter")
+            assertThat(
+                elt,
+                displayActual = { "Proper element during reverse iter at $cur in $name. Expected ${cur + offset} but was $it." }
+            )
+            .isEqualTo(cur + offset)
+            assertThat(cur, displayActual = { "Accurate index passed by reverse iter. Expected $i but was $it." })
                 .isEqualTo(i)
             true
         }, end, start)
-        assertThat(cur)
-            .overridingErrorMessage("Enough elements reverse-iterated in $name -- $cur $start")
+        assertThat(cur, displayActual = { "Enough elements reverse-iterated in $name -- $cur $start. Expected $start but was $it." })
             .isEqualTo(start)
     }
 
     fun check(rope: RopeSequence<Int>, size: Int, name: String, offset: Int = 0) {
-        assertThat(rope.length)
-            .overridingErrorMessage("Size of $name should be ${rope.length} but was $size")
+        assertThat(rope.length, displayActual = { "Size of $name should be ${rope.length} but was $size." })
             .isEqualTo(size)
         for (i in 0 until rope.length) {
-            assertThat(rope.get(i)).overridingErrorMessage("Field at $i in $name").isEqualTo(offset + i)
+            assertThat(
+                rope.get(i),
+                displayActual = { "Field at $i in $name. Expected ${offset + i} but was $it." }
+            ).isEqualTo(offset + i)
         }
         checkForEach(rope, name, 0, rope.length, offset)
         val e = min(10, floor(size.toDouble() / 100).toInt())
@@ -97,10 +101,10 @@ class RopeSequenceTest {
     fun checkSmalAndEmpty() {
         val small = RopeSequence.from(listOf(1, 2, 4))
         val empty = RopeSequence.empty<Int>()
-        assertThat(small.append(empty)).overridingErrorMessage("ID append").isEqualTo(small)
-        assertThat(small.prepend(empty)).overridingErrorMessage("ID prepend").isEqualTo(small)
-        assertThat(empty.append(empty)).overridingErrorMessage("empty append").isEqualTo(empty)
-        assertThat(small.slice(0, 0)).overridingErrorMessage("empty slice").isEqualTo(empty)
+        assertThat(small.append(empty), displayActual = { "ID append. Expected $small but was $it." }).isEqualTo(small)
+        assertThat(small.prepend(empty), displayActual = { "ID prepend. Expected $small but was $it." }).isEqualTo(small)
+        assertThat(empty.append(empty), displayActual = { "Empty append. Expected $empty but was $it." }).isEqualTo(empty)
+        assertThat(small.slice(0, 0), displayActual = { "Empty slice. Expected $empty but was $it." }).isEqualTo(empty)
 
         var sum = 0
         small.forEach(
@@ -113,9 +117,12 @@ class RopeSequenceTest {
                 }
             }
         )
-        assertThat(sum).overridingErrorMessage("abort iteration").isEqualTo(1)
+        assertThat(sum, displayActual = { "abort iteration. Expected 1 but was $it." }).isEqualTo(1)
 
-        assertThat(small.map({ x, _ -> x + 1 })).overridingErrorMessage("mapping").isEqualTo(listOf(2, 3, 5))
+        assertThat(
+            small.map({ x, _ -> x + 1 }),
+            displayActual = { "mapping. Expected ${listOf(2, 3, 5)} but was $it." }
+        ).isEqualTo(listOf(2, 3, 5))
     }
 
     companion object {
