@@ -1,9 +1,10 @@
 package com.atlassian.prosemirror.transform
 
+import assertk.assertThat
+import assertk.assertions.isEqualTo
 import com.atlassian.prosemirror.model.Node
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.pos
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.tags
-import org.assertj.core.api.Assertions.assertThat
 
 fun invert(transform: Transform): Transform {
     val out = Transform(transform.doc)

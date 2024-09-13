@@ -1,7 +1,8 @@
 package com.atlassian.prosemirror.model
 
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.doc
-import org.assertj.core.api.Assertions.assertThat
+import assertk.assertThat
+import assertk.assertions.isEqualTo
 import kotlin.test.Test
 
 class NodeSelectionTest {

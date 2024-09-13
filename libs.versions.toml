@@ -1,5 +1,6 @@
 [versions]
 
+assertk = "0.28.1"
 dokkaPlugin = "1.9.20"
 kotlin = "2.0.0"
 ktlintPlugin = "12.1.1"
@@ -11,10 +12,9 @@ kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxJson" }
 jsoup = { module = "org.jsoup:jsoup", version = "1.17.2" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
-test-assertk = { module = "com.willowtreeapps.assertk:assertk", version = "0.28.1" }
 
 # test
-test-assertj = { module = "org.assertj:assertj-core", version = "1.7.1" } # ignore-update
+test-assertk = { module = "com.willowtreeapps.assertk:assertk", version.ref = "assertk" }
 
 [plugins]
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }

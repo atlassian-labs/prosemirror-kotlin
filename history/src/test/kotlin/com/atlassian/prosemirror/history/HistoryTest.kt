@@ -1,6 +1,9 @@
 package com.atlassian.prosemirror.history
 
+import assertk.assertThat
 import com.atlassian.prosemirror.testbuilder.schema as testSchema
+import assertk.assertions.isEqualTo
+import assertk.assertions.isFalse
 import com.atlassian.prosemirror.model.Fragment
 import com.atlassian.prosemirror.model.Node
 import com.atlassian.prosemirror.model.Slice
@@ -13,7 +16,6 @@ import com.atlassian.prosemirror.state.Transaction
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.doc
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.schema
 import com.atlassian.prosemirror.transform.ReplaceStep
-import org.assertj.core.api.Assertions.assertThat
 import kotlin.test.Test
 
 class HistoryTest {

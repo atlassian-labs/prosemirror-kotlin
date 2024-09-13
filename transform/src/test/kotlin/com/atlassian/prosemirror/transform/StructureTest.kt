@@ -1,5 +1,9 @@
 package com.atlassian.prosemirror.transform
 
+import assertk.assertThat
+import assertk.assertions.isEqualTo
+import assertk.assertions.isFalse
+import assertk.assertions.isTrue
 import com.atlassian.prosemirror.model.Node
 import com.atlassian.prosemirror.model.NodeBase
 import com.atlassian.prosemirror.model.NodeRange
@@ -9,7 +13,6 @@ import com.atlassian.prosemirror.model.Slice
 import com.atlassian.prosemirror.testbuilder.MarkSpecImpl
 import com.atlassian.prosemirror.testbuilder.NodeSpecImpl
 import com.atlassian.prosemirror.testbuilder.schemaBasic
-import org.assertj.core.api.Assertions.assertThat
 import kotlin.test.Test
 
 val schema = Schema(
@@ -87,7 +90,7 @@ class CanSplitTest {
     fun no(pos: Int, depth: Int = 1, after: String? = null) {
         assertThat(
             canSplit(doc, pos, depth, if (after == null) null else listOf(NodeBase(type = schema.nodes[after]!!)))
-        ).isFalse
+        ).isFalse()
     }
 
     @Test
@@ -171,14 +174,14 @@ class CanSplitTest {
                 1,
                 listOf(NodeBase(type = s.nodes["scene"]!!))
             )
-        ).isFalse
+        ).isFalse()
     }
 }
 
 class LiftTargetTest {
     fun yes(pos: Int) {
         val r = range(pos)
-        assertThat(r != null && liftTarget(r).let { it != null && it != 0 }).isTrue
+        assertThat(r != null && liftTarget(r).let { it != null && it != 0 }).isTrue()
     }
 
     fun no(pos: Int) {
@@ -208,12 +211,12 @@ class LiftTargetTest {
 class FindWrappingsTest {
     fun yes(pos: Int, end: Int, type: String) {
         val r = range(pos, end)
-        assertThat(r != null && findWrapping(r, schema.nodes[type]!!) != null).isTrue
+        assertThat(r != null && findWrapping(r, schema.nodes[type]!!) != null).isTrue()
     }
 
     fun no(pos: Int, end: Int, type: String) {
         val r = range(pos, end)
-        assertThat(r == null || findWrapping(r, schema.nodes[type]!!) == null).isTrue
+        assertThat(r == null || findWrapping(r, schema.nodes[type]!!) == null).isTrue()
     }
 
     @Test

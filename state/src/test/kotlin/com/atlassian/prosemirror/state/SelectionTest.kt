@@ -1,10 +1,13 @@
 package com.atlassian.prosemirror.state
 
+import assertk.assertThat
+import assertk.assertions.isEqualTo
+import assertk.assertions.isNull
+import assertk.assertions.isTrue
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.doc
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.pos
 import com.atlassian.prosemirror.testbuilder.schema
-import org.assertj.core.api.Assertions.assertThat
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
@@ -18,7 +21,7 @@ class SelectionTest {
     fun `should follow changes`() {
         val state = TestState(EditorStateConfigImpl(doc = doc { p { +"hi" } }, schema = schema))
         state.apply(state.tr.insertText("xy", 1))
-        assertThat(state.selection.head)
+        assertThat(state.selection.head).isEqualTo(3)
         assertThat(state.selection.anchor).isEqualTo(3)
         state.apply(state.tr.insertText("zq", 1))
         assertThat(state.selection.head).isEqualTo(5)
@@ -179,12 +182,12 @@ class SelectionTest {
         state.apply(state.tr.replaceSelectionWith(schema.node("hard_break")))
         assertThat(state.doc).isEqualTo(doc { p { +"foo" + br {} + "bar" + img {} + "baz" } })
         assertThat(state.selection.head).isEqualTo(5)
-        assertThat(state.selection.empty).isTrue
+        assertThat(state.selection.empty).isTrue()
         state.nodeSel(8)
         state.apply(state.tr.insertText("abc"))
         assertThat(state.doc).isEqualTo(doc { p { +"foo" + br {} + "barabcbaz" } })
         assertThat(state.selection.head).isEqualTo(11)
-        assertThat(state.selection.empty).isTrue
+        assertThat(state.selection.empty).isTrue()
         state.nodeSel(0)
         state.apply(state.tr.insertText("xyz"))
         assertThat(state.doc).isEqualTo(doc { p { +"xyz" } })

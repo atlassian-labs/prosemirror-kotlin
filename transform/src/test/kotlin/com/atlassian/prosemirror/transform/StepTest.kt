@@ -1,10 +1,13 @@
 package com.atlassian.prosemirror.transform
 
+import assertk.assertThat
+import assertk.assertions.isEqualTo
+import assertk.assertions.isNotNull
+import assertk.assertions.isNull
 import com.atlassian.prosemirror.model.Fragment
 import com.atlassian.prosemirror.model.Slice
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.doc
 import com.atlassian.prosemirror.testbuilder.schema
-import org.assertj.core.api.Assertions.assertThat
 import kotlin.test.Test
 
 val testDoc = doc { p { +"foobar" } }
@@ -26,7 +29,7 @@ class StepTest {
         val step1 = mkStep(from1, to1, val1)
         val step2 = mkStep(from2, to2, val2)
         val merged = step1.merge(step2)
-        assertThat(merged).isNotNull
+        assertThat(merged).isNotNull()
         assertThat(merged!!.apply(testDoc).doc).isEqualTo(step2.apply(step1.apply(testDoc).doc!!).doc)
     }
 

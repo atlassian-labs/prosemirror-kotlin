@@ -1,11 +1,12 @@
 package com.atlassian.prosemirror.model
 
+import assertk.assertThat
+import assertk.assertions.isEqualTo
 import com.atlassian.prosemirror.testbuilder.MarkSpecImpl
 import com.atlassian.prosemirror.testbuilder.NodeBuildCompanion
 import com.atlassian.prosemirror.testbuilder.NodeBuilder
 import com.atlassian.prosemirror.testbuilder.NodeSpecImpl
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.doc
-import org.assertj.core.api.Assertions.assertThat
 import kotlin.test.Ignore
 import kotlin.test.Test
 import com.atlassian.prosemirror.testbuilder.schema as testSchema
