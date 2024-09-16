@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
-    <file name="build.gradle.kts">
-        <error line="39" column="1" source="standard:no-blank-line-before-rbrace" />
-    </file>
     <file name="src/commonMain/kotlin/com/atlassian/prosemirror/collab/Collab.kt">
         <error line="24" column="17" source="standard:function-signature" />
         <error line="24" column="42" source="standard:function-signature" />

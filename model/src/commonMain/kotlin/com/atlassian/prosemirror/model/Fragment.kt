@@ -279,7 +279,7 @@ class Fragment {
         return if (verbose) {
             "<${toStringInner()}>"
         } else {
-            "Fragment#${System.identityHashCode(this)} content size: ${content.size}"
+            "Fragment#${super.toString()} content size: ${content.size}"
         }
     }
 

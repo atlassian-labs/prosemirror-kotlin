@@ -1,12 +1,10 @@
 package com.atlassian.prosemirror.model
 
+import com.fleeksoft.ksoup.nodes.Node as DOMNode
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Element
-import java.util.Locale
-import javax.xml.xpath.XPathConstants
-import javax.xml.xpath.XPathFactory
+import kotlin.jvm.JvmInline
 import kotlin.math.max
-import com.fleeksoft.ksoup.nodes.Node as DOMNode
 
 // TODO move all regex patterns here to avoid parsing multiple times
 object RegexPatterns {
@@ -517,7 +515,7 @@ class NodeContext(
     fun inlineContext(node: DOMNode): Boolean {
         if (this.type != null) return this.type.inlineContent
         if (this.content.isNotEmpty()) return this.content[0].isInline
-        val name = node.parentNode()?.nodeName()?.lowercase(Locale.getDefault()) ?: false
+        val name = node.parentNode()?.nodeName()?.lowercase() ?: false
         return blockTags.contains(name)
     }
 }
@@ -636,7 +634,7 @@ class ParseContext(
     // none is found, the element's content nodes are added directly.
     @Suppress("ComplexMethod")
     fun addElement(dom: Element, matchAfter: ParseRule? = null) {
-        val name = dom.nodeName().lowercase(Locale.getDefault())
+        val name = dom.nodeName().lowercase()
         var ruleID: ParseRule? = null
         if (listTags.contains(name) && this.parser.normalizeLists) normalizeList(dom)
         val ruleFromNode = this.options.ruleFromNode?.invoke(dom)
@@ -766,8 +764,7 @@ class ParseContext(
             var contentDOM = dom
             val contentElement = rule.contentElement
             if (contentElement is ContentElement.StringContentElement) {
-                val xPath = XPathFactory.newInstance().newXPath()
-                contentDOM = xPath.evaluate(contentElement.s, dom, XPathConstants.NODE) as Element
+                contentDOM = evaluateXpathNode(contentElement.s, dom)
             } else if (contentElement is ContentElement.FunctionContentElement) {
                 contentDOM = contentElement.func(dom)
             } else if (contentElement is ContentElement.ElementContentElement) {

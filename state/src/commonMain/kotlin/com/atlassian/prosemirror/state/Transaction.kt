@@ -7,6 +7,7 @@ import com.atlassian.prosemirror.model.RangeError
 import com.atlassian.prosemirror.model.Slice
 import com.atlassian.prosemirror.transform.Step
 import com.atlassian.prosemirror.transform.Transform
+import kotlinx.datetime.Clock
 
 //  Commands are functions that take a state and a an optional transaction dispatch function and...
 //
@@ -58,7 +59,7 @@ class Transaction : Transform {
     var storedMarks: List<Mark>?
 
     internal constructor(state: PMEditorState) : super(state.doc) {
-        this.time = System.currentTimeMillis()
+        this.time = Clock.System.now().toEpochMilliseconds()
         this.curSelection = state.selection
         this.storedMarks = state.storedMarks
     }

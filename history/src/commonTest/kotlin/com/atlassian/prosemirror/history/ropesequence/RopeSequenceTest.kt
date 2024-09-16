@@ -2,9 +2,9 @@ package com.atlassian.prosemirror.history.ropesequence
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
-import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.min
+import kotlin.random.Random
 import kotlin.test.Test
 
 class RopeSequenceTest {
@@ -75,8 +75,8 @@ class RopeSequenceTest {
         checkForEach(rope, name, 0, rope.length, offset)
         val e = min(10, floor(size.toDouble() / 100).toInt())
         for (i in 0 until e) {
-            var start = floor(Math.random() * size).toInt()
-            val end = start + ceil(Math.random() * (size - start)).toInt()
+            val start = Random.nextInt(size - 1)
+            val end = start + Random.nextInt(size - start)
             checkForEach(rope, "$name-$start-$end", start, end, offset)
             check(rope.slice(start, end), end - start, "$name-sliced-$start-$end", offset + start)
         }
