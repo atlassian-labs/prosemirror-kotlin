@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
-    <file name="src/main/kotlin/com/atlassian/prosemirror/state/Plugin.kt">
+    <file name="src/commonMain/kotlin/com/atlassian/prosemirror/state/Plugin.kt">
         <error line="8" column="1" source="standard:no-empty-first-line-in-class-body" />
         <error line="29" column="1" source="standard:no-consecutive-comments" />
         <error line="47" column="1" source="standard:no-empty-first-line-in-class-body" />
@@ -18,7 +18,7 @@
         <error line="103" column="77" source="standard:function-signature" />
         <error line="127" column="1" source="standard:no-empty-first-line-in-class-body" />
     </file>
-    <file name="src/main/kotlin/com/atlassian/prosemirror/state/Selection.kt">
+    <file name="src/commonMain/kotlin/com/atlassian/prosemirror/state/Selection.kt">
         <error line="21" column="18" source="standard:function-signature" />
         <error line="21" column="29" source="standard:function-signature" />
         <error line="21" column="45" source="standard:function-signature" />
@@ -109,7 +109,7 @@
         <error line="550" column="61" source="standard:function-signature" />
         <error line="550" column="70" source="standard:function-signature" />
     </file>
-    <file name="src/main/kotlin/com/atlassian/prosemirror/state/State.kt">
+    <file name="src/commonMain/kotlin/com/atlassian/prosemirror/state/State.kt">
         <error line="44" column="31" source="standard:multiline-expression-wrapping" />
         <error line="54" column="53" source="standard:multiline-expression-wrapping" />
         <error line="60" column="1" source="standard:no-blank-line-in-list" />
@@ -128,7 +128,7 @@
         <error line="324" column="17" source="standard:property-naming" />
         <error line="333" column="48" source="standard:multiline-expression-wrapping" />
     </file>
-    <file name="src/main/kotlin/com/atlassian/prosemirror/state/Transaction.kt">
+    <file name="src/commonMain/kotlin/com/atlassian/prosemirror/state/Transaction.kt">
         <error line="89" column="46" source="standard:multiline-expression-wrapping" />
         <error line="89" column="46" source="standard:function-signature" />
         <error line="107" column="46" source="standard:multiline-expression-wrapping" />
@@ -181,19 +181,19 @@
         <error line="228" column="28" source="standard:multiline-expression-wrapping" />
         <error line="228" column="28" source="standard:function-signature" />
     </file>
-    <file name="src/test/kotlin/com/atlassian/prosemirror/state/SelectionTest.kt">
+    <file name="src/commonTest/kotlin/com/atlassian/prosemirror/state/SelectionTest.kt">
         <error line="69" column="21" source="standard:multiline-expression-wrapping" />
         <error line="153" column="21" source="standard:multiline-expression-wrapping" />
         <error line="175" column="21" source="standard:multiline-expression-wrapping" />
         <error line="198" column="21" source="standard:multiline-expression-wrapping" />
     </file>
-    <file name="src/test/kotlin/com/atlassian/prosemirror/state/State.kt">
+    <file name="src/commonTest/kotlin/com/atlassian/prosemirror/state/State.kt">
         <error line="24" column="1" source="standard:no-empty-first-line-in-class-body" />
         <error line="56" column="17" source="standard:function-signature" />
         <error line="56" column="30" source="standard:function-signature" />
         <error line="56" column="47" source="standard:function-signature" />
     </file>
-    <file name="src/test/kotlin/com/atlassian/prosemirror/state/StateTest.kt">
+    <file name="src/commonTest/kotlin/com/atlassian/prosemirror/state/StateTest.kt">
         <error line="43" column="24" source="standard:multiline-expression-wrapping" />
         <error line="58" column="24" source="standard:multiline-expression-wrapping" />
         <error line="70" column="21" source="standard:multiline-expression-wrapping" />

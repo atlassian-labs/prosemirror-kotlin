@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
-    <file name="src/main/kotlin/com/atlassian/prosemirror/model/CompareDeep.kt">
+    <file name="src/commonMain/kotlin/com/atlassian/prosemirror/model/CompareDeep.kt">
         <error line="3" column="17" source="standard:function-signature" />
         <error line="3" column="25" source="standard:function-signature" />
         <error line="3" column="31" source="standard:function-signature" />
     </file>
-    <file name="src/main/kotlin/com/atlassian/prosemirror/model/Content.kt">
+    <file name="src/commonMain/kotlin/com/atlassian/prosemirror/model/Content.kt">
         <error line="37" column="23" source="standard:function-signature" />
         <error line="37" column="39" source="standard:function-signature" />
         <error line="37" column="55" source="standard:function-signature" />
@@ -62,7 +62,7 @@
         <error line="474" column="43" source="standard:function-signature" />
         <error line="474" column="62" source="standard:function-signature" />
     </file>
-    <file name="src/main/kotlin/com/atlassian/prosemirror/model/Diff.kt">
+    <file name="src/commonMain/kotlin/com/atlassian/prosemirror/model/Diff.kt">
         <error line="5" column="19" source="standard:function-signature" />
         <error line="5" column="32" source="standard:function-signature" />
         <error line="5" column="45" source="standard:function-signature" />
@@ -73,10 +73,10 @@
         <error line="39" column="54" source="standard:function-signature" />
         <error line="39" column="63" source="standard:function-signature" />
     </file>
-    <file name="src/main/kotlin/com/atlassian/prosemirror/model/Dom.kt">
+    <file name="src/commonMain/kotlin/com/atlassian/prosemirror/model/Dom.kt">
         <error line="1" column="1" source="standard:no-empty-file" />
     </file>
-    <file name="src/main/kotlin/com/atlassian/prosemirror/model/Fragment.kt">
+    <file name="src/commonMain/kotlin/com/atlassian/prosemirror/model/Fragment.kt">
         <error line="78" column="21" source="standard:function-signature" />
         <error line="78" column="86" source="standard:function-signature" />
         <error line="78" column="110" source="standard:function-signature" />
@@ -109,7 +109,7 @@
         <error line="363" column="26" source="standard:function-signature" />
         <error line="363" column="37" source="standard:function-signature" />
     </file>
-    <file name="src/main/kotlin/com/atlassian/prosemirror/model/FromDom.kt">
+    <file name="src/commonMain/kotlin/com/atlassian/prosemirror/model/FromDom.kt">
         <error line="3" column="1" source="standard:import-ordering" />
         <error line="18" column="1" source="standard:blank-line-before-declaration" />
         <error line="19" column="10" source="standard:enum-wrapping" />
@@ -188,7 +188,7 @@
         <error line="1114" column="35" source="standard:function-signature" />
         <error line="1114" column="50" source="standard:function-signature" />
     </file>
-    <file name="src/main/kotlin/com/atlassian/prosemirror/model/Mark.kt">
+    <file name="src/commonMain/kotlin/com/atlassian/prosemirror/model/Mark.kt">
         <error line="3" column="1" source="standard:import-ordering" />
         <error line="82" column="48" source="standard:multiline-expression-wrapping" />
         <error line="82" column="48" source="standard:function-signature" />
@@ -206,7 +206,7 @@
         <error line="123" column="36" source="standard:function-signature" />
         <error line="123" column="49" source="standard:function-signature" />
     </file>
-    <file name="src/main/kotlin/com/atlassian/prosemirror/model/Node.kt">
+    <file name="src/commonMain/kotlin/com/atlassian/prosemirror/model/Node.kt">
         <error line="9" column="1" source="standard:no-wildcard-imports" />
         <error line="65" column="1" source="standard:no-empty-first-line-in-class-body" />
         <error line="128" column="17" source="standard:multiline-expression-wrapping" />
@@ -285,7 +285,7 @@
         <error line="735" column="34" source="standard:function-signature" />
         <error line="735" column="45" source="standard:function-signature" />
     </file>
-    <file name="src/main/kotlin/com/atlassian/prosemirror/model/Replace.kt">
+    <file name="src/commonMain/kotlin/com/atlassian/prosemirror/model/Replace.kt">
         <error line="25" column="1" source="standard:no-blank-line-in-list" />
         <error line="33" column="1" source="standard:no-empty-first-line-in-class-body" />
         <error line="38" column="18" source="standard:function-signature" />
@@ -344,7 +344,7 @@
         <error line="253" column="42" source="standard:function-signature" />
         <error line="253" column="61" source="standard:function-signature" />
     </file>
-    <file name="src/main/kotlin/com/atlassian/prosemirror/model/ResolvedPos.kt">
+    <file name="src/commonMain/kotlin/com/atlassian/prosemirror/model/ResolvedPos.kt">
         <error line="129" column="20" source="standard:function-signature" />
         <error line="129" column="32" source="standard:function-signature" />
         <error line="129" column="50" source="standard:function-signature" />
@@ -359,7 +359,7 @@
         <error line="273" column="55" source="standard:function-signature" />
         <error line="299" column="1" source="standard:no-blank-line-in-list" />
     </file>
-    <file name="src/main/kotlin/com/atlassian/prosemirror/model/Schema.kt">
+    <file name="src/commonMain/kotlin/com/atlassian/prosemirror/model/Schema.kt">
         <error line="18" column="18" source="standard:function-signature" />
         <error line="18" column="49" source="standard:function-signature" />
         <error line="18" column="83" source="standard:function-signature" />
@@ -481,7 +481,7 @@
         <error line="744" column="33" source="standard:function-signature" />
         <error line="744" column="52" source="standard:function-signature" />
     </file>
-    <file name="src/main/kotlin/com/atlassian/prosemirror/model/ToDom.kt">
+    <file name="src/commonMain/kotlin/com/atlassian/prosemirror/model/ToDom.kt">
         <error line="27" column="5" source="standard:blank-line-before-declaration" />
         <error line="28" column="5" source="standard:blank-line-before-declaration" />
         <error line="29" column="5" source="standard:blank-line-before-declaration" />
@@ -497,7 +497,7 @@
         <error line="97" column="68" source="standard:function-signature" />
         <error line="98" column="33" source="standard:multiline-expression-wrapping" />
     </file>
-    <file name="src/main/kotlin/com/atlassian/prosemirror/model/parser/AnySerialiser.kt">
+    <file name="src/commonMain/kotlin/com/atlassian/prosemirror/model/parser/AnySerialiser.kt">
         <error line="24" column="1" source="standard:indent" />
         <error line="25" column="1" source="standard:indent" />
         <error line="26" column="1" source="standard:indent" />
@@ -602,12 +602,12 @@
         <error line="117" column="5" source="standard:blank-line-before-declaration" />
         <error line="118" column="1" source="standard:indent" />
     </file>
-    <file name="src/main/kotlin/com/atlassian/prosemirror/model/util/Utils.kt">
+    <file name="src/commonMain/kotlin/com/atlassian/prosemirror/model/util/Utils.kt">
         <error line="8" column="22" source="standard:function-signature" />
         <error line="8" column="33" source="standard:function-signature" />
         <error line="8" column="40" source="standard:function-signature" />
     </file>
-    <file name="src/test/kotlin/com/atlassian/prosemirror/model/ContentTest.kt">
+    <file name="src/commonTest/kotlin/com/atlassian/prosemirror/model/ContentTest.kt">
         <error line="15" column="11" source="standard:function-signature" />
         <error line="15" column="25" source="standard:function-signature" />
         <error line="15" column="38" source="standard:function-signature" />
@@ -695,7 +695,7 @@
         <error line="311" column="49" source="standard:function-signature" />
         <error line="315" column="71" source="standard:function-signature" />
     </file>
-    <file name="src/test/kotlin/com/atlassian/prosemirror/model/DomTest.kt">
+    <file name="src/commonTest/kotlin/com/atlassian/prosemirror/model/DomTest.kt">
         <error line="3" column="1" source="standard:import-ordering" />
         <error line="14" column="25" source="standard:multiline-expression-wrapping" />
         <error line="16" column="17" source="standard:multiline-expression-wrapping" />
@@ -717,7 +717,7 @@
         <error line="259" column="42" source="standard:function-signature" />
         <error line="259" column="84" source="standard:function-signature" />
     </file>
-    <file name="src/test/kotlin/com/atlassian/prosemirror/model/MarkTest.kt">
+    <file name="src/commonTest/kotlin/com/atlassian/prosemirror/model/MarkTest.kt">
         <error line="19" column="1" source="standard:blank-line-before-declaration" />
         <error line="19" column="10" source="standard:function-signature" />
         <error line="19" column="24" source="standard:function-signature" />
@@ -738,7 +738,7 @@
         <error line="236" column="52" source="standard:function-signature" />
         <error line="258" column="21" source="standard:multiline-expression-wrapping" />
     </file>
-    <file name="src/test/kotlin/com/atlassian/prosemirror/model/NodeSelectionTest.kt">
+    <file name="src/commonTest/kotlin/com/atlassian/prosemirror/model/NodeSelectionTest.kt">
         <error line="3" column="1" source="standard:import-ordering" />
         <error line="61" column="27" source="standard:multiline-expression-wrapping" />
         <error line="90" column="31" source="standard:multiline-expression-wrapping" />
@@ -748,7 +748,7 @@
         <error line="126" column="39" source="standard:multiline-expression-wrapping" />
         <error line="126" column="39" source="standard:function-signature" />
     </file>
-    <file name="src/test/kotlin/com/atlassian/prosemirror/model/NodeTest.kt">
+    <file name="src/commonTest/kotlin/com/atlassian/prosemirror/model/NodeTest.kt">
         <error line="5" column="1" source="standard:import-ordering" />
         <error line="22" column="24" source="standard:multiline-expression-wrapping" />
         <error line="23" column="13" source="standard:multiline-expression-wrapping" />
