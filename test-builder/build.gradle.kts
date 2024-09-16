@@ -15,6 +15,14 @@ java {
   withJavadocJar()
 }
 
+sourceSets {
+  main {
+    java {
+      srcDir("src/commonMain")
+    }
+  }
+}
+
 dependencies {
   implementation(libs.kotlin.stdlib)
   implementation(libs.kotlinx.serialization.json)

@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
-    <file name="build.gradle.kts">
-        <error line="28" column="1" source="standard:no-blank-line-before-rbrace" />
-    </file>
-    <file name="src/main/kotlin/com/atlassian/prosemirror/history/History.kt">
+    <file name="src/commonMain/kotlin/com/atlassian/prosemirror/history/History.kt">
         <error line="3" column="1" source="standard:import-ordering" />
         <error line="38" column="1" source="standard:no-consecutive-comments" />
         <error line="48" column="1" source="standard:no-empty-first-line-in-class-body" />
@@ -51,7 +48,7 @@
         <error line="588" column="33" source="standard:function-signature" />
         <error line="588" column="48" source="standard:function-signature" />
     </file>
-    <file name="src/main/kotlin/com/atlassian/prosemirror/history/ropesequence/RopeSequence.kt">
+    <file name="src/commonMain/kotlin/com/atlassian/prosemirror/history/ropesequence/RopeSequence.kt">
         <error line="19" column="31" source="standard:function-signature" />
         <error line="19" column="55" source="standard:function-signature" />
         <error line="19" column="66" source="standard:function-signature" />
@@ -104,7 +101,7 @@
         <error line="241" column="40" source="standard:function-signature" />
         <error line="241" column="47" source="standard:function-signature" />
     </file>
-    <file name="src/test/kotlin/com/atlassian/prosemirror/history/HistoryTest.kt">
+    <file name="src/commonTest/kotlin/com/atlassian/prosemirror/history/HistoryTest.kt">
         <error line="3" column="1" source="standard:import-ordering" />
         <error line="22" column="1" source="standard:no-empty-first-line-in-class-body" />
         <error line="23" column="1" source="standard:indent" />
@@ -625,13 +622,13 @@
         <error line="545" column="1" source="standard:indent" />
         <error line="546" column="1" source="standard:indent" />
     </file>
-    <file name="src/test/kotlin/com/atlassian/prosemirror/history/TestPlugin.kt">
+    <file name="src/commonTest/kotlin/com/atlassian/prosemirror/history/TestPlugin.kt">
         <error line="18" column="55" source="standard:multiline-expression-wrapping" />
         <error line="19" column="27" source="standard:function-signature" />
         <error line="19" column="54" source="standard:function-signature" />
         <error line="19" column="77" source="standard:function-signature" />
     </file>
-    <file name="src/test/kotlin/com/atlassian/prosemirror/history/ropesequence/RopeSequenceTest.kt">
+    <file name="src/commonTest/kotlin/com/atlassian/prosemirror/history/ropesequence/RopeSequenceTest.kt">
         <error line="11" column="1" source="standard:no-empty-first-line-in-class-body" />
         <error line="35" column="19" source="standard:multiline-expression-wrapping" />
         <error line="41" column="22" source="standard:function-signature" />
