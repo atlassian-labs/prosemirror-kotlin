@@ -1,5 +1,7 @@
 package com.atlassian.prosemirror.model
 
+import kotlinx.atomicfu.update
+
 // You can [_resolve_](#model.Node.resolve) a position to get more information about it. Objects of
 // this class represent such a resolved position, providing various pieces of context information,
 // and some helper methods.
@@ -270,18 +272,19 @@ class ResolvedPos(
 
         internal fun resolveCached(doc: Node, pos: Int): ResolvedPos {
             val resolveCache = doc.type.schema.resolveCache
-            val resolveCachePos = doc.type.schema.resolveCachePos
 
             resolveCache.forEach { cached ->
                 if (cached.pos == pos && cached.doc === doc) return cached
             }
             val result = resolve(doc, pos)
-            if (resolveCachePos.get() >= resolveCache.size) {
-                resolveCache.add(result)
-            } else {
-                resolveCache[resolveCachePos.get()] = result
+            doc.type.schema.resolveCachePos.update { cachePos ->
+                if (cachePos >= resolveCache.size) {
+                    resolveCache.add(result)
+                } else {
+                    resolveCache[cachePos] = result
+                }
+                (cachePos + 1) % RESOLVE_CACHE_SIZE
             }
-            resolveCachePos.set((resolveCachePos.get() + 1) % RESOLVE_CACHE_SIZE)
             return result
         }
     }

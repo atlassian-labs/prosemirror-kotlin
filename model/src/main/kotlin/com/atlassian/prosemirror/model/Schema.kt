@@ -2,10 +2,10 @@
 
 package com.atlassian.prosemirror.model
 
+import co.touchlab.stately.collections.ConcurrentMutableList
 import com.atlassian.prosemirror.util.verbose
+import kotlinx.atomicfu.atomic
 import kotlinx.serialization.json.JsonObject
-import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.atomic.AtomicInteger
 
 // An object holding the attributes of a node.
 typealias Attrs = Map<String, Any?>
@@ -609,17 +609,14 @@ class Schema {
 
     /**
      * From some testing on mix-contents.json (will differ based on document etc.);
-     * Initial Render: 3:1 interating (reads) vs writing
+     * Initial Render: 3:1 iterating (reads) vs writing
      * Selection: ~10:1
      * Typing: ~5:1
-     *
-     * Therefore, CopyOnWriteArrayList is probably preferable to synchronizing out traversals (w/synchronizedList),
-     * despite the penalty of having to copy on write (the size is only 12 anyway).
      */
-    val resolveCache = CopyOnWriteArrayList<ResolvedPos>()
+    val resolveCache = ConcurrentMutableList<ResolvedPos>()
 
     @Suppress("MayBeConst")
-    var resolveCachePos = AtomicInteger(0)
+    val resolveCachePos = atomic(0)
 
     // Construct a schema from a schema [specification](#model.SchemaSpec).
     constructor(spec: SchemaSpec) {
