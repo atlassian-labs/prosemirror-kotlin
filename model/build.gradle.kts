@@ -1,5 +1,6 @@
 plugins {
   alias(libs.plugins.kotlin.jvm)
+  alias(libs.plugins.kotlin.atomicfu)
   alias(libs.plugins.ktlint)
   alias(libs.plugins.dokka)
   id("maven-publish")
@@ -18,12 +19,12 @@ java {
 dependencies {
   implementation(libs.kotlin.stdlib)
   implementation(libs.kotlinx.serialization.json)
+  implementation(libs.stately.concurrent.collections)
   implementation(project(":util"))
   api(libs.ksoup)
   testImplementation(project(":test-builder"))
   testImplementation(kotlin("test"))
   testImplementation(libs.test.assertk)
-
 }
 
 description = "prosemirror-model"

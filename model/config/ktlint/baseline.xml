@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
-    <file name="build.gradle.kts">
-        <error line="26" column="1" source="standard:no-blank-line-before-rbrace" />
-    </file>
     <file name="src/main/kotlin/com/atlassian/prosemirror/model/CompareDeep.kt">
         <error line="3" column="17" source="standard:function-signature" />
         <error line="3" column="25" source="standard:function-signature" />
@@ -348,22 +345,21 @@
         <error line="253" column="61" source="standard:function-signature" />
     </file>
     <file name="src/main/kotlin/com/atlassian/prosemirror/model/ResolvedPos.kt">
-        <error line="127" column="20" source="standard:function-signature" />
-        <error line="127" column="32" source="standard:function-signature" />
-        <error line="127" column="50" source="standard:function-signature" />
-        <error line="209" column="20" source="standard:function-signature" />
-        <error line="209" column="47" source="standard:function-signature" />
-        <error line="209" column="86" source="standard:function-signature" />
-        <error line="248" column="30" source="standard:function-signature" />
-        <error line="248" column="41" source="standard:function-signature" />
-        <error line="248" column="49" source="standard:function-signature" />
-        <error line="271" column="36" source="standard:function-signature" />
-        <error line="271" column="47" source="standard:function-signature" />
-        <error line="271" column="55" source="standard:function-signature" />
-        <error line="296" column="1" source="standard:no-blank-line-in-list" />
+        <error line="129" column="20" source="standard:function-signature" />
+        <error line="129" column="32" source="standard:function-signature" />
+        <error line="129" column="50" source="standard:function-signature" />
+        <error line="211" column="20" source="standard:function-signature" />
+        <error line="211" column="47" source="standard:function-signature" />
+        <error line="211" column="86" source="standard:function-signature" />
+        <error line="250" column="30" source="standard:function-signature" />
+        <error line="250" column="41" source="standard:function-signature" />
+        <error line="250" column="49" source="standard:function-signature" />
+        <error line="273" column="36" source="standard:function-signature" />
+        <error line="273" column="47" source="standard:function-signature" />
+        <error line="273" column="55" source="standard:function-signature" />
+        <error line="299" column="1" source="standard:no-blank-line-in-list" />
     </file>
     <file name="src/main/kotlin/com/atlassian/prosemirror/model/Schema.kt">
-        <error line="5" column="1" source="standard:import-ordering" />
         <error line="18" column="18" source="standard:function-signature" />
         <error line="18" column="49" source="standard:function-signature" />
         <error line="18" column="83" source="standard:function-signature" />
@@ -425,65 +421,65 @@
         <error line="427" column="1" source="standard:no-blank-line-in-list" />
         <error line="431" column="1" source="standard:no-blank-line-in-list" />
         <error line="435" column="1" source="standard:no-blank-line-in-list" />
-        <error line="638" column="33" source="standard:multiline-expression-wrapping" />
-        <error line="642" column="28" source="standard:multiline-expression-wrapping" />
-        <error line="651" column="29" source="standard:multiline-expression-wrapping" />
-        <error line="676" column="14" source="standard:function-signature" />
-        <error line="676" column="30" source="standard:function-signature" />
-        <error line="676" column="52" source="standard:function-signature" />
-        <error line="676" column="72" source="standard:function-signature" />
-        <error line="676" column="90" source="standard:function-signature" />
-        <error line="684" column="14" source="standard:function-signature" />
-        <error line="684" column="30" source="standard:function-signature" />
-        <error line="684" column="52" source="standard:function-signature" />
-        <error line="684" column="68" source="standard:function-signature" />
-        <error line="684" column="86" source="standard:function-signature" />
-        <error line="692" column="14" source="standard:function-signature" />
-        <error line="692" column="30" source="standard:function-signature" />
-        <error line="692" column="52" source="standard:function-signature" />
-        <error line="692" column="74" source="standard:function-signature" />
-        <error line="692" column="92" source="standard:function-signature" />
-        <error line="700" column="29" source="standard:function-signature" />
+        <error line="635" column="33" source="standard:multiline-expression-wrapping" />
+        <error line="639" column="28" source="standard:multiline-expression-wrapping" />
+        <error line="648" column="29" source="standard:multiline-expression-wrapping" />
+        <error line="673" column="14" source="standard:function-signature" />
+        <error line="673" column="30" source="standard:function-signature" />
+        <error line="673" column="52" source="standard:function-signature" />
+        <error line="673" column="72" source="standard:function-signature" />
+        <error line="673" column="90" source="standard:function-signature" />
+        <error line="681" column="14" source="standard:function-signature" />
+        <error line="681" column="30" source="standard:function-signature" />
+        <error line="681" column="52" source="standard:function-signature" />
+        <error line="681" column="68" source="standard:function-signature" />
+        <error line="681" column="86" source="standard:function-signature" />
+        <error line="689" column="14" source="standard:function-signature" />
+        <error line="689" column="30" source="standard:function-signature" />
+        <error line="689" column="52" source="standard:function-signature" />
+        <error line="689" column="74" source="standard:function-signature" />
+        <error line="689" column="92" source="standard:function-signature" />
+        <error line="697" column="29" source="standard:function-signature" />
+        <error line="700" column="14" source="standard:function-signature" />
+        <error line="700" column="28" source="standard:function-signature" />
+        <error line="700" column="48" source="standard:function-signature" />
+        <error line="700" column="51" source="standard:function-signature" />
         <error line="703" column="14" source="standard:function-signature" />
         <error line="703" column="28" source="standard:function-signature" />
-        <error line="703" column="48" source="standard:function-signature" />
-        <error line="703" column="51" source="standard:function-signature" />
+        <error line="703" column="50" source="standard:function-signature" />
+        <error line="703" column="70" source="standard:function-signature" />
+        <error line="703" column="95" source="standard:function-signature" />
+        <error line="703" column="98" source="standard:function-signature" />
         <error line="706" column="14" source="standard:function-signature" />
         <error line="706" column="28" source="standard:function-signature" />
         <error line="706" column="50" source="standard:function-signature" />
-        <error line="706" column="70" source="standard:function-signature" />
-        <error line="706" column="95" source="standard:function-signature" />
-        <error line="706" column="98" source="standard:function-signature" />
+        <error line="706" column="66" source="standard:function-signature" />
+        <error line="706" column="91" source="standard:function-signature" />
+        <error line="706" column="94" source="standard:function-signature" />
         <error line="709" column="14" source="standard:function-signature" />
         <error line="709" column="28" source="standard:function-signature" />
         <error line="709" column="50" source="standard:function-signature" />
-        <error line="709" column="66" source="standard:function-signature" />
-        <error line="709" column="91" source="standard:function-signature" />
-        <error line="709" column="94" source="standard:function-signature" />
-        <error line="712" column="14" source="standard:function-signature" />
-        <error line="712" column="28" source="standard:function-signature" />
-        <error line="712" column="50" source="standard:function-signature" />
-        <error line="712" column="72" source="standard:function-signature" />
-        <error line="712" column="97" source="standard:function-signature" />
-        <error line="712" column="100" source="standard:function-signature" />
-        <error line="716" column="14" source="standard:function-signature" />
-        <error line="716" column="28" source="standard:function-signature" />
-        <error line="716" column="53" source="standard:function-signature" />
-        <error line="722" column="14" source="standard:function-signature" />
-        <error line="722" column="28" source="standard:function-signature" />
-        <error line="722" column="48" source="standard:function-signature" />
-        <error line="727" column="14" source="standard:function-signature" />
-        <error line="727" column="30" source="standard:function-signature" />
-        <error line="727" column="50" source="standard:function-signature" />
-        <error line="732" column="22" source="standard:function-signature" />
-        <error line="732" column="41" source="standard:function-signature" />
-        <error line="732" column="64" source="standard:function-signature" />
-        <error line="737" column="22" source="standard:function-signature" />
-        <error line="737" column="41" source="standard:function-signature" />
-        <error line="737" column="64" source="standard:function-signature" />
-        <error line="747" column="17" source="standard:function-signature" />
-        <error line="747" column="33" source="standard:function-signature" />
-        <error line="747" column="52" source="standard:function-signature" />
+        <error line="709" column="72" source="standard:function-signature" />
+        <error line="709" column="97" source="standard:function-signature" />
+        <error line="709" column="100" source="standard:function-signature" />
+        <error line="713" column="14" source="standard:function-signature" />
+        <error line="713" column="28" source="standard:function-signature" />
+        <error line="713" column="53" source="standard:function-signature" />
+        <error line="719" column="14" source="standard:function-signature" />
+        <error line="719" column="28" source="standard:function-signature" />
+        <error line="719" column="48" source="standard:function-signature" />
+        <error line="724" column="14" source="standard:function-signature" />
+        <error line="724" column="30" source="standard:function-signature" />
+        <error line="724" column="50" source="standard:function-signature" />
+        <error line="729" column="22" source="standard:function-signature" />
+        <error line="729" column="41" source="standard:function-signature" />
+        <error line="729" column="64" source="standard:function-signature" />
+        <error line="734" column="22" source="standard:function-signature" />
+        <error line="734" column="41" source="standard:function-signature" />
+        <error line="734" column="64" source="standard:function-signature" />
+        <error line="744" column="17" source="standard:function-signature" />
+        <error line="744" column="33" source="standard:function-signature" />
+        <error line="744" column="52" source="standard:function-signature" />
     </file>
     <file name="src/main/kotlin/com/atlassian/prosemirror/model/ToDom.kt">
         <error line="27" column="5" source="standard:blank-line-before-declaration" />
