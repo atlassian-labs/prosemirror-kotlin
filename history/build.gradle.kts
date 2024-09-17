@@ -19,7 +19,7 @@ kotlin {
   }
 
   // iOS
-  val xcframeworkName = "state"
+  val xcframeworkName = "history"
   val xcf = XCFramework(xcframeworkName)
   listOf(
     iosX64(),
@@ -93,7 +93,7 @@ kotlin {
   }
 }
 
-description = "prosemirror-state"
+description = "prosemirror-history"
 
 publishing {
   publications {
