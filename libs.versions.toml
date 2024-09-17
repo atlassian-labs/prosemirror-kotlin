@@ -3,7 +3,8 @@
 assertk = "0.28.1"
 atomicfu = "0.25.0"
 dokkaPlugin = "1.9.20"
-kotlin = "2.0.0"
+kotlin = "2.0.20"
+kotlinDatetime = "0.6.1"
 kotlinxJson = "1.6.3"
 ktlintPlugin = "12.1.1"
 ksoup="0.1.6-alpha1"
@@ -12,6 +13,7 @@ statelyConcurrency = "2.0.0"
 [libraries]
 # kotlin
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
+kotlin-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinDatetime" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxJson" }
 ksoup = { module = "com.fleeksoft.ksoup:ksoup", version.ref = "ksoup" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -23,6 +25,7 @@ test-assertk = { module = "com.willowtreeapps.assertk:assertk", version.ref = "a
 [plugins]
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlin-atomicfu = { id = "org.jetbrains.kotlinx.atomicfu", version.ref = "atomicfu" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotlinCocoapods = { id = "org.jetbrains.kotlin.native.cocoapods", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintPlugin" }

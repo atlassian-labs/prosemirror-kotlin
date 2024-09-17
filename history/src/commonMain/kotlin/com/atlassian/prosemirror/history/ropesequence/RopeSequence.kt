@@ -74,7 +74,7 @@ abstract class RopeSequence<T> {
     // Create a rope repesenting a sub-sequence of this rope.
     fun slice(from: Int = 0, to: Int = this.length): RopeSequence<T> {
         if (from >= to) return empty()
-        return this.sliceInner(Math.max(0, from), Math.min(this.length, to))
+        return this.sliceInner(max(0, from), min(this.length, to))
     }
 
     // :: (number) → T
@@ -194,7 +194,7 @@ class Append<T>(
     val right: RopeSequence<T>
 ) : RopeSequence<T>() {
     override val length = left.length + right.length
-    override val depth = Math.max(left.depth, right.depth) + 1
+    override val depth = max(left.depth, right.depth) + 1
 
     override fun flatten(): List<T> {
         return this.left.flatten() + this.right.flatten()
@@ -272,7 +272,7 @@ class Append<T>(
     }
 
     override fun toString(): String {
-        return "Append {left: ${left.javaClass.simpleName}, right: ${right.javaClass.simpleName}, " +
+        return "Append {left: ${left::class.simpleName}, right: ${right::class.simpleName}, " +
             "lenght: $length, depth: $depth}"
     }
 }

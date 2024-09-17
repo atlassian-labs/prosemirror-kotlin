@@ -102,7 +102,7 @@ class CollabPlugin(
         CollabPluginSpec(
             CollabConfig(
                 version = config.version,
-                clientID = config.clientID ?: Random.nextInt(0, Integer.MAX_VALUE).toString()
+                clientID = config.clientID ?: Random.nextInt().toString()
             )
         )
     )

@@ -1,7 +1,6 @@
 package com.atlassian.prosemirror.model
 
 import com.atlassian.prosemirror.model.parser.JSON
-import java.io.Serializable
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.buildJsonObject
@@ -10,14 +9,17 @@ import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
-import java.util.UUID
+import kotlin.jvm.JvmInline
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 interface UnsupportedMark {
     var originalMarkName: String?
 }
 
 @JvmInline
-value class MarkId(val id: String) : Serializable
+@kotlinx.serialization.Serializable
+value class MarkId(val id: String)
 
 // A mark is a piece of information that can be attached to a node, such as it being emphasized, in
 // code font, or a link. It has a type and optionally a set of attributes that provide further
@@ -30,7 +32,8 @@ open class Mark constructor(
     // The attributes associated with this mark.
     val attrs: Attrs
 ) {
-    var markId: MarkId = MarkId("${type.name}&${UUID.randomUUID()}")
+    @OptIn(ExperimentalUuidApi::class)
+    var markId: MarkId = MarkId("${type.name}&${Uuid.random()}")
 
     // Given a set of marks, create a new set which contains this one as well, in the right
     // position. If this mark is already in the set, the set itself is returned. If any marks that

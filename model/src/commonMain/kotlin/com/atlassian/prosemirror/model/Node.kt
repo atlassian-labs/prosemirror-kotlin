@@ -5,8 +5,9 @@ package com.atlassian.prosemirror.model
 import com.atlassian.prosemirror.model.parser.JSON
 import com.atlassian.prosemirror.util.slice
 import com.atlassian.prosemirror.util.verbose
-import java.io.Serializable
-import java.util.*
+import kotlin.jvm.JvmInline
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
@@ -37,7 +38,9 @@ interface UnsupportedNode {
 }
 
 @JvmInline
-value class NodeId(val id: String) : Serializable
+@kotlinx.serialization.Serializable
+value class NodeId(val id: String)
+
 
 /**
  * This class represents a node in the tree that makes up a ProseMirror document. So a document is
@@ -71,7 +74,8 @@ open class Node constructor(
     // For text nodes, this contains the node's text content.
     open val text: String? = null
 
-    var nodeId: NodeId = NodeId("${type.name}&${UUID.randomUUID()}")
+    @OptIn(ExperimentalUuidApi::class)
+    var nodeId: NodeId = NodeId("${type.name}&${Uuid.random()}")
 
     init {
         this.content = content ?: Fragment.empty
