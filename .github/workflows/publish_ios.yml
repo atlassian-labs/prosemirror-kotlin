@@ -1,0 +1,58 @@
+name: Publish to artifactory on release branch
+
+on:
+  push:
+    branches: [ "achernykh/ios-xcframework-artifact-publish" ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    permissions:
+      contents: write
+      id-token: write
+    env:
+      SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+      SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+
+    steps:
+
+      - name: "Checkout sources"
+        uses: actions/checkout@v4
+
+      - name: "Setup Java"
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'adopt'
+
+      - name: "Build xcframework"
+        run: ./gradlew :util:assembleUtilReleaseXCFramework
+
+      - name: "ls"
+        run: ls
+
+      - name: "Zip xcframework files"
+        run: zip -r ./util/build/util.xcframework.zip ./util/build/XCFrameworks/release/util.xcframework
+
+      - name: release
+        uses: actions/create-release@v1
+        id: create_release
+        with:
+          draft: true
+          prerelease: false
+          release_name: ${{ steps.version.outputs.version }}
+          tag_name: "1.0.3"
+          body: "util.xcframework"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: upload xcframework artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./util/build/util.xcframework.zip
+          asset_name: util.xcframework.zip
+          asset_content_type: application/zip
