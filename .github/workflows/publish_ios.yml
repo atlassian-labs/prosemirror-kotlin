@@ -34,13 +34,16 @@ jobs:
         uses: actions/create-release@v1
         id: create_release
         with:
-          draft: true
-          prerelease: false
+#          draft: true
+#          prerelease: false
           release_name: ${{ steps.version.outputs.version }}
           tag_name: 1.0.3 # ${{ github.ref }}
           body: "Release 1.0.3" #"Release ${{ github.ref }}"
         env:
           GITHUB_TOKEN: ${{ github.token }}
+
+      - name: "Release data:"
+        run: echo id ${{steps.create_release.outputs.id}} html_url ${{steps.create_release.outputs.html_url}} upload_url ${{steps.create_release.outputs.upload_url}}
 
 #      - name: "Prepare xcframework artifacts for collab module"
 #        run: bash ${GITHUB_WORKSPACE}/gradle/pack_xcframework.sh collab ${{steps.create_release.outputs.id}}
