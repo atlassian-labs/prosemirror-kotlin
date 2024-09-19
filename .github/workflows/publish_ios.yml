@@ -28,160 +28,161 @@ jobs:
           distribution: 'adopt'
 
       - name: "Build xcframework"
-        run: ./gradlew :util:assembleUtilReleaseXCFramework
+        run: ./gradlew assembleXCFramework
 
       - name: release
         uses: actions/create-release@v1
         id: create_release
         with:
-          draft: true
-          prerelease: false
           release_name: ${{ steps.version.outputs.version }}
-          tag_name: 1.0.3 # ${{ github.ref }}
-          body: "Release 1.0.3" #"Release ${{ github.ref }}"
+          tag_name: 1.0.4 # ${{ github.ref }}
+          body: "Release 1.0.4" #"Release ${{ github.ref }}"
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-#      - name: "Prepare xcframework artifacts for collab module"
-#        run: bash ${GITHUB_WORKSPACE}/gradle/pack_xcframework.sh collab ${{steps.create_release.outputs.id}}
-#
-#      - name: "Prepare xcframework artifacts for history module"
-#        run: bash ${GITHUB_WORKSPACE}/gradle/pack_xcframework.sh history ${{steps.create_release.outputs.id}}
-#
-#      - name: "Prepare xcframework artifacts for model module"
-#        run: bash ${GITHUB_WORKSPACE}/gradle/pack_xcframework.sh model ${{steps.create_release.outputs.id}}
-#
-#      - name: "Prepare xcframework artifacts for state module"
-#        run: bash ${GITHUB_WORKSPACE}/gradle/pack_xcframework.sh state ${{steps.create_release.outputs.id}}
-#
-#      - name: "Prepare xcframework artifacts for test-builder module"
-#        run: bash ${GITHUB_WORKSPACE}/gradle/pack_xcframework.sh test-builder ${{steps.create_release.outputs.id}}
-#
-#      - name: "Prepare xcframework artifacts for transform module"
-#        run: bash ${GITHUB_WORKSPACE}/gradle/pack_xcframework.sh transform ${{steps.create_release.outputs.id}}
+      - name: "Release data:"
+        run: echo id ${{steps.create_release.outputs.id}} html_url ${{steps.create_release.outputs.html_url}} upload_url ${{steps.create_release.outputs.upload_url}}
+
+      - name: "Prepare xcframework artifacts for collab module"
+        run: bash ${GITHUB_WORKSPACE}/gradle/pack_xcframework.sh collab ${{steps.create_release.outputs.html_url}}
+
+      - name: "Prepare xcframework artifacts for history module"
+        run: bash ${GITHUB_WORKSPACE}/gradle/pack_xcframework.sh history ${{steps.create_release.outputs.html_url}}
+
+      - name: "Prepare xcframework artifacts for model module"
+        run: bash ${GITHUB_WORKSPACE}/gradle/pack_xcframework.sh model ${{steps.create_release.outputs.html_url}}
+
+      - name: "Prepare xcframework artifacts for state module"
+        run: bash ${GITHUB_WORKSPACE}/gradle/pack_xcframework.sh state ${{steps.create_release.outputs.html_url}}
+
+      - name: "Prepare xcframework artifacts for test-builder module"
+        run: bash ${GITHUB_WORKSPACE}/gradle/pack_xcframework.sh test-builder ${{steps.create_release.outputs.html_url}}
+
+      - name: "Prepare xcframework artifacts for transform module"
+        run: bash ${GITHUB_WORKSPACE}/gradle/pack_xcframework.sh transform ${{steps.create_release.outputs.html_url}}
 
       - name: "Prepare xcframework artifacts for util module"
-        run: bash ${GITHUB_WORKSPACE}/gradle/pack_xcframework.sh util ${{steps.create_release.outputs.id}}
-#
-#      - name: upload xcframework artifacts for collab module
-#        uses: actions/upload-release-asset@v1
-#        env:
-#          GITHUB_TOKEN: ${{ github.token }}
-#        with:
-#          upload_url: ${{ steps.create_release.outputs.upload_url }}
-#          asset_path: ./collab/build/collab.xcframework.zip
-#          asset_name: collab.xcframework.zip
-#          asset_content_type: application/zip
-#
-#      - name: upload Package.swift artifacts for collab module
-#        uses: actions/upload-release-asset@v1
-#        env:
-#          GITHUB_TOKEN: ${{ github.token }}
-#        with:
-#          upload_url: ${{ steps.create_release.outputs.upload_url }}
-#          asset_path: ./collab/build/Package.swift
-#          asset_name: collab.package.swift
-#          asset_content_type: text/plain
-#
-#      - name: upload xcframework artifacts for history module
-#        uses: actions/upload-release-asset@v1
-#        env:
-#          GITHUB_TOKEN: ${{ github.token }}
-#        with:
-#          upload_url: ${{ steps.create_release.outputs.upload_url }}
-#          asset_path: ./history/build/history.xcframework.zip
-#          asset_name: history.xcframework.zip
-#          asset_content_type: application/zip
-#
-#      - name: upload Package.swift artifacts for history module
-#        uses: actions/upload-release-asset@v1
-#        env:
-#          GITHUB_TOKEN: ${{ github.token }}
-#        with:
-#          upload_url: ${{ steps.create_release.outputs.upload_url }}
-#          asset_path: ./history/build/Package.swift
-#          asset_name: history.package.swift
-#          asset_content_type: text/plain
-#
-#      - name: upload xcframework artifacts for model module
-#        uses: actions/upload-release-asset@v1
-#        env:
-#          GITHUB_TOKEN: ${{ github.token }}
-#        with:
-#          upload_url: ${{ steps.create_release.outputs.upload_url }}
-#          asset_path: ./model/build/model.xcframework.zip
-#          asset_name: model.xcframework.zip
-#          asset_content_type: application/zip
-#
-#      - name: upload Package.swift artifacts for model module
-#        uses: actions/upload-release-asset@v1
-#        env:
-#          GITHUB_TOKEN: ${{ github.token }}
-#        with:
-#          upload_url: ${{ steps.create_release.outputs.upload_url }}
-#          asset_path: ./model/build/Package.swift
-#          asset_name: model.package.swift
-#          asset_content_type: text/plain
-#
-#      - name: upload xcframework artifacts for state module
-#        uses: actions/upload-release-asset@v1
-#        env:
-#          GITHUB_TOKEN: ${{ github.token }}
-#        with:
-#          upload_url: ${{ steps.create_release.outputs.upload_url }}
-#          asset_path: ./state/build/state.xcframework.zip
-#          asset_name: state.xcframework.zip
-#          asset_content_type: application/zip
-#
-#      - name: upload Package.swift artifacts for state module
-#        uses: actions/upload-release-asset@v1
-#        env:
-#          GITHUB_TOKEN: ${{ github.token }}
-#        with:
-#          upload_url: ${{ steps.create_release.outputs.upload_url }}
-#          asset_path: ./state/build/Package.swift
-#          asset_name: state.package.swift
-#          asset_content_type: text/plain
-#
-#      - name: upload xcframework artifacts for test-builder module
-#        uses: actions/upload-release-asset@v1
-#        env:
-#          GITHUB_TOKEN: ${{ github.token }}
-#        with:
-#          upload_url: ${{ steps.create_release.outputs.upload_url }}
-#          asset_path: ./test-builder/build/test_builder.xcframework.zip
-#          asset_name: test-builder.xcframework.zip
-#          asset_content_type: application/zip
-#
-#      - name: upload Package.swift artifacts for test-builder module
-#        uses: actions/upload-release-asset@v1
-#        env:
-#          GITHUB_TOKEN: ${{ github.token }}
-#        with:
-#          upload_url: ${{ steps.create_release.outputs.upload_url }}
-#          asset_path: ./test-builder/build/Package.swift
-#          asset_name: test-builder.package.swift
-#          asset_content_type: text/plain
-#
-#      - name: upload xcframework artifacts for transform module
-#        uses: actions/upload-release-asset@v1
-#        env:
-#          GITHUB_TOKEN: ${{ github.token }}
-#        with:
-#          upload_url: ${{ steps.create_release.outputs.upload_url }}
-#          asset_path: ./transform/build/transform.xcframework.zip
-#          asset_name: transform.xcframework.zip
-#          asset_content_type: application/zip
-#
-#      - name: upload Package.swift artifacts for transform module
-#        uses: actions/upload-release-asset@v1
-#        env:
-#          GITHUB_TOKEN: ${{ github.token }}
-#        with:
-#          upload_url: ${{ steps.create_release.outputs.upload_url }}
-#          asset_path: ./transform/build/Package.swift
-#          asset_name: transform.package.swift
-#          asset_content_type: text/plain
+        run: bash ${GITHUB_WORKSPACE}/gradle/pack_xcframework.sh util ${{steps.create_release.outputs.html_url}}
+
+      - name: upload xcframework artifacts for collab module
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./collab/build/collab.xcframework.zip
+          asset_name: collab.xcframework.zip
+          asset_content_type: application/zip
+
+      - name: upload Package.swift artifacts for collab module
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./collab/build/Package.swift
+          asset_name: collab.package.swift
+          asset_content_type: text/plain
+
+      - name: upload xcframework artifacts for history module
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./history/build/history.xcframework.zip
+          asset_name: history.xcframework.zip
+          asset_content_type: application/zip
+
+      - name: upload Package.swift artifacts for history module
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./history/build/Package.swift
+          asset_name: history.package.swift
+          asset_content_type: text/plain
+
+      - name: upload xcframework artifacts for model module
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./model/build/model.xcframework.zip
+          asset_name: model.xcframework.zip
+          asset_content_type: application/zip
+
+      - name: upload Package.swift artifacts for model module
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./model/build/Package.swift
+          asset_name: model.package.swift
+          asset_content_type: text/plain
+
+      - name: upload xcframework artifacts for state module
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./state/build/state.xcframework.zip
+          asset_name: state.xcframework.zip
+          asset_content_type: application/zip
+
+      - name: upload Package.swift artifacts for state module
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./state/build/Package.swift
+          asset_name: state.package.swift
+          asset_content_type: text/plain
+
+      - name: upload xcframework artifacts for test-builder module
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./test-builder/build/test_builder.xcframework.zip
+          asset_name: test-builder.xcframework.zip
+          asset_content_type: application/zip
+
+      - name: upload Package.swift artifacts for test-builder module
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./test-builder/build/Package.swift
+          asset_name: test-builder.package.swift
+          asset_content_type: text/plain
+
+      - name: upload xcframework artifacts for transform module
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./transform/build/transform.xcframework.zip
+          asset_name: transform.xcframework.zip
+          asset_content_type: application/zip
+
+      - name: upload Package.swift artifacts for transform module
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./transform/build/Package.swift
+          asset_name: transform.package.swift
+          asset_content_type: text/plain
 
       - name: upload xcframework artifacts for util module
         uses: actions/upload-release-asset@v1
