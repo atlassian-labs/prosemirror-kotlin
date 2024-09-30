@@ -254,7 +254,7 @@ class NodeType internal constructor(
         var copy: MutableList<Mark>? = null
         marks.forEachIndexed { i, mark ->
             if (!this.allowsMarkType(mark.type)) {
-                if (copy == null) copy = marks.slice(0..i).toMutableList()
+                if (copy == null) copy = marks.slice(0..<i).toMutableList()
             } else {
                 copy?.add(mark)
             }
