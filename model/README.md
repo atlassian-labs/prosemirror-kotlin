@@ -20,3 +20,5 @@ implementation("com.atlassian.prosemirror:model:1.0.2")
 ```
 
 ### Versioning
+- Implemented changes to match version [1.22.3](https://github.com/ProseMirror/prosemirror-model/releases/tag/1.22.3)
+  of prosemirror-model

@@ -100,24 +100,28 @@ class Fragment {
         leafText: ((leafNode: Node) -> String?)?
     ): String {
         var text = ""
-        var separated = true
+        var first = true
         val func: (node: Node, start: Int, parent: Node?, index: Int) -> Boolean = { node, pos, parent, index ->
-            if (node.isText) {
-                node.text?.let {
-                    text += it.slice(max(from, pos) - pos, to - pos)
-                }
-                separated = blockSeparator == null
-            } else if (node.isLeaf) {
-                if (leafText != null) {
-                    text += leafText(node)
-                } else if (node.type.spec.leafText != null) {
-                    text += node.type.spec.leafText!!.invoke(node)
-                }
-                separated = blockSeparator == null
-            } else if (!separated && node.isBlock) {
-                text += blockSeparator
-                separated = true
+            val nodeText = if (node.isText) {
+                node.text?.slice(max(from, pos) - pos, to - pos) ?: ""
+            } else if (!node.isLeaf) {
+                ""
+            } else if (leafText != null) {
+                leafText(node)
+            } else if (node.type.spec.leafText != null) {
+                node.type.spec.leafText!!.invoke(node)
             }
+            else {
+                ""
+            }
+            if (node.isBlock && (node.isLeaf && nodeText != null || node.isTextblock) && blockSeparator != null) {
+                if (first) {
+                    first = false
+                } else {
+                    text += blockSeparator
+                }
+            }
+            text += nodeText
             true
         }
         this.nodesBetween(
@@ -255,7 +259,7 @@ class Fragment {
     }
 
     // Find the index and inner offset corresponding to a given relative position in this fragment.
-    // The result object will be reused (overwritten) the next time the function is called. (Not public.)
+    // The result object will be reused (overwritten) the next time the function is called. @internal
     fun findIndex(pos: Int, round: Int = -1): Index {
         if (pos == 0) return retIndex(0, pos)
         if (pos == this.size) return retIndex(this.content.size, pos)

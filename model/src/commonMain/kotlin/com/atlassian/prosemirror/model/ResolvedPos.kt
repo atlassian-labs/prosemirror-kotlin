@@ -272,24 +272,29 @@ class ResolvedPos(
 
         internal fun resolveCached(doc: Node, pos: Int): ResolvedPos {
             val resolveCache = doc.type.schema.resolveCache
-
-            resolveCache.forEach { cached ->
-                if (cached.pos == pos && cached.doc === doc) return cached
+            val cache = resolveCache[doc]
+            if (cache != null) {
+                for (i in 0 until cache.elts.size) {
+                    val elt = cache.elts[i]
+                    if (elt.pos == pos) return elt
+                }
+            } else {
+                resolveCache[doc] = ResolveCache()
             }
             val result = resolve(doc, pos)
-            doc.type.schema.resolveCachePos.update { cachePos ->
-                if (cachePos >= resolveCache.size) {
-                    resolveCache.add(result)
-                } else {
-                    resolveCache[cachePos] = result
-                }
-                (cachePos + 1) % RESOLVE_CACHE_SIZE
+            cache?.let {
+                it.elts.add(it.i, result)
+                it.i = (it.i + 1) % RESOLVE_CACHE_SIZE
             }
             return result
         }
     }
 }
 
+class ResolveCache {
+    val elts: MutableList<ResolvedPos> = mutableListOf()
+    var i = 0
+}
 private const val RESOLVE_CACHE_SIZE = 12
 
 // Represents a flat range of content, i.e. one that starts and ends in the same node.

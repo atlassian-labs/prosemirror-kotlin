@@ -185,7 +185,7 @@ class DomTest {
                 ),
                 marks = testSchema.spec.marks + mapOf(
                     "comment" to MarkSpecImpl(
-                        parseDOM = listOf(ParseRuleImpl(tag = "div.comment")),
+                        parseDOM = listOf(TagParseRuleImpl(tag = "div.comment")),
                         toDOM = { _, _ ->
                             DOMOutputSpec.ArrayDOMOutputSpec(listOf("div", mapOf("class" to "comment"), 0))
                         }
@@ -215,7 +215,7 @@ class DomTest {
                     "comment" to MarkSpecImpl(
                         attrs = mapOf("id" to AttributeSpecImpl(default = null)),
                         parseDOM = listOf(
-                            ParseRuleImpl(
+                            TagParseRuleImpl(
                                 tag = "span.comment",
                                 getNodeAttrs = { dom ->
                                     val id = dom.attribute("data-id")?.int() ?: 10
@@ -269,7 +269,7 @@ class DomTest {
                 nodes = testSchema.spec.nodes,
                 marks = testSchema.spec.marks + mapOf(
                     "test" to MarkSpecImpl(
-                        parseDOM = listOf(ParseRuleImpl(tag = "test")),
+                        parseDOM = listOf(TagParseRuleImpl(tag = "test")),
                         toDOM = { _, _ -> DOMOutputSpec.ArrayDOMOutputSpec(listOf("test", 0)) },
                         spanning = false
                     )
@@ -645,6 +645,21 @@ class DomTest {
 //            ), 1, 1), eq)
 //        })
 //
+//        it("can temporary shadow a mark with another configuration of the same type", () => {
+//            let s = new Schema({nodes: schema.spec.nodes, marks: {color: {
+//                attrs: {color: {}},
+//                toDOM: m => ["span", {style: `color: ${m.attrs.color}`}],
+//                parseDOM: [{style: "color", getAttrs: v => ({color: v})}]
+//            }}})
+//            let d = DOMParser.fromSchema(s)
+//                .parse(domFrom('<p><span style="color: red">abc<span style="color: blue">def</span>ghi</span></p>'))
+//            ist(d, s.node("doc", null, [s.node("paragraph", null, [
+//                s.text("abc", [s.mark("color", {color: "red"})]),
+//                s.text("def", [s.mark("color", {color: "blue"})]),
+//                s.text("ghi", [s.mark("color", {color: "red"})])
+//            ])]), eq)
+//        })
+//
 //        function find(html: string, doc: PMNode) {
 //        return () => {
 //        let dom = document.createElement("div")
@@ -879,6 +894,15 @@ class DomTest {
 //        let node = deepEm.serializeNode(p(strong("foo", code("bar"), em(code("baz"))), em("quux"), "xyz"), {document})
 //        ist((node as HTMLElement).innerHTML,
 //            "<strong>foo<code>bar</code></strong><em><i data-emphasis=\"true\"><strong><code>baz</code></strong>quux</i></em>xyz")
+//    })
+//
+//    it("refuses to use values from attributes as DOM specs", () => {
+//        let weird = new DOMSerializer(Object.assign({}, serializer.nodes, {
+//            image: (node: PMNode) => ["span", ["img", {src: node.attrs.src}], node.attrs.alt]
+//        }), serializer.marks)
+//        ist.throws(() => weird.serializeNode(img({src: "x.png", alt: ["script", {src: "http://evil.com/inject.js"}]}),
+//        {document}),
+//        /Using an array from an attribute object as a DOM spec/)
 //    })
 // })
 
