@@ -17,14 +17,12 @@ class CommentNodeBuilder(
     marks: List<Mark> = emptyList(),
     override val schema: Schema = testSchema
 ) : NodeBuilder<CommentNodeBuilder>(pos, marks, schema) {
-
     override val checked: Boolean
         get() = false
 
     override fun create(pos: Int, marks: List<Mark>, schema: Schema): NodeBuilder<CommentNodeBuilder> {
         return CommentNodeBuilder(pos, marks, schema)
     }
-
 }
 
 class CustomNodeBuildCompanion(schema: Schema): NodeBuildCompanion<CommentNodeBuilder>(schema) {
@@ -76,10 +74,18 @@ class DomTest {
         // custom link mark that has a title=null attribute
         fun NodeBuilder<PMNodeBuilder>.aWithTitle(href: String = "foo", func: NodeBuilder<PMNodeBuilder>.() -> Unit) =
             mark("link", func, attrs = mapOf("href" to href, "title" to null))
+
         test(
             // TypeScript code: doc(p("a ", a({href: "foo"}, "big ", a({href: "bar"}, "nested"), " link")))
             // converts to the code below because each node cannot have more than 1 Link mark
-            doc { p { +"a " + aWithTitle(href = "foo") { +"big "} + aWithTitle(href = "bar") { +"nested" } + aWithTitle(href = "foo") { +" link" } } },
+            doc {
+                p {
+                    +"a " +
+                        aWithTitle(href = "foo") { +"big "} +
+                        aWithTitle(href = "bar") { +"nested" } +
+                        aWithTitle(href = "foo") { +" link" }
+                }
+            },
             "<p>a <a href=\"foo\">big </a><a href=\"bar\">nested</a><a href=\"foo\"> link</a></p>"
         )
     }
@@ -187,7 +193,10 @@ class DomTest {
                 )
             )
         )
-        fun NodeBuilder<CommentNodeBuilder>.comment(func: NodeBuilder<CommentNodeBuilder>.() -> Unit) = mark("comment", func)
+
+        fun NodeBuilder<CommentNodeBuilder>.comment(func: NodeBuilder<CommentNodeBuilder>.() -> Unit) =
+            mark("comment", func)
+
         val doc = CustomNodeBuildCompanion(schemaWithComment).doc {
             p { +"one" } + this.comment { p { +"two" } + p { strong { +"three" } } } + p { +"four" }
         }
@@ -268,7 +277,9 @@ class DomTest {
             )
         )
         val b = CustomNodeBuildCompanion(markSchema)
-        fun NodeBuilder<CommentNodeBuilder>.test(func: NodeBuilder<CommentNodeBuilder>.() -> Unit) = mark("test", func)
+
+        fun NodeBuilder<CommentNodeBuilder>.test(func: NodeBuilder<CommentNodeBuilder>.() -> Unit) =
+            mark("test", func)
 
         test(
             b.doc { p { test { +"a" + img(mapOf("src" to "x")) {} + "b" } } },
