@@ -164,7 +164,7 @@ open class DOMSerializer(
                         if (space > 0) {
                             dom.attr(
 //                                name.slice(0 until space),
-                                name.slice(space + 1..space + 1),
+                                name.substring(space + 1),
                                 attrs[name].toString()
                             )
                         } else {

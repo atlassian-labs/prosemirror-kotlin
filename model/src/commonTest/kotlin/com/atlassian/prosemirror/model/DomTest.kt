@@ -7,48 +7,30 @@ import com.atlassian.prosemirror.testbuilder.NodeBuildCompanion
 import com.atlassian.prosemirror.testbuilder.NodeBuilder
 import com.atlassian.prosemirror.testbuilder.NodeSpecImpl
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.doc
-import kotlin.test.Ignore
 import kotlin.test.Test
 import com.atlassian.prosemirror.testbuilder.schema as testSchema
-
-val schemaWithComment = Schema(
-    SchemaSpec(
-        nodes = testSchema.spec.nodes + mapOf(
-            "doc" to (testSchema.spec.nodes["doc"] as NodeSpecImpl).copy(marks = "comment")
-        ),
-        marks = testSchema.spec.marks + mapOf(
-            "comment" to MarkSpecImpl(
-                parseDOM = listOf(ParseRuleImpl(tag = "div.comment")),
-                toDOM = { _, _ ->
-                    DOMOutputSpec.ArrayDOMOutputSpec(listOf("div", mapOf("class" to "comment"), 0))
-                }
-            )
-        )
-    )
-)
-
-fun NodeBuilder<CommentNodeBuilder>.comment(func: NodeBuilder<CommentNodeBuilder>.() -> Unit) = mark("comment", func)
+import com.atlassian.prosemirror.testbuilder.AttributeSpecImpl
+import com.atlassian.prosemirror.testbuilder.PMNodeBuilder
 
 class CommentNodeBuilder(
     pos: Int = 0,
     marks: List<Mark> = emptyList(),
-    override val schema: Schema = schemaWithComment
+    override val schema: Schema = testSchema
 ) : NodeBuilder<CommentNodeBuilder>(pos, marks, schema) {
-
     override val checked: Boolean
         get() = false
 
     override fun create(pos: Int, marks: List<Mark>, schema: Schema): NodeBuilder<CommentNodeBuilder> {
         return CommentNodeBuilder(pos, marks, schema)
     }
+}
 
-    companion object : NodeBuildCompanion<CommentNodeBuilder>(schemaWithComment) {
-        override val checked: Boolean
-            get() = false
+class CustomNodeBuildCompanion(schema: Schema): NodeBuildCompanion<CommentNodeBuilder>(schema) {
+    override val checked: Boolean
+        get() = false
 
-        override fun create(): CommentNodeBuilder {
-            return CommentNodeBuilder()
-        }
+    override fun create(): CommentNodeBuilder {
+        return CommentNodeBuilder(schema = schema)
     }
 }
 
@@ -87,11 +69,23 @@ class DomTest {
         )
     }
 
-    @Ignore // "This test is failing - fix code"
     @Test
     fun `can represent links`() {
+        // custom link mark that has a title=null attribute
+        fun NodeBuilder<PMNodeBuilder>.aWithTitle(href: String = "foo", func: NodeBuilder<PMNodeBuilder>.() -> Unit) =
+            mark("link", func, attrs = mapOf("href" to href, "title" to null))
+
         test(
-            doc { p { +"a " + a(href = "foo") { +"big " + a(href = "bar") { +"nested" } + " link" } } },
+            // TypeScript code: doc(p("a ", a({href: "foo"}, "big ", a({href: "bar"}, "nested"), " link")))
+            // converts to the code below because each node cannot have more than 1 Link mark
+            doc {
+                p {
+                    +"a " +
+                        aWithTitle(href = "foo") { +"big "} +
+                        aWithTitle(href = "bar") { +"nested" } +
+                        aWithTitle(href = "foo") { +" link" }
+                }
+            },
             "<p>a <a href=\"foo\">big </a><a href=\"bar\">nested</a><a href=\"foo\"> link</a></p>"
         )
     }
@@ -184,7 +178,26 @@ class DomTest {
 
     @Test
     fun `can parse marks on block nodes`() {
-        val doc = CommentNodeBuilder.doc {
+        val schemaWithComment = Schema(
+            SchemaSpec(
+                nodes = testSchema.spec.nodes + mapOf(
+                    "doc" to (testSchema.spec.nodes["doc"] as NodeSpecImpl).copy(marks = "comment")
+                ),
+                marks = testSchema.spec.marks + mapOf(
+                    "comment" to MarkSpecImpl(
+                        parseDOM = listOf(ParseRuleImpl(tag = "div.comment")),
+                        toDOM = { _, _ ->
+                            DOMOutputSpec.ArrayDOMOutputSpec(listOf("div", mapOf("class" to "comment"), 0))
+                        }
+                    )
+                )
+            )
+        )
+
+        fun NodeBuilder<CommentNodeBuilder>.comment(func: NodeBuilder<CommentNodeBuilder>.() -> Unit) =
+            mark("comment", func)
+
+        val doc = CustomNodeBuildCompanion(schemaWithComment).doc {
             p { +"one" } + this.comment { p { +"two" } + p { strong { +"three" } } } + p { +"four" }
         }
         test(
@@ -193,46 +206,88 @@ class DomTest {
         )
     }
 
-    // TODO convert tests below
-//        it("parses unique, non-exclusive, same-typed marks", () => {
-//            let commentSchema = new Schema({
-//                nodes: schema.spec.nodes,
-//                marks: schema.spec.marks.update("comment", {
-//                attrs: { id: { default: null }},
-//                parseDOM: [{
-//                tag: "span.comment",
-//                getAttrs(dom) { return { id: parseInt((dom as HTMLElement).getAttribute('data-id')!, 10) } }
-//            }],
-//                excludes: '',
-//                toDOM(mark: Mark) { return ["span", {class: "comment", "data-id": mark.attrs.id }, 0] }
-//            })
-//            })
-//            let b = builders(commentSchema)
-//            test(b.schema.nodes.doc.createAndFill(undefined, [
-//                b.schema.nodes.paragraph.createAndFill(undefined, [
-//                    b.schema.text('double comment', [
-//                        b.schema.marks.comment.create({ id: 1 }),
-//                        b.schema.marks.comment.create({ id: 2 })
-//                    ])!
-//            ])!
-//            ])!,
-//            "<p><span class=\"comment\" data-id=\"1\"><span class=\"comment\" data-id=\"2\">double comment</span></span></p>")()
-//        })
-//
-//        it("serializes non-spanning marks correctly", () => {
-//            let markSchema = new Schema({
-//                nodes: schema.spec.nodes,
-//                marks: schema.spec.marks.update("test", {
-//                parseDOM: [{tag: "test"}],
-//                toDOM() { return ["test", 0] },
-//                spanning: false
-//            })
-//            })
-//            let b = builders(markSchema) as any
-//            test(b.doc(b.paragraph(b.test("a", b.image({src: "x"}), "b"))),
-//                "<p><test>a</test><test><img src=\"x\"></test><test>b</test></p>")()
-//        })
-//
+    @Test
+    fun `parses unique non-exclusive same-typed marks`() {
+        val commentSchema = Schema(
+            SchemaSpec(
+                nodes = testSchema.spec.nodes,
+                marks = testSchema.spec.marks + mapOf(
+                    "comment" to MarkSpecImpl(
+                        attrs = mapOf("id" to AttributeSpecImpl(default = null)),
+                        parseDOM = listOf(
+                            ParseRuleImpl(
+                                tag = "span.comment",
+                                getNodeAttrs = { dom ->
+                                    val id = dom.attribute("data-id")?.int() ?: 10
+                                    ParseRuleMatch(mapOf("id" to id))
+                                               },
+                            )
+                        ),
+                        excludes = "",
+                            toDOM = { mark, _ ->
+                            DOMOutputSpec.ArrayDOMOutputSpec(
+                                listOf(
+                                    "span",
+                                    mapOf("class" to "comment", "data-id" to mark.attrs["id"]),
+                                    0
+                                )
+                            )
+                        }
+                    )
+                )
+            )
+        )
+        val doc = commentSchema.nodes["doc"]!!.createAndFill(
+            attrs = null,
+            content = listOf(
+                commentSchema.nodes["paragraph"]!!.createAndFill(
+                    attrs = null,
+                    content = listOf(
+                        commentSchema.text(
+                            text = "double comment",
+                            marks = listOf(
+                            commentSchema.marks["comment"]!!.create(mapOf("id" to 1)),
+                            commentSchema.marks["comment"]!!.create(mapOf("id" to 2))
+                        )
+                        )
+                    ),
+                    marks = null
+                )!!
+            ),
+            marks = null
+        )!!
+        test(
+            doc,
+            "<p><span class=\"comment\" data-id=\"1\"><span class=\"comment\" data-id=\"2\">double comment</span></span></p>"
+        )
+    }
+
+    @Test
+    fun `serializes non-spanning marks correctly`() {
+        val markSchema = Schema(
+            SchemaSpec(
+                nodes = testSchema.spec.nodes,
+                marks = testSchema.spec.marks + mapOf(
+                    "test" to MarkSpecImpl(
+                        parseDOM = listOf(ParseRuleImpl(tag = "test")),
+                        toDOM = { _, _ -> DOMOutputSpec.ArrayDOMOutputSpec(listOf("test", 0)) },
+                        spanning = false
+                    )
+                )
+            )
+        )
+        val b = CustomNodeBuildCompanion(markSchema)
+
+        fun NodeBuilder<CommentNodeBuilder>.test(func: NodeBuilder<CommentNodeBuilder>.() -> Unit) =
+            mark("test", func)
+
+        test(
+            b.doc { p { test { +"a" + img(mapOf("src" to "x")) {} + "b" } } },
+            "<p><test>a</test><test><img src=\"x\"></test><test>b</test></p>"
+        )
+    }
+
+    // Skipping the following tests because we don't support them yet
 //        it("serializes an element and an attribute with XML namespace", () => {
 //            let xmlnsSchema = new Schema({
 //                nodes: {
@@ -430,12 +485,16 @@ class DomTest {
             doc { p { em { +"Hello" } + "!" } }
         )
     }
+
+    @Test
+    fun `interprets font-weight bold as strong`() {
+        recover(
+            "<p style='font-weight: bold'>Hello</p>",
+            doc { p { strong { +"Hello" } } }
+        )
+    }
 }
 
-//        it("interprets font-weight: bold as strong",
-//            recover("<p style='font-weight: bold'>Hello</p>",
-//                doc(p(strong("Hello")))))
-//
 //        it("allows clearing of pending marks",
 //            recover("<blockquote style='font-style: italic'><p style='font-style: normal'>One</p><p>Two</p></blockquote",
 //                doc(blockquote(p("One"), p(em("Two"))))))
@@ -822,3 +881,11 @@ class DomTest {
 //            "<strong>foo<code>bar</code></strong><em><i data-emphasis=\"true\"><strong><code>baz</code></strong>quux</i></em>xyz")
 //    })
 // })
+
+fun com.fleeksoft.ksoup.nodes.Attribute?.int(default: Int? = null): Int? {
+    return try {
+        this?.value?.takeIf { it.isNotBlank() }?.toInt()
+    } catch (ex: NumberFormatException) {
+        default
+    }
+}

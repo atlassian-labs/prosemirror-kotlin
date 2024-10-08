@@ -13,6 +13,7 @@ import com.atlassian.prosemirror.model.ParseRuleMatch
 import com.atlassian.prosemirror.model.PreserveWhitespace
 import com.atlassian.prosemirror.model.Schema
 import com.atlassian.prosemirror.model.SchemaSpec
+import com.fleeksoft.ksoup.nodes.Element
 
 val pDOM: DOMOutputSpec = DOMOutputSpec.ArrayDOMOutputSpec(listOf("p", 0))
 val blockquoteDOM: DOMOutputSpec = DOMOutputSpec.ArrayDOMOutputSpec(listOf("blockquote", 0))
@@ -200,11 +201,12 @@ val marks = mapOf<String, MarkSpec>(
             // pasted content will be inexplicably wrapped in `<b>`
             // tags with a font-weight normal.
             ParseRuleImpl(tag = "b", getNodeAttrs = { node ->
-                // TODO find a way to parse css
-                // node.style.fontWeight != "normal" && null
-                ParseRuleMatch(null)
+                ParseRuleMatch(null, node.styles()["font-weight"] != "normal")
             }),
-//            {style: "font-weight", getAttrs: (value: string) => /^(bold(er)?|[5-9]\d{2,})$/.test(value) && null}
+            ParseRuleImpl(style = "font-weight", getStyleAttrs = { value ->
+                val regex = "^bold(er)?|[5-9]\\d{2,}".toRegex()
+                ParseRuleMatch(null, regex.matches(value))
+            })
         ),
         toDOM = { _, _ -> strongDOM }
     ),
@@ -232,3 +234,11 @@ val marks = mapOf<String, MarkSpec>(
 // To reuse elements from this schema, extend or read from its `spec.nodes` and `spec.marks`
 // [properties](#model.Schema.spec).
 val schemaBasic = Schema(SchemaSpec(nodes = nodes, marks = marks))
+
+fun Element.styles(): Map<String, String> {
+    val style = attribute("style")?.value ?: return emptyMap()
+    return style.split(";").associate {
+        val (key, value) = it.split(":")
+        key.trim() to value.trim()
+    }
+}

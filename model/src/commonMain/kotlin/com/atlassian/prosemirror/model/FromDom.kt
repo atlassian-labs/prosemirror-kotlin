@@ -323,7 +323,7 @@ class DOMParser(
                 // or has an '=' sign after the prop, followed by the given
                 // value.
                 style.length > prop.length &&
-                (style[prop.length] != 61.toChar() || style.slice(prop.length + 1 until style.length) != value)
+                (style[prop.length] != '=' || style.slice(prop.length + 1 until style.length) != value)
             ) {
                 continue
             }
