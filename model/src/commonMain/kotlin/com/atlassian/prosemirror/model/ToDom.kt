@@ -199,8 +199,10 @@ fun suspiciousAttributesInner(attrs: Map<String, Any?>): List<Any>? {
                     scan(value[i]!!)
                 }
             }
-        } else {
-            //for (let prop in value) scan(value[prop])
+        } else if (value is Map<*, *>) {
+            for (v in value.values) {
+                v?.let { scan(it) }
+            }
         }
     }
     scan(attrs)

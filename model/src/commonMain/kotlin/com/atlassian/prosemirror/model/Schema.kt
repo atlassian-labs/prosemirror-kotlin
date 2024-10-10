@@ -678,10 +678,7 @@ class Schema {
      * Selection: ~10:1
      * Typing: ~5:1
      */
-    val resolveCache = ConcurrentMutableMap<Node, ResolveCache>()
-
-    @Suppress("MayBeConst")
-    val resolveCachePos = atomic(0)
+    val resolveCache = ConcurrentMutableMap<NodeId, ResolveCache>()
 
     // Construct a schema from a schema [specification](#model.SchemaSpec).
     constructor(spec: SchemaSpec) {
