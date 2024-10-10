@@ -589,6 +589,7 @@ fun buildCommand(redo: Boolean, scroll: Boolean): Command {
     return { state, dispatch ->
         try {
             val hist = historyKey.getState(state)
+//            println("command hist: $hist redo:$redo")
             if (hist == null || (if (redo) hist.undone else hist.done).eventCount == 0) {
                 false
             } else {

@@ -41,6 +41,7 @@ interface UnsupportedNode {
 @kotlinx.serialization.Serializable
 value class NodeId(val id: String)
 
+var cnt = 0
 
 /**
  * This class represents a node in the tree that makes up a ProseMirror document. So a document is
@@ -74,11 +75,13 @@ open class Node constructor(
     // For text nodes, this contains the node's text content.
     open val text: String? = null
 
-    @OptIn(ExperimentalUuidApi::class)
-    var nodeId: NodeId = NodeId("${type.name}&${Uuid.random()}")
+//    @OptIn(ExperimentalUuidApi::class)
+    var nodeId: NodeId// = NodeId("${type.name}&${cnt++}")
 
     init {
         this.content = content ?: Fragment.empty
+        nodeId = NodeId("${type.name}&${cnt++}")
+        println(nodeId)
     }
 
     // The size of this node, as defined by the integer-based [indexing scheme]

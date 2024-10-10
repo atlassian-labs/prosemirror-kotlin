@@ -124,6 +124,7 @@ abstract class Selection(
 
     // Replace the selection with the given node, appending the changes to the given transaction.
     fun replaceWith(tr: Transaction, node: Node) {
+//        println("replaceWith selectionNodeId: ${tr.selection._from.doc.nodeId} vs ${tr.doc.nodeId}")
         val mapFrom = tr.steps.size
         val ranges = this.ranges
         for (i in ranges.indices) {
@@ -134,7 +135,13 @@ abstract class Selection(
             if (i != 0) {
                 tr.deleteRange(from, to)
             } else {
+//                println("replaceWith equals2: ${tr.doc === tr.selection._from.doc} selection: ${tr.selection} replace with node: $node")
                 tr.replaceRangeWith(from, to, node)
+                val a = tr.selection._from.doc.nodeId
+                val b = tr.doc.nodeId
+//                val s = "replaceWith selectionNodeId: $a vs $b"
+//                println("replaceWith selectionNodeId: $a vs $b")
+                println("replaceWith equals3: ${tr.doc === tr.selection._from.doc} is8: ${b.id}")
                 selectionToInsertionEnd(tr, mapFrom, if (node.isInline) -1 else 1)
             }
         }
@@ -548,6 +555,8 @@ fun findSelectionIn(
 }
 
 fun selectionToInsertionEnd(tr: Transaction, startLen: Int, bias: Int) {
+    println("selectionToInsertionEnd equals: ${tr.doc === tr.selection._from.doc}")
+    println("selectionToInsertionEnd selectionNodeId: ${tr.selection._from.doc.nodeId} vs ${tr.doc.nodeId}")
     val last = tr.steps.size - 1
     if (last < startLen) return
     val step = tr.steps[last]

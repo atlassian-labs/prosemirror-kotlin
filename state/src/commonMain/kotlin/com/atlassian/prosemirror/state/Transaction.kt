@@ -88,6 +88,7 @@ class Transaction : Transform {
     // Update the transaction's current selection. Will determine the selection that the editor gets
     // when the transaction is applied.
     fun setSelection(selection: Selection) = this.apply {
+        println("setSelection nodeId: ${this.doc.nodeId} selectionNodeId: ${selection._from.doc.nodeId}")
         if (selection._from.doc.nodeId != this.doc.nodeId) {
             throw RangeError("Selection passed to setSelection must point at the current document")
         }
@@ -155,6 +156,8 @@ class Transaction : Transform {
     // Replace the selection with the given node. When `inheritMarks` is true and the content is
     // inline, it inherits the marks from the place where it is inserted.
     fun replaceSelectionWith(node: Node, inheritMarks: Boolean = true) = this.apply {
+        println("replaceSelectionWith equals: ${this.doc == selection._from.doc}")
+//        println("replaceSelectionWith nodeId: ${this.doc.nodeId} selectionNodeId: ${selection._from.doc.nodeId}")
         val selection = this.selection
         var node = node
         if (inheritMarks) {
@@ -180,6 +183,7 @@ class Transaction : Transform {
     // the given string.
     @Suppress("NestedBlockDepth")
     fun insertText(text: String, from: Int? = null, to: Int? = null): Transaction = this.apply {
+        println("insertText nodeId: ${this.doc.nodeId} selectionNodeId: ${selection._from.doc.nodeId}")
         val schema = this.doc.type.schema
         if (from == null) {
             if (text.isEmpty()) return this.deleteSelection()
