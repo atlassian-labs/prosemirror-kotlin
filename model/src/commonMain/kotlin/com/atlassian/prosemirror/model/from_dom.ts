@@ -45,33 +45,14 @@ export interface ParseOptions {
   context?: ResolvedPos
 
   /// @internal
-  ruleFromNode?: (node: DOMNode) => ParseRule | null
+  ruleFromNode?: (node: DOMNode) => Omit<TagParseRule, "tag"> | null
   /// @internal
   topOpen?: boolean
 }
 
-/// A value that describes how to parse a given DOM node or inline
-/// style as a ProseMirror node or mark.
-export interface ParseRule {
-  /// A CSS selector describing the kind of DOM elements to match. A
-  /// single rule should have _either_ a `tag` or a `style` property.
-  tag?: string
-
-  /// The namespace to match. This should be used with `tag`.
-  /// Nodes are only matched when the namespace matches or this property
-  /// is null.
-  namespace?: string
-
-  /// A CSS property name to match. When given, this rule matches
-  /// inline styles that list that property. May also have the form
-  /// `"property=value"`, in which case the rule only matches if the
-  /// property's value exactly matches the given value. (For more
-  /// complicated filters, use [`getAttrs`](#model.ParseRule.getAttrs)
-  /// and return false to indicate that the match failed.) Rules
-  /// matching styles may only produce [marks](#model.ParseRule.mark),
-  /// not nodes.
-  style?: string
-
+/// Fields that may be present in both [tag](#model.TagParseRule) and
+/// [style](#model.StyleParseRule) parse rules.
+export interface GenericParseRule {
   /// Can be used to change the order in which the parse rules in a
   /// schema are tried. Those with higher priority come first. Rules
   /// without a priority are counted as having priority 50. This
@@ -98,21 +79,8 @@ export interface ParseRule {
   /// character, as in `"blockquote/|list_item/"`.
   context?: string
 
-  /// The name of the node type to create when this rule matches. Only
-  /// valid for rules with a `tag` property, not for style rules. Each
-  /// rule should have one of a `node`, `mark`, `clearMark`, or
-  /// `ignore` property (except when it appears in a
-  /// [node](#model.NodeSpec.parseDOM) or [mark
-  /// spec](#model.MarkSpec.parseDOM), in which case the `node` or
-  /// `mark` property will be derived from its position).
-  node?: string
-
   /// The name of the mark type to wrap the matched content in.
   mark?: string
-
-  /// [Style](#model.ParseRule.style) rules can remove marks from the
-  /// set of active marks.
-  clearMark?: (mark: Mark) => boolean
 
   /// When true, ignore content that matches this rule.
   ignore?: boolean
@@ -128,23 +96,37 @@ export interface ParseRule {
   /// Attributes for the node or mark created by this rule. When
   /// `getAttrs` is provided, it takes precedence.
   attrs?: Attrs
+}
+
+/// Parse rule targeting a DOM element.
+export interface TagParseRule extends GenericParseRule {
+  /// A CSS selector describing the kind of DOM elements to match.
+  tag: string
+
+  /// The namespace to match. Nodes are only matched when the
+  /// namespace matches or this property is null.
+  namespace?: string
+
+  /// The name of the node type to create when this rule matches. Each
+  /// rule should have either a `node`, `mark`, or `ignore` property
+  /// (except when it appears in a [node](#model.NodeSpec.parseDOM) or
+  /// [mark spec](#model.MarkSpec.parseDOM), in which case the `node`
+  /// or `mark` property will be derived from its position).
+  node?: string
 
   /// A function used to compute the attributes for the node or mark
   /// created by this rule. Can also be used to describe further
   /// conditions the DOM element or style must match. When it returns
   /// `false`, the rule won't match. When it returns null or undefined,
   /// that is interpreted as an empty/default set of attributes.
-  ///
-  /// Called with a DOM Element for `tag` rules, and with a string (the
-  /// style's value) for `style` rules.
-  getAttrs?: (node: HTMLElement | string) => Attrs | false | null
+  getAttrs?: (node: HTMLElement) => Attrs | false | null
 
-  /// For `tag` rules that produce non-leaf nodes or marks, by default
-  /// the content of the DOM element is parsed as content of the mark
-  /// or node. If the child nodes are in a descendent node, this may be
-  /// a CSS selector string that the parser must use to find the actual
-  /// content element, or a function that returns the actual content
-  /// element to the parser.
+  /// For rules that produce non-leaf nodes, by default the content of
+  /// the DOM element is parsed as content of the node. If the child
+  /// nodes are in a descendent node, this may be a CSS selector
+  /// string that the parser must use to find the actual content
+  /// element, or a function that returns the actual content element
+  /// to the parser.
   contentElement?: string | HTMLElement | ((node: DOMNode) => HTMLElement)
 
   /// Can be used to override the content of a matched node. When
@@ -160,14 +142,46 @@ export interface ParseRule {
   preserveWhitespace?: boolean | "full"
 }
 
+/// A parse rule targeting a style property.
+export interface StyleParseRule extends GenericParseRule {
+  /// A CSS property name to match. This rule will match inline styles
+  /// that list that property. May also have the form
+  /// `"property=value"`, in which case the rule only matches if the
+  /// property's value exactly matches the given value. (For more
+  /// complicated filters, use [`getAttrs`](#model.ParseRule.getAttrs)
+  /// and return false to indicate that the match failed.) Rules
+  /// matching styles may only produce [marks](#model.ParseRule.mark),
+  /// not nodes.
+  style: string
+
+  /// Given to make TS see ParseRule as a tagged union @hide
+  tag?: undefined
+
+  /// Style rules can remove marks from the set of active marks.
+  clearMark?: (mark: Mark) => boolean
+
+  /// A function used to compute the attributes for the node or mark
+  /// created by this rule. Called with the style's value.
+  getAttrs?: (node: string) => Attrs | false | null
+}
+
+/// A value that describes how to parse a given DOM node or inline
+/// style as a ProseMirror node or mark.
+export type ParseRule = TagParseRule | StyleParseRule
+
+function isTagRule(rule: ParseRule): rule is TagParseRule { return (rule as TagParseRule).tag != null }
+function isStyleRule(rule: ParseRule): rule is StyleParseRule { return (rule as StyleParseRule).style != null }
+
 /// A DOM parser represents a strategy for parsing DOM content into a
 /// ProseMirror document conforming to a given schema. Its behavior is
 /// defined by an array of [rules](#model.ParseRule).
 export class DOMParser {
   /// @internal
-  tags: ParseRule[] = []
+  tags: TagParseRule[] = []
   /// @internal
-  styles: ParseRule[] = []
+  styles: StyleParseRule[] = []
+  /// @internal
+  matchedStyles: readonly string[]
   /// @internal
   normalizeLists: boolean
 
@@ -180,9 +194,15 @@ export class DOMParser {
     /// uses, in order of precedence.
     readonly rules: readonly ParseRule[]
   ) {
+    let matchedStyles: string[] = this.matchedStyles = []
     rules.forEach(rule => {
-      if (rule.tag) this.tags.push(rule)
-      else if (rule.style) this.styles.push(rule)
+      if (isTagRule(rule)) {
+        this.tags.push(rule)
+      } else if (isStyleRule(rule)) {
+        let prop = /[^=]*/.exec(rule.style)![0]
+        if (matchedStyles.indexOf(prop) < 0) matchedStyles.push(prop)
+        this.styles.push(rule)
+      }
     })
 
     // Only normalize list elements when lists in the schema can't directly contain themselves
@@ -196,7 +216,7 @@ export class DOMParser {
   /// Parse a document from the content of a DOM node.
   parse(dom: DOMNode, options: ParseOptions = {}): Node {
     let context = new ParseContext(this, options, false)
-    context.addAll(dom, options.from, options.to)
+    context.addAll(dom, Mark.none, options.from, options.to)
     return context.finish() as Node
   }
 
@@ -208,12 +228,12 @@ export class DOMParser {
   /// the left of the input and the end of nodes at the end.
   parseSlice(dom: DOMNode, options: ParseOptions = {}) {
     let context = new ParseContext(this, options, true)
-    context.addAll(dom, options.from, options.to)
+    context.addAll(dom, Mark.none, options.from, options.to)
     return Slice.maxOpen(context.finish() as Fragment)
   }
 
   /// @internal
-  matchTag(dom: DOMNode, context: ParseContext, after?: ParseRule) {
+  matchTag(dom: DOMNode, context: ParseContext, after?: TagParseRule) {
     for (let i = after ? this.tags.indexOf(after) + 1 : 0; i < this.tags.length; i++) {
       let rule = this.tags[i]
       if (matches(dom, rule.tag!) &&
@@ -230,7 +250,7 @@ export class DOMParser {
   }
 
   /// @internal
-  matchStyle(prop: string, value: string, context: ParseContext, after?: ParseRule) {
+  matchStyle(prop: string, value: string, context: ParseContext, after?: StyleParseRule) {
     for (let i = after ? this.styles.indexOf(after) + 1 : 0; i < this.styles.length; i++) {
       let rule = this.styles[i], style = rule.style!
       if (style.indexOf(prop) != 0 ||
@@ -265,16 +285,16 @@ export class DOMParser {
     for (let name in schema.marks) {
       let rules = schema.marks[name].spec.parseDOM
       if (rules) rules.forEach(rule => {
-        insert(rule = copy(rule))
-        if (!(rule.mark || rule.ignore || rule.clearMark))
+        insert(rule = copy(rule) as ParseRule)
+        if (!(rule.mark || rule.ignore || (rule as StyleParseRule).clearMark))
           rule.mark = name
       })
     }
     for (let name in schema.nodes) {
       let rules = schema.nodes[name].spec.parseDOM
       if (rules) rules.forEach(rule => {
-        insert(rule = copy(rule))
-        if (!(rule.node || rule.ignore || rule.mark))
+        insert(rule = copy(rule) as TagParseRule)
+        if (!((rule as TagParseRule).node || rule.ignore || rule.mark))
           rule.node = name
       })
     }
@@ -319,16 +339,11 @@ class NodeContext {
 
   // Marks applied to the node's children
   activeMarks: readonly Mark[] = Mark.none
-  // Nested Marks with same type
-  stashMarks: Mark[] = []
 
   constructor(
     readonly type: NodeType | null,
     readonly attrs: Attrs | null,
-    // Marks applied to this node itself
     readonly marks: readonly Mark[],
-    // Marks that can't apply here, but will be used in children if possible
-    public pendingMarks: readonly Mark[],
     readonly solid: boolean,
     match: ContentMatch | null,
     readonly options: number
@@ -370,22 +385,6 @@ class NodeContext {
     return this.type ? this.type.create(this.attrs, content, this.marks) : content
   }
 
-  popFromStashMark(mark: Mark) {
-    for (let i = this.stashMarks.length - 1; i >= 0; i--)
-      if (mark.eq(this.stashMarks[i])) return this.stashMarks.splice(i, 1)[0]
-  }
-
-  applyPending(nextType: NodeType) {
-    for (let i = 0, pending = this.pendingMarks; i < pending.length; i++) {
-      let mark = pending[i]
-      if ((this.type ? this.type.allowsMarkType(mark.type) : markMayApply(mark.type, nextType)) &&
-          !mark.isInSet(this.activeMarks)) {
-        this.activeMarks = mark.addToSet(this.activeMarks)
-        this.pendingMarks = mark.removeFromSet(this.pendingMarks)
-      }
-    }
-  }
-
   inlineContext(node: DOMNode) {
     if (this.type) return this.type.inlineContent
     if (this.content.length) return this.content[0].isInline
@@ -409,12 +408,12 @@ class ParseContext {
     let topNode = options.topNode, topContext: NodeContext
     let topOptions = wsOptionsFor(null, options.preserveWhitespace, 0) | (isOpen ? OPT_OPEN_LEFT : 0)
     if (topNode)
-      topContext = new NodeContext(topNode.type, topNode.attrs, Mark.none, Mark.none, true,
+      topContext = new NodeContext(topNode.type, topNode.attrs, Mark.none, true,
                                    options.topMatch || topNode.type.contentMatch, topOptions)
     else if (isOpen)
-      topContext = new NodeContext(null, null, Mark.none, Mark.none, true, null, topOptions)
+      topContext = new NodeContext(null, null, Mark.none, true, null, topOptions)
     else
-      topContext = new NodeContext(parser.schema.topNodeType, null, Mark.none, Mark.none, true, null, topOptions)
+      topContext = new NodeContext(parser.schema.topNodeType, null, Mark.none, true, null, topOptions)
     this.nodes = [topContext]
     this.find = options.findPositions
     this.needsBlock = false
@@ -427,25 +426,12 @@ class ParseContext {
   // Add a DOM node to the content. Text is inserted as text node,
   // otherwise, the node is passed to `addElement` or, if it has a
   // `style` attribute, `addElementWithStyles`.
-  addDOM(dom: DOMNode) {
-    if (dom.nodeType == 3) this.addTextNode(dom as Text)
-    else if (dom.nodeType == 1) this.addElement(dom as HTMLElement)
+  addDOM(dom: DOMNode, marks: readonly Mark[]) {
+    if (dom.nodeType == 3) this.addTextNode(dom as Text, marks)
+    else if (dom.nodeType == 1) this.addElement(dom as HTMLElement, marks)
   }
 
-  withStyleRules(dom: HTMLElement, f: () => void) {
-    let style = dom.getAttribute("style")
-    if (!style) return f()
-    let marks = this.readStyles(parseStyles(style))
-    if (!marks) return // A style with ignore: true
-    let [addMarks, removeMarks] = marks, top = this.top
-    for (let i = 0; i < removeMarks.length; i++) this.removePendingMark(removeMarks[i], top)
-    for (let i = 0; i < addMarks.length; i++) this.addPendingMark(addMarks[i])
-    f()
-    for (let i = 0; i < addMarks.length; i++) this.removePendingMark(addMarks[i], top)
-    for (let i = 0; i < removeMarks.length; i++) this.addPendingMark(removeMarks[i])
-  }
-
-  addTextNode(dom: Text) {
+  addTextNode(dom: Text, marks: readonly Mark[]) {
     let value = dom.nodeValue!
     let top = this.top
     if (top.options & OPT_PRESERVE_WS_FULL ||
@@ -469,7 +455,7 @@ class ParseContext {
       } else {
         value = value.replace(/\r\n?/g, "\n")
       }
-      if (value) this.insertNode(this.parser.schema.text(value))
+      if (value) this.insertNode(this.parser.schema.text(value), marks)
       this.findInText(dom)
     } else {
       this.findInside(dom)
@@ -478,14 +464,14 @@ class ParseContext {
 
   // Try to find a handler for the given tag and use that to parse. If
   // none is found, the element's content nodes are added directly.
-  addElement(dom: HTMLElement, matchAfter?: ParseRule) {
-    let name = dom.nodeName.toLowerCase(), ruleID: ParseRule | undefined
+  addElement(dom: HTMLElement, marks: readonly Mark[], matchAfter?: TagParseRule) {
+    let name = dom.nodeName.toLowerCase(), ruleID: TagParseRule | undefined
     if (listTags.hasOwnProperty(name) && this.parser.normalizeLists) normalizeList(dom)
     let rule = (this.options.ruleFromNode && this.options.ruleFromNode(dom)) ||
         (ruleID = this.parser.matchTag(dom, this, matchAfter))
     if (rule ? rule.ignore : ignoreTags.hasOwnProperty(name)) {
       this.findInside(dom)
-      this.ignoreFallback(dom)
+      this.ignoreFallback(dom, marks)
     } else if (!rule || rule.skip || rule.closeParent) {
       if (rule && rule.closeParent) this.open = Math.max(0, this.open - 1)
       else if (rule && (rule.skip as any).nodeType) dom = rule.skip as any as HTMLElement
@@ -498,105 +484,110 @@ class ParseContext {
         sync = true
         if (!top.type) this.needsBlock = true
       } else if (!dom.firstChild) {
-        this.leafFallback(dom)
+        this.leafFallback(dom, marks)
         return
       }
-      if (rule && rule.skip) this.addAll(dom)
-      else this.withStyleRules(dom, () => this.addAll(dom))
+      let innerMarks = rule && rule.skip ? marks : this.readStyles(dom, marks)
+      if (innerMarks) this.addAll(dom, innerMarks)
       if (sync) this.sync(top)
       this.needsBlock = oldNeedsBlock
     } else {
-      this.withStyleRules(dom, () => {
-        this.addElementByRule(dom, rule!, rule!.consuming === false ? ruleID : undefined)
-      })
+      let innerMarks = this.readStyles(dom, marks)
+      if (innerMarks)
+        this.addElementByRule(dom, rule as TagParseRule, innerMarks, rule!.consuming === false ? ruleID : undefined)
     }
   }
 
   // Called for leaf DOM nodes that would otherwise be ignored
-  leafFallback(dom: DOMNode) {
+  leafFallback(dom: DOMNode, marks: readonly Mark[]) {
     if (dom.nodeName == "BR" && this.top.type && this.top.type.inlineContent)
-      this.addTextNode(dom.ownerDocument!.createTextNode("\n"))
+      this.addTextNode(dom.ownerDocument!.createTextNode("\n"), marks)
   }
 
   // Called for ignored nodes
-  ignoreFallback(dom: DOMNode) {
+  ignoreFallback(dom: DOMNode, marks: readonly Mark[]) {
     // Ignored BR nodes should at least create an inline context
     if (dom.nodeName == "BR" && (!this.top.type || !this.top.type.inlineContent))
-      this.findPlace(this.parser.schema.text("-"))
+      this.findPlace(this.parser.schema.text("-"), marks)
   }
 
   // Run any style parser associated with the node's styles. Either
-  // return an array of marks, or null to indicate some of the styles
-  // had a rule with `ignore` set.
-  readStyles(styles: readonly string[]) {
-    let add = Mark.none, remove = Mark.none
-    for (let i = 0; i < styles.length; i += 2) {
-      for (let after = undefined;;) {
-        let rule = this.parser.matchStyle(styles[i], styles[i + 1], this, after)
+  // return an updated array of marks, or null to indicate some of the
+  // styles had a rule with `ignore` set.
+  readStyles(dom: HTMLElement, marks: readonly Mark[]) {
+    let styles = dom.style
+    // Because many properties will only show up in 'normalized' form
+    // in `style.item` (i.e. text-decoration becomes
+    // text-decoration-line, text-decoration-color, etc), we directly
+    // query the styles mentioned in our rules instead of iterating
+    // over the items.
+    if (styles && styles.length) for (let i = 0; i < this.parser.matchedStyles.length; i++) {
+      let name = this.parser.matchedStyles[i], value = styles.getPropertyValue(name)
+      if (value) for (let after: StyleParseRule | undefined = undefined;;) {
+        let rule = this.parser.matchStyle(name, value, this, after)
         if (!rule) break
         if (rule.ignore) return null
-        if (rule.clearMark) {
-          this.top.pendingMarks.concat(this.top.activeMarks).forEach(m => {
-            if (rule!.clearMark!(m)) remove = m.addToSet(remove)
-          })
-        } else {
-          add = this.parser.schema.marks[rule.mark!].create(rule.attrs).addToSet(add)
-        }
+        if (rule.clearMark)
+          marks = marks.filter(m => !rule!.clearMark!(m))
+        else
+          marks = marks.concat(this.parser.schema.marks[rule.mark!].create(rule.attrs))
         if (rule.consuming === false) after = rule
         else break
       }
     }
-    return [add, remove]
+    return marks
   }
 
   // Look up a handler for the given node. If none are found, return
   // false. Otherwise, apply it, use its return value to drive the way
   // the node's content is wrapped, and return true.
-  addElementByRule(dom: HTMLElement, rule: ParseRule, continueAfter?: ParseRule) {
-    let sync, nodeType, mark
+  addElementByRule(dom: HTMLElement, rule: TagParseRule, marks: readonly Mark[], continueAfter?: TagParseRule) {
+    let sync, nodeType
     if (rule.node) {
       nodeType = this.parser.schema.nodes[rule.node]
       if (!nodeType.isLeaf) {
-        sync = this.enter(nodeType, rule.attrs || null, rule.preserveWhitespace)
-      } else if (!this.insertNode(nodeType.create(rule.attrs))) {
-        this.leafFallback(dom)
+        let inner = this.enter(nodeType, rule.attrs || null, marks, rule.preserveWhitespace)
+        if (inner) {
+          sync = true
+          marks = inner
+        }
+      } else if (!this.insertNode(nodeType.create(rule.attrs), marks)) {
+        this.leafFallback(dom, marks)
       }
     } else {
       let markType = this.parser.schema.marks[rule.mark!]
-      mark = markType.create(rule.attrs)
-      this.addPendingMark(mark)
+      marks = marks.concat(markType.create(rule.attrs))
     }
     let startIn = this.top
 
     if (nodeType && nodeType.isLeaf) {
       this.findInside(dom)
     } else if (continueAfter) {
-      this.addElement(dom, continueAfter)
+      this.addElement(dom, marks, continueAfter)
     } else if (rule.getContent) {
       this.findInside(dom)
-      rule.getContent(dom, this.parser.schema).forEach(node => this.insertNode(node))
+      rule.getContent(dom, this.parser.schema).forEach(node => this.insertNode(node, marks))
     } else {
       let contentDOM = dom
       if (typeof rule.contentElement == "string") contentDOM = dom.querySelector(rule.contentElement)!
       else if (typeof rule.contentElement == "function") contentDOM = rule.contentElement(dom)
       else if (rule.contentElement) contentDOM = rule.contentElement
       this.findAround(dom, contentDOM, true)
-      this.addAll(contentDOM)
+      this.addAll(contentDOM, marks)
     }
     if (sync && this.sync(startIn)) this.open--
-    if (mark) this.removePendingMark(mark, startIn)
   }
 
   // Add all child nodes between `startIndex` and `endIndex` (or the
   // whole node, if not given). If `sync` is passed, use it to
   // synchronize after every block element.
-  addAll(parent: DOMNode, startIndex?: number, endIndex?: number) {
+  addAll(parent: DOMNode, marks: readonly Mark[], startIndex?: number, endIndex?: number) {
     let index = startIndex || 0
     for (let dom = startIndex ? parent.childNodes[startIndex] : parent.firstChild,
              end = endIndex == null ? null : parent.childNodes[endIndex];
          dom != end; dom = dom!.nextSibling, ++index) {
       this.findAtPoint(parent, index)
-      this.addDOM(dom!)
+      this.addDOM(dom!, marks)
     }
     this.findAtPoint(parent, index)
   }
@@ -604,7 +595,7 @@ class ParseContext {
   // Try to find a way to fit the given node type into the current
   // context. May add intermediate wrappers and/or leave non-solid
   // nodes that we're in.
-  findPlace(node: Node) {
+  findPlace(node: Node, marks: readonly Mark[]) {
     let route, sync: NodeContext | undefined
     for (let depth = this.open; depth >= 0; depth--) {
       let cx = this.nodes[depth]
@@ -616,29 +607,29 @@ class ParseContext {
       }
       if (cx.solid) break
     }
-    if (!route) return false
+    if (!route) return null
     this.sync(sync!)
     for (let i = 0; i < route.length; i++)
-      this.enterInner(route[i], null, false)
-    return true
+      marks = this.enterInner(route[i], null, marks, false)
+    return marks
   }
 
   // Try to insert the given node, adjusting the context when needed.
-  insertNode(node: Node) {
+  insertNode(node: Node, marks: readonly Mark[]) {
     if (node.isInline && this.needsBlock && !this.top.type) {
       let block = this.textblockFromContext()
-      if (block) this.enterInner(block)
+      if (block) marks = this.enterInner(block, null, marks)
     }
-    if (this.findPlace(node)) {
+    let innerMarks = this.findPlace(node, marks)
+    if (innerMarks) {
       this.closeExtra()
       let top = this.top
-      top.applyPending(node.type)
       if (top.match) top.match = top.match.matchType(node.type)
-      let marks = top.activeMarks
-      for (let i = 0; i < node.marks.length; i++)
-        if (!top.type || top.type.allowsMarkType(node.marks[i].type))
-          marks = node.marks[i].addToSet(marks)
-      top.content.push(node.mark(marks))
+      let nodeMarks = Mark.none
+      for (let m of innerMarks.concat(node.marks))
+        if (top.type ? top.type.allowsMarkType(m.type) : markMayApply(m.type, node.type))
+          nodeMarks = m.addToSet(nodeMarks)
+      top.content.push(node.mark(nodeMarks))
       return true
     }
     return false
@@ -646,22 +637,31 @@ class ParseContext {
 
   // Try to start a node of the given type, adjusting the context when
   // necessary.
-  enter(type: NodeType, attrs: Attrs | null, preserveWS?: boolean | "full") {
-    let ok = this.findPlace(type.create(attrs))
-    if (ok) this.enterInner(type, attrs, true, preserveWS)
-    return ok
+  enter(type: NodeType, attrs: Attrs | null, marks: readonly Mark[], preserveWS?: boolean | "full") {
+    let innerMarks = this.findPlace(type.create(attrs), marks)
+    if (innerMarks) innerMarks = this.enterInner(type, attrs, marks, true, preserveWS)
+    return innerMarks
   }
 
   // Open a node of the given type
-  enterInner(type: NodeType, attrs: Attrs | null = null, solid: boolean = false, preserveWS?: boolean | "full") {
+  enterInner(type: NodeType, attrs: Attrs | null, marks: readonly Mark[],
+             solid: boolean = false, preserveWS?: boolean | "full") {
     this.closeExtra()
     let top = this.top
-    top.applyPending(type)
     top.match = top.match && top.match.matchType(type)
     let options = wsOptionsFor(type, preserveWS, top.options)
     if ((top.options & OPT_OPEN_LEFT) && top.content.length == 0) options |= OPT_OPEN_LEFT
-    this.nodes.push(new NodeContext(type, attrs, top.activeMarks, top.pendingMarks, solid, null, options))
+    let applyMarks = Mark.none
+    marks = marks.filter(m => {
+      if (top.type ? top.type.allowsMarkType(m.type) : markMayApply(m.type, type)) {
+        applyMarks = m.addToSet(applyMarks)
+        return false
+      }
+      return true
+    })
+    this.nodes.push(new NodeContext(type, attrs, applyMarks, solid, null, options))
     this.open++
+    return marks
   }
 
   // Make sure all nodes above this.open are finished and added to
@@ -773,35 +773,13 @@ class ParseContext {
       if (type.isTextblock && type.defaultAttrs) return type
     }
   }
-
-  addPendingMark(mark: Mark) {
-    let found = findSameMarkInSet(mark, this.top.pendingMarks)
-    if (found) this.top.stashMarks.push(found)
-    this.top.pendingMarks = mark.addToSet(this.top.pendingMarks)
-  }
-
-  removePendingMark(mark: Mark, upto: NodeContext) {
-    for (let depth = this.open; depth >= 0; depth--) {
-      let level = this.nodes[depth]
-      let found = level.pendingMarks.lastIndexOf(mark)
-      if (found > -1) {
-        level.pendingMarks = mark.removeFromSet(level.pendingMarks)
-      } else {
-        level.activeMarks = mark.removeFromSet(level.activeMarks)
-        let stashMark = level.popFromStashMark(mark)
-        if (stashMark && level.type && level.type.allowsMarkType(stashMark.type))
-          level.activeMarks = stashMark.addToSet(level.activeMarks)
-      }
-      if (level == upto) break
-    }
-  }
 }
 
 // Kludge to work around directly nested list nodes produced by some
 // tools and allowed by browsers to mean that the nested list is
 // actually part of the list item above it.
 function normalizeList(dom: DOMNode) {
-  for (let child = dom.firstChild, prevItem = null; child; child = child.nextSibling) {
+  for (let child = dom.firstChild, prevItem: ChildNode | null = null; child; child = child.nextSibling) {
     let name = child.nodeType == 1 ? child.nodeName.toLowerCase() : null
     if (name && listTags.hasOwnProperty(name) && prevItem) {
       prevItem.appendChild(child)
@@ -817,13 +795,6 @@ function normalizeList(dom: DOMNode) {
 // Apply a CSS selector.
 function matches(dom: any, selector: string): boolean {
   return (dom.matches || dom.msMatchesSelector || dom.webkitMatchesSelector || dom.mozMatchesSelector).call(dom, selector)
-}
-
-// Tokenize a style attribute into property/value pairs.
-function parseStyles(style: string): string[] {
-  let re = /\s*([\w-]+)\s*:\s*([^;]+)/g, m, result = []
-  while (m = re.exec(style)) result.push(m[1], m[2].trim())
-  return result
 }
 
 function copy(obj: {[prop: string]: any}) {
@@ -849,11 +820,5 @@ function markMayApply(markType: MarkType, nodeType: NodeType) {
       }
     }
     if (scan(parent.contentMatch)) return true
-  }
-}
-
-function findSameMarkInSet(mark: Mark, set: readonly Mark[]) {
-  for (let i = 0; i < set.length; i++) {
-    if (mark.eq(set[i])) return set[i]
   }
 }

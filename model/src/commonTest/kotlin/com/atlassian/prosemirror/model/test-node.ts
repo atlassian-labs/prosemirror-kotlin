@@ -120,6 +120,18 @@ describe("Node", () => {
       ])
       ist(d.textBetween(0, d.content.size, '', '<anonymous>'), 'Hello <anonymous>')
     })
+
+    it("adds block separator around empty paragraphs", () => {
+      ist(doc(p("one"), p(), p("two")).textBetween(0, 12, "\n"), "one\n\ntwo")
+    })
+
+    it("adds block separator around leaf nodes", () => {
+      ist(doc(p("one"), hr(), hr(), p("two")).textBetween(0, 12, "\n", "---"), "one\n---\n---\ntwo")
+    })
+
+    it("doesn't add block separator around non-rendered leaf nodes", () => {
+      ist(doc(p("one"), hr(), hr(), p("two")).textBetween(0, 12, "\n"), "one\ntwo")
+    })
   })
 
   describe("textContent", () => {
@@ -134,6 +146,28 @@ describe("Node", () => {
     it("works on a nested element", () => {
       ist(doc(ul(li(p("hi")), li(p(em("a"), "b")))).textContent,
           "hiab")
+    })
+  })
+
+  describe("check", () => {
+    it("notices invalid content", () => {
+      ist.throws(() => doc(li("x")).check(),
+                 /Invalid content for node doc/)
+    })
+
+    it("notices marks in wrong places", () => {
+      ist.throws(() => doc(schema.nodes.paragraph.create(null, [], [schema.marks.em.create()])).check(),
+                 /Invalid content for node doc/)
+    })
+
+    it("notices incorrect sets of marks", () => {
+      ist.throws(() => schema.text("a", [schema.marks.em.create(), schema.marks.em.create()]).check(),
+                 /Invalid collection of marks/)
+    })
+
+    it("notices wrong attribute types", () => {
+      ist.throws(() => schema.nodes.image.create({src: true}).check(),
+                 /Expected value of type string for attribute src on type image, got boolean/)
     })
   })
 

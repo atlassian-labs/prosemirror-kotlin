@@ -201,13 +201,7 @@ fun addRange(_start: ResolvedPos?, _end: ResolvedPos?, depth: Int, target: Mutab
 }
 
 fun close(node: Node, content: Fragment): Node {
-    if (!node.type.validContent(content)) {
-        if (verbose) {
-            throw ReplaceError("Invalid content for node ${node.type.name} content: ${content.toJSON()}")
-        } else {
-            throw ReplaceError("Invalid content for node ${node.type.name}")
-        }
-    }
+    node.type.checkContent(content)
     return node.copy(content)
 }
 

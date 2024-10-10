@@ -4,6 +4,8 @@ import com.fleeksoft.ksoup.nodes.Document
 import com.fleeksoft.ksoup.nodes.Element
 import com.fleeksoft.ksoup.nodes.Node as DOMNode
 import com.fleeksoft.ksoup.nodes.TextNode
+import com.fleeksoft.ksoup.parser.ParseSettings
+import com.fleeksoft.ksoup.parser.Tag
 
 // A description of a DOM structure. Can be either a string, which is
 // interpreted as a text node, a DOM node, which is interpreted as
@@ -97,7 +99,9 @@ open class DOMSerializer(
     internal fun serializeNodeInner(node: Node, document: Document?): DOMNode {
         val (dom, contentDOM) = renderSpec(
             doc(document),
-            nodes[node.type.name]?.invoke(node) ?: DOMOutputSpec.TextNodeDOMOutputSpec("")
+            nodes[node.type.name]?.invoke(node) ?: DOMOutputSpec.TextNodeDOMOutputSpec(""),
+            null,
+            node.attrs
         )
         if (contentDOM != null) {
             if (node.isLeaf) {
@@ -119,83 +123,10 @@ open class DOMSerializer(
         document: Document?
     ): DOMOutputSpec.ComplexNodeDOMOutputSpec? {
         val toDOM = this.marks[mark.type.name] ?: return null
-        return renderSpec(doc(document), toDOM(mark, inline))
+        return renderSpec(doc(document), toDOM(mark, inline), null, mark.attrs)
     }
 
     companion object {
-        // Render an [output spec](#model.DOMOutputSpec) to a DOM node. If
-        // the spec has a hole (zero) in it, `contentDOM` will point at the
-        // node with the hole.
-        @Suppress("ComplexMethod", "NestedBlockDepth", "ReturnCount", "LongMethod")
-        fun renderSpec(
-            doc: Document,
-            structure: DOMOutputSpec,
-            xmlNamespace: String? = null
-        ): DOMOutputSpec.ComplexNodeDOMOutputSpec {
-            if (structure is DOMOutputSpec.TextNodeDOMOutputSpec) {
-                return DOMOutputSpec.ComplexNodeDOMOutputSpec(domNode = TextNode(structure.content))
-            }
-            if (structure is DOMOutputSpec.DomNodeDOMOutputSpec) {
-                return DOMOutputSpec.ComplexNodeDOMOutputSpec(domNode = structure.domNode)
-            }
-            if (structure is DOMOutputSpec.ComplexNodeDOMOutputSpec) {
-                return structure.copy()
-            }
-            structure as DOMOutputSpec.ArrayDOMOutputSpec
-            var tagName = structure.content.first() as String
-            val space = tagName.indexOf(" ")
-            var xmlNS = xmlNamespace
-            if (space > 0) {
-                xmlNS = tagName.slice(0 until space)
-                tagName = tagName.slice(space + 1 until tagName.length)
-            }
-            var contentDOM: Element? = null
-//            val dom = if (xmlNS != null) doc.createElementNS(xmlNS, tagName) else doc.createElement(tagName)
-            val dom = doc.createElement(tagName)
-            val attrs = structure.content.getOrNull(1)
-            var start = 1
-            //  attrs != null && typeof attrs == "object" && attrs.nodeType == null && !Array.isArray(attrs)
-            if (attrs is Map<*, *>) {
-                start = 2
-                for (name in attrs.keys) {
-                    if (attrs[name] != null) {
-                        val name = name.toString()
-                        val space = name.indexOf(" ")
-                        if (space > 0) {
-                            dom.attr(
-//                                name.slice(0 until space),
-                                name.substring(space + 1),
-                                attrs[name].toString()
-                            )
-                        } else {
-                            dom.attr(name, attrs[name].toString())
-                        }
-                    }
-                }
-            }
-            for (i in start until structure.content.size) {
-                val child = structure.content[i]
-                if (child == 0) {
-                    if (i < structure.content.size - 1 || i > start) {
-                        throw RangeError("Content hole must be the only child of its parent node")
-                    }
-                    return DOMOutputSpec.ComplexNodeDOMOutputSpec(dom, dom)
-                } else {
-                    val spec = renderSpec(doc, child as DOMOutputSpec, xmlNS)
-                    val inner = spec.domNode
-                    val innerContent = spec.contentDOM
-                    dom.appendChild(inner)
-                    if (innerContent != null) {
-                        if (contentDOM != null) {
-                            throw RangeError("Multiple content holes")
-                        }
-                        contentDOM = innerContent as Element
-                    }
-                }
-            }
-            return DOMOutputSpec.ComplexNodeDOMOutputSpec(dom, contentDOM)
-        }
-
         // Build a serializer using the [`toDOM`](#model.NodeSpec.toDOM)
         // properties in a schema's node and mark specs.
         fun fromSchema(schema: Schema): DOMSerializer {
@@ -245,3 +176,116 @@ fun gatherMarksToDOM(obj: Map<String, MarkType>): Map<String, (mark: Mark, isInl
 }
 
 fun doc(document: Document? = null) = document ?: Document("http://atlassian.net")
+
+val suspiciousAttributeCache = mutableMapOf<Any, List<Any>?>()
+
+fun suspiciousAttributes(attrs: Map<String, Any?>): List<Any>? {
+    return suspiciousAttributeCache.getOrPut(attrs) {
+        suspiciousAttributesInner(attrs)
+    }
+}
+
+fun suspiciousAttributesInner(attrs: Map<String, Any?>): List<Any>? {
+    var result: MutableList<Any>? = null
+    fun scan(value: Any) {
+        if (value is List<*>) {
+            if (value.isNotEmpty() && value[0] is String) {
+                if (result == null) {
+                    result = mutableListOf()
+                }
+                result?.add(value)
+            } else {
+                for (i in value.indices) {
+                    scan(value[i]!!)
+                }
+            }
+        } else {
+            //for (let prop in value) scan(value[prop])
+        }
+    }
+    scan(attrs)
+    return result
+}
+
+fun renderSpec(
+    doc: Document,
+    structure: DOMOutputSpec,
+    xmlNamespace: String? = null,
+    blockArraysIn: Map<String, Any?>? = null
+): DOMOutputSpec.ComplexNodeDOMOutputSpec {
+    var xmlNS = xmlNamespace
+    if (structure is DOMOutputSpec.TextNodeDOMOutputSpec) {
+        return DOMOutputSpec.ComplexNodeDOMOutputSpec(domNode = TextNode(structure.content))
+    }
+    if (structure is DOMOutputSpec.DomNodeDOMOutputSpec) {
+        return DOMOutputSpec.ComplexNodeDOMOutputSpec(domNode = structure.domNode)
+    }
+    if (structure is DOMOutputSpec.ComplexNodeDOMOutputSpec) {
+        return structure
+    }
+    structure as DOMOutputSpec.ArrayDOMOutputSpec
+    var tagName = structure.content.first() as? String ?: throw RangeError("Invalid array passed to renderSpec")
+    val suspicious = blockArraysIn?.let { suspiciousAttributes(it) }
+    if (blockArraysIn != null && suspicious != null && suspicious.contains(structure)) {
+        throw RangeError("Using an array from an attribute object as a DOM spec. This may be an attempted cross site scripting attack.")
+    }
+    val space = tagName.indexOf(" ")
+    if (space > 0) {
+        xmlNS = tagName.substring(0, space)
+        tagName = tagName.substring(space + 1)
+    }
+    var contentDOM: Element? = null
+    val dom = if (xmlNS != null) doc.createElementNS(xmlNS, tagName) else doc.createElement(tagName)
+    val attrs = structure.content.getOrNull(1)
+    var start = 1
+    if (attrs is Map<*, *>) {
+        start = 2
+        for (name in attrs.keys) {
+            if (attrs[name] != null) {
+                val name = name.toString()
+                val space = name.indexOf(" ")
+                if (space > 0) {
+                    dom.attr(
+//                        name.substring(0, space),
+                        name.substring(space + 1),
+                        attrs[name].toString()
+                    )
+                } else {
+                    dom.attr(name, attrs[name].toString())
+                }
+            }
+        }
+    }
+    for (i in start until structure.content.size) {
+        val child = structure.content[i] as? DOMOutputSpec ?: 0
+        if (child == 0) {
+            if (i < structure.content.size - 1 || i > start) {
+                throw RangeError("Content hole must be the only child of its parent node")
+            }
+            return DOMOutputSpec.ComplexNodeDOMOutputSpec(dom, dom)
+        } else {
+            val spec = renderSpec(doc, child as DOMOutputSpec, xmlNS, blockArraysIn)
+            val inner = spec.domNode
+            val innerContent = spec.contentDOM
+            dom.appendChild(inner)
+            if (innerContent != null) {
+                if (contentDOM != null) {
+                    throw RangeError("Multiple content holes")
+                }
+                contentDOM = innerContent
+            }
+        }
+    }
+    return DOMOutputSpec.ComplexNodeDOMOutputSpec(dom, contentDOM)
+}
+
+fun Document.createElementNS(namespace: String, tagName: String): Element {
+    return Element(
+        Tag.valueOf(
+            tagName,
+            namespace,
+            ParseSettings.preserveCase,
+        ),
+        this.baseUri(),
+    )
+}

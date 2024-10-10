@@ -5,7 +5,7 @@ import {Fragment} from "./fragment"
 import {Mark} from "./mark"
 import {ContentMatch} from "./content"
 import {DOMOutputSpec} from "./to_dom"
-import {ParseRule} from "./from_dom"
+import {ParseRule, TagParseRule} from "./from_dom"
 
 /// An object holding the attributes of a node.
 export type Attrs = {readonly [attr: string]: any}
@@ -14,7 +14,7 @@ export type Attrs = {readonly [attr: string]: any}
 // have any attributes), build up a single reusable default attribute
 // object, and use it for all nodes that don't specify specific
 // attributes.
-function defaultAttrs(attrs: Attrs) {
+function defaultAttrs(attrs: {[name: string]: Attribute}) {
   let defaults = Object.create(null)
   for (let attrName in attrs) {
     let attr = attrs[attrName]
@@ -24,7 +24,7 @@ function defaultAttrs(attrs: Attrs) {
   return defaults
 }
 
-function computeAttrs(attrs: Attrs, value: Attrs | null) {
+function computeAttrs(attrs: {[name: string]: Attribute}, value: Attrs | null) {
   let built = Object.create(null)
   for (let name in attrs) {
     let given = value && value[name]
@@ -38,9 +38,18 @@ function computeAttrs(attrs: Attrs, value: Attrs | null) {
   return built
 }
 
-function initAttrs(attrs?: {[name: string]: AttributeSpec}) {
+export function checkAttrs(attrs: {[name: string]: Attribute}, values: Attrs, type: string, name: string) {
+  for (let name in values)
+    if (!(name in attrs)) throw new RangeError(`Unsupported attribute ${name} for ${type} of type ${name}`)
+  for (let name in attrs) {
+    let attr = attrs[name]
+    if (attr.validate) attr.validate(values[name])
+  }
+}
+
+function initAttrs(typeName: string, attrs?: {[name: string]: AttributeSpec}) {
   let result: {[name: string]: Attribute} = Object.create(null)
-  if (attrs) for (let name in attrs) result[name] = new Attribute(attrs[name])
+  if (attrs) for (let name in attrs) result[name] = new Attribute(typeName, name, attrs[name])
   return result
 }
 
@@ -66,7 +75,7 @@ export class NodeType {
     readonly spec: NodeSpec
   ) {
     this.groups = spec.group ? spec.group.split(" ") : []
-    this.attrs = initAttrs(spec.attrs)
+    this.attrs = initAttrs(name, spec.attrs)
     this.defaultAttrs = defaultAttrs(this.attrs)
 
     // Filled in later
@@ -144,8 +153,7 @@ export class NodeType {
   /// if it doesn't match.
   createChecked(attrs: Attrs | null = null, content?: Fragment | Node | readonly Node[] | null, marks?: readonly Mark[]) {
     content = Fragment.from(content)
-    if (!this.validContent(content))
-      throw new RangeError("Invalid content for node " + this.name)
+    this.checkContent(content)
     return new Node(this, this.computeAttrs(attrs), content, Mark.setFrom(marks))
   }
 
@@ -170,13 +178,26 @@ export class NodeType {
   }
 
   /// Returns true if the given fragment is valid content for this node
-  /// type with the given attributes.
+  /// type.
   validContent(content: Fragment) {
     let result = this.contentMatch.matchFragment(content)
     if (!result || !result.validEnd) return false
     for (let i = 0; i < content.childCount; i++)
       if (!this.allowsMarks(content.child(i).marks)) return false
     return true
+  }
+
+  /// Throws a RangeError if the given fragment is not valid content for this
+  /// node type.
+  /// @internal
+  checkContent(content: Fragment) {
+    if (!this.validContent(content))
+      throw new RangeError(`Invalid content for node ${this.name}: ${content.toString().slice(0, 50)}`)
+  }
+
+  /// @internal
+  checkAttrs(attrs: Attrs) {
+    checkAttrs(this.attrs, attrs, "node", this.name)
   }
 
   /// Check whether the given mark type is allowed in this node.
@@ -219,15 +240,25 @@ export class NodeType {
   }
 }
 
+function validateType(typeName: string, attrName: string, type: string) {
+  let types = type.split("|")
+  return (value: any) => {
+    let name = value === null ? "null" : typeof value
+    if (types.indexOf(name) < 0) throw new RangeError(`Expected value of type ${types} for attribute ${attrName} on type ${typeName}, got ${name}`)
+  }
+}
+
 // Attribute descriptors
 
 class Attribute {
   hasDefault: boolean
   default: any
+  validate: undefined | ((value: any) => void)
 
-  constructor(options: AttributeSpec) {
+  constructor(typeName: string, attrName: string, options: AttributeSpec) {
     this.hasDefault = Object.prototype.hasOwnProperty.call(options, "default")
     this.default = options.default
+    this.validate = typeof options.validate == "string" ? validateType(typeName, attrName, options.validate) : options.validate
   }
 
   get isRequired() {
@@ -260,7 +291,7 @@ export class MarkType {
     /// The spec on which the type is based.
     readonly spec: MarkSpec
   ) {
-    this.attrs = initAttrs(spec.attrs)
+    this.attrs = initAttrs(name, spec.attrs)
     ;(this as any).excluded = null
     let defaults = defaultAttrs(this.attrs)
     this.instance = defaults ? new Mark(this, defaults) : null
@@ -295,6 +326,11 @@ export class MarkType {
   isInSet(set: readonly Mark[]): Mark | undefined {
     for (let i = 0; i < set.length; i++)
       if (set[i].type == this) return set[i]
+  }
+
+  /// @internal
+  checkAttrs(attrs: Attrs) {
+    checkAttrs(this.attrs, attrs, "mark", this.name)
   }
 
   /// Queries whether a given mark type is
@@ -422,7 +458,7 @@ export interface NodeSpec {
   /// implied (the name of this node will be filled in automatically).
   /// If you supply your own parser, you do not need to also specify
   /// parsing rules in your schema.
-  parseDOM?: readonly ParseRule[]
+  parseDOM?: readonly TagParseRule[]
 
   /// Defines the default way a node of this type should be serialized
   /// to a string representation for debugging (e.g. in error messages).
@@ -433,6 +469,15 @@ export interface NodeSpec {
   /// [`Node.textBetween`](#model.Node^textBetween) and
   /// [`Node.textContent`](#model.Node^textContent)).
   leafText?: (node: Node) => string
+
+  /// A single inline node in a schema can be set to be a linebreak
+  /// equivalent. When converting between block types that support the
+  /// node and block types that don't but have
+  /// [`whitespace`](#model.NodeSpec.whitespace) set to `"pre"`,
+  /// [`setBlockType`](#transform.Transform.setBlockType) will convert
+  /// between newline characters to or from linebreak nodes as
+  /// appropriate.
+  linebreakReplacement?: boolean
 
   /// Node specs may include arbitrary properties that can be read by
   /// other code via [`NodeType.spec`](#model.NodeType.spec).
@@ -496,6 +541,15 @@ export interface AttributeSpec {
   /// provided whenever a node or mark of a type that has them is
   /// created.
   default?: any
+  /// A function or type name used to validate values of this
+  /// attribute. This will be used when deserializing the attribute
+  /// from JSON, and when running [`Node.check`](#model.Node.check).
+  /// When a function, it should raise an exception if the value isn't
+  /// of the expected type or shape. When a string, it should be a
+  /// `|`-separated string of primitive types (`"number"`, `"string"`,
+  /// `"boolean"`, `"null"`, and `"undefined"`), and the library will
+  /// raise an error when the value is not one of those types.
+  validate?: string | ((value: any) => void)
 }
 
 /// A document schema. Holds [node](#model.NodeType) and [mark
@@ -523,13 +577,17 @@ export class Schema<Nodes extends string = any, Marks extends string = any> {
   /// A map from mark names to mark type objects.
   marks: {readonly [name in Marks]: MarkType} & {readonly [key: string]: MarkType}
 
+  /// The [linebreak
+  /// replacement](#model.NodeSpec.linebreakReplacement) node defined
+  /// in this schema, if any.
+  linebreakReplacement: NodeType | null = null
+
   /// Construct a schema from a schema [specification](#model.SchemaSpec).
   constructor(spec: SchemaSpec<Nodes, Marks>) {
-    this.spec = {
-      nodes: OrderedMap.from(spec.nodes),
-      marks: OrderedMap.from(spec.marks || {}),
-      topNode: spec.topNode
-    }
+    let instanceSpec = this.spec = {} as any
+    for (let prop in spec) instanceSpec[prop] = (spec as any)[prop]
+    instanceSpec.nodes = OrderedMap.from(spec.nodes),
+    instanceSpec.marks = OrderedMap.from(spec.marks || {}),
 
     this.nodes = NodeType.compile(this.spec.nodes, this)
     this.marks = MarkType.compile(this.spec.marks, this)
@@ -542,6 +600,11 @@ export class Schema<Nodes extends string = any, Marks extends string = any> {
       type.contentMatch = contentExprCache[contentExpr] ||
         (contentExprCache[contentExpr] = ContentMatch.parse(contentExpr, this.nodes))
       ;(type as any).inlineContent = type.contentMatch.inlineContent
+      if (type.spec.linebreakReplacement) {
+        if (this.linebreakReplacement) throw new RangeError("Multiple linebreak nodes defined")
+        if (!type.isInline || !type.isLeaf) throw new RangeError("Linebreak replacement nodes must be inline leaf nodes")
+        this.linebreakReplacement = type
+      }
       type.markSet = markExpr == "_" ? null :
         markExpr ? gatherMarks(this, markExpr.split(" ")) :
         markExpr == "" || !type.inlineContent ? [] : null
@@ -618,7 +681,7 @@ export class Schema<Nodes extends string = any, Marks extends string = any> {
 }
 
 function gatherMarks(schema: Schema, marks: readonly string[]) {
-  let found = []
+  let found: MarkType[] = []
   for (let i = 0; i < marks.length; i++) {
     let name = marks[i], mark = schema.marks[name], ok = mark
     if (mark) {

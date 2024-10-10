@@ -8,8 +8,8 @@ import kotlin.math.max
 
 // TODO move all regex patterns here to avoid parsing multiple times
 object RegexPatterns {
-    // val re = /\s*([\w-]+)\s*:\s*([^;]+)/g
-    val STYLE_REGEX = "\\s*([\\w-]+)\\s*:\\s*([^;]+)".toRegex()
+    // /[^=]*/
+    val STYLE_PROP_REGEX = "[^=]*".toRegex()
 }
 
 data class ParseOptionPosition(val node: DOMNode, val offset: Int, var pos: Int?)
@@ -54,7 +54,7 @@ interface ParseOptions {
     // given [top node](#model.ParseOptions.topNode).
     val context: ResolvedPos?
 
-    val ruleFromNode: ((node: DOMNode) -> ParseRule?)?
+    val ruleFromNode: ((node: DOMNode) -> TagParseRule?)?
 
     val topOpen: Boolean?
 }
@@ -67,32 +67,13 @@ data class ParseOptionsImpl(
     override val topNode: Node? = null,
     override val topMatch: ContentMatch? = null,
     override val context: ResolvedPos? = null,
-    override val ruleFromNode: ((node: DOMNode) -> ParseRule?)? = null,
+    override val ruleFromNode: ((node: DOMNode) -> TagParseRule?)? = null,
     override val topOpen: Boolean? = null
 ) : ParseOptions
 
-// A value that describes how to parse a given DOM node or inline
-// style as a ProseMirror node or mark.
+// Fields that may be present in both [tag](#model.TagParseRule) and
+// [style](#model.StyleParseRule) parse rules.
 interface ParseRule {
-    // A CSS selector describing the kind of DOM elements to match. A
-    // single rule should have _either_ a `tag` or a `style` property.
-    val tag: String?
-
-    // The namespace to match. This should be used with `tag`.
-    // Nodes are only matched when the namespace matches or this property
-    // is null.
-    val namespace: String?
-
-    // A CSS property name to match. When given, this rule matches
-    // inline styles that list that property. May also have the form
-    // `"property=value"`, in which case the rule only matches if the
-    // property's value exactly matches the given value. (For more
-    // complicated filters, use [`getAttrs`](#model.ParseRule.getAttrs)
-    // and return false to indicate that the match failed.) Rules
-    // matching styles may only produce [marks](#model.ParseRule.mark),
-    // not nodes.
-    val style: String?
-
     // Can be used to change the order in which the parse rules in a
     // schema are tried. Those with higher priority come first. Rules
     // without a priority are counted as having priority 50. This
@@ -119,21 +100,8 @@ interface ParseRule {
     // character, as in `"blockquote/|list_item/"`.
     val context: String?
 
-    // The name of the node type to create when this rule matches. Only
-    // valid for rules with a `tag` property, not for style rules. Each
-    // rule should have one of a `node`, `mark`, `clearMark`, or
-    // `ignore` property (except when it appears in a
-    // [node](#model.NodeSpec.parseDOM) or [mark
-    // spec](#model.MarkSpec.parseDOM), in which case the `node` or
-    // `mark` property will be derived from its position).
-    var node: String?
-
     // The name of the mark type to wrap the matched content in.
     var mark: String?
-
-    // [Style](#model.ParseRule.style) rules can remove marks from the
-    // set of active marks.
-    var clearMark: ((mark: Mark) -> Boolean)?
 
     // When true, ignore content that matches this rule.
     val ignore: Boolean?
@@ -150,23 +118,39 @@ interface ParseRule {
     // `getAttrs` is provided, it takes precedence.
     var attrs: Attrs?
 
+    fun copyRule(): ParseRule
+}
+
+// Parse rule targeting a DOM element.
+interface TagParseRule: ParseRule {
+    // A CSS selector describing the kind of DOM elements to match.
+    val tag: String
+
+    // The namespace to match. Nodes are only matched when the
+    // namespace matches or this property is null.
+    val namespace: String?
+
+    // The name of the node type to create when this rule matches. Each
+    // rule should have either a `node`, `mark`, or `ignore` property
+    // (except when it appears in a [node](#model.NodeSpec.parseDOM) or
+    // [mark spec](#model.MarkSpec.parseDOM), in which case the `node`
+    // or `mark` property will be derived from its position).
+    var node: String?
+
     // A function used to compute the attributes for the node or mark
     // created by this rule. Can also be used to describe further
     // conditions the DOM element or style must match. When it returns
     // `false`, the rule won't match. When it returns null or undefined,
     // that is interpreted as an empty/default set of attributes.
-    //
-    // Called with a DOM Element for `tag` rules, and with a string (the
-    // style's value) for `style` rules.
-    val getStyleAttrs: ((style: String) -> ParseRuleMatch)?
     val getNodeAttrs: ((node: Element) -> ParseRuleMatch)?
 
-    // For `tag` rules that produce non-leaf nodes or marks, by default
-    // the content of the DOM element is parsed as content of the mark
-    // or node. If the child nodes are in a descendent node, this may be
-    // a CSS selector string that the parser must use to find the actual
-    // content element, or a function that returns the actual content
-    // element to the parser.
+
+    // For rules that produce non-leaf nodes, by default the content of
+    // the DOM element is parsed as content of the node. If the child
+    // nodes are in a descendent node, this may be a CSS selector
+    // string that the parser must use to find the actual content
+    // element, or a function that returns the actual content element
+    // to the parser.
     val contentElement: ContentElement?
 
     // Can be used to override the content of a matched node. When
@@ -180,18 +164,60 @@ interface ParseRule {
     // but newlines normalized to spaces, and `"full"` means that
     // newlines should also be preserved.
     val preserveWhitespace: PreserveWhitespace?
-
-    fun copyRule(): ParseRule
 }
 
-data class ParseRuleImpl(
-    override val tag: String? = null,
+// A parse rule targeting a style property.
+interface StyleParseRule: ParseRule {
+    // A CSS property name to match. This rule will match inline styles
+    // that list that property. May also have the form
+    // `"property=value"`, in which case the rule only matches if the
+    // property's value exactly matches the given value. (For more
+    // complicated filters, use [`getAttrs`](#model.ParseRule.getAttrs)
+    // and return false to indicate that the match failed.) Rules
+    // matching styles may only produce [marks](#model.ParseRule.mark),
+    // not nodes.
+    val style: String
+
+    // Given to make TS see ParseRule as a tagged union @hide
+//    val tag: Any?
+
+    // Style rules can remove marks from the set of active marks.
+    val clearMark: ((mark: Mark) -> Boolean)?
+
+    // A function used to compute the attributes for the node or mark
+    // created by this rule. Called with the style's value.
+    val getStyleAttrs: ((style: String) -> ParseRuleMatch)?
+}
+
+fun isTagRule(rule: ParseRule) = (rule as? TagParseRule)?.tag != null
+fun isStyleRule(rule: ParseRule) = (rule as? StyleParseRule)?.style != null
+
+data class TagParseRuleImpl(
+    override val tag: String,
     override val namespace: String? = null,
-    override val style: String? = null,
     override val priority: Int? = null,
     override val consuming: Boolean? = null,
     override val context: String? = null,
     override var node: String? = null,
+    override var mark: String? = null,
+    override val ignore: Boolean? = null,
+    override val closeParent: Boolean? = null,
+    override val skip: Boolean? = null,
+    override var attrs: Attrs? = null,
+    override val getNodeAttrs: ((node: Element) -> ParseRuleMatch)? = null,
+    override val contentElement: ContentElement? = null,
+    override val getContent: ((node: DOMNode, schema: Schema) -> Fragment?)? = null,
+    override val preserveWhitespace: PreserveWhitespace? = null
+) : TagParseRule, ParseRule {
+    override fun copyRule() = this.copy()
+}
+
+data class StyleParseRuleImpl(
+//    override val tag: String? = null,
+    override val style: String,
+    override val priority: Int? = null,
+    override val consuming: Boolean? = null,
+    override val context: String? = null,
     override var mark: String? = null,
     override var clearMark: ((mark: Mark) -> Boolean)? = null,
     override val ignore: Boolean? = null,
@@ -199,12 +225,8 @@ data class ParseRuleImpl(
     override val skip: Boolean? = null,
     override var attrs: Attrs? = null,
     override val getStyleAttrs: ((style: String) -> ParseRuleMatch)? = null,
-    override val getNodeAttrs: ((node: Element) -> ParseRuleMatch)? = null,
-    override val contentElement: ContentElement? = null,
-    override val getContent: ((node: DOMNode, schema: Schema) -> Fragment?)? = null,
-    override val preserveWhitespace: PreserveWhitespace? = null
-) : ParseRule {
-    override fun copyRule(): ParseRule = this.copy()
+) : StyleParseRule, ParseRule {
+    override fun copyRule() = this.copy()
 }
 
 data class ParseRuleMatch(val attrs: Attrs?, val matches: Boolean = true) {
@@ -232,19 +254,25 @@ class DOMParser(
     val schema: Schema,
     // The set of [parse rules](#model.ParseRule) that the parser
     // uses, in order of precedence.
-    val rules: List<ParseRule>
+    rules: List<ParseRule>
 ) {
-    internal val tags = mutableListOf<ParseRule>()
-    internal val styles = mutableListOf<ParseRule>()
+    internal val tags = mutableListOf<TagParseRule>()
+    internal val styles = mutableListOf<StyleParseRule>()
     internal val normalizeLists: Boolean
+    internal val matchedStyles = mutableListOf<String>()
 
     // Create a parser that targets the given schema, using the given
     // parsing rules.
     init {
         rules.forEach { rule ->
-            if (rule.tag != null) {
-                this.tags.add(rule)
-            } else if (rule.style != null) {
+            if (isTagRule(rule)) {
+                this.tags.add(rule as TagParseRule)
+            } else if (isStyleRule(rule)) {
+                rule as StyleParseRule
+                val prop = RegexPatterns.STYLE_PROP_REGEX.find(rule.style)?.groups?.firstOrNull()?.value
+                if (prop != null && prop !in this.matchedStyles) {
+                    this.matchedStyles.add(prop)
+                }
                 this.styles.add(rule)
             }
         }
@@ -252,7 +280,7 @@ class DOMParser(
         // Only normalize list elements when lists in the schema can't directly contain themselves
         this.normalizeLists = this.tags.firstOrNull { r ->
             val regex = "^(ul|ol)\\b".toRegex()
-            if (!regex.containsMatchIn(r.tag!!) || r.node == null) {
+            if (!regex.containsMatchIn(r.tag) || r.node == null) {
                 false
             } else {
                 val node = schema.nodes[r.node]!!
@@ -270,7 +298,7 @@ class DOMParser(
     // Parse a document from the content of a DOM node.
     fun parse(dom: DOMNode, options: ParseOptions = ParseOptionsImpl()): Node {
         val context = ParseContext(this, options, false)
-        context.addAll(dom, options.from, options.to)
+        context.addAll(dom, Mark.none, options.from, options.to)
         return context.finish() as Node
     }
 
@@ -282,12 +310,12 @@ class DOMParser(
     // the left of the input and the end of nodes at the end.
     fun parseSlice(dom: DOMNode, options: ParseOptions = ParseOptionsImpl()): Slice {
         val context = ParseContext(this, options, true)
-        context.addAll(dom, options.from, options.to)
+        context.addAll(dom, Mark.none, options.from, options.to)
         return Slice.maxOpen(context.finish() as Fragment)
     }
 
     @Suppress("NestedBlockDepth", "ComplexCondition")
-    internal fun matchTag(dom: DOMNode, context: ParseContext, after: ParseRule?): ParseRule? {
+    internal fun matchTag(dom: DOMNode, context: ParseContext, after: TagParseRule?): TagParseRule? {
         val start = if (after != null) this.tags.indexOf(after) + 1 else 0
         for (i in start until this.tags.size) {
             val rule = this.tags[i]
@@ -308,7 +336,7 @@ class DOMParser(
     }
 
     @Suppress("ComplexCondition", "LoopWithTooManyJumpStatements")
-    internal fun matchStyle(prop: String, value: String, context: ParseContext, after: ParseRule?): ParseRule? {
+    internal fun matchStyle(prop: String, value: String, context: ParseContext, after: StyleParseRule?): StyleParseRule? {
         val start = if (after != null) {
             this.styles.indexOf(after) + 1
         } else {
@@ -359,16 +387,16 @@ class DOMParser(
                 value.spec.parseDOM?.forEach { rule ->
                     val ruleToInsert = rule.copyRule()
                     insert(rule = ruleToInsert)
-                    if (!(rule.mark != null || rule.ignore != null || rule.clearMark != null)) {
+                    if (!(rule.mark != null || rule.ignore != null || (rule as? StyleParseRule)?.clearMark != null)) {
                         ruleToInsert.mark = key
                     }
                 }
             }
             schema.nodes.forEach { (key, value) ->
                 value.spec.parseDOM?.forEach { rule ->
-                    val ruleToInsert = rule.copyRule()
-                    insert(ruleToInsert)
-                    if (!(rule.node != null || rule.ignore != null || rule.mark != null)) {
+                    val ruleToInsert = rule.copyRule() as TagParseRule
+                    insert(ruleToInsert as ParseRule)
+                    if (!((rule as? TagParseRule)?.node != null || rule.ignore != null || rule.mark != null)) {
                         ruleToInsert.node = key
                     }
                 }
@@ -417,10 +445,7 @@ fun wsOptionsFor(type: NodeType?, preserveWhitespace: PreserveWhitespace?, base:
 class NodeContext(
     val type: NodeType?,
     val attrs: Attrs?,
-    // Marks applied to this node itself
     val marks: List<Mark>,
-    // Marks that can't apply here, but will be used in children if possible
-    var pendingMarks: List<Mark>,
     val solid: Boolean,
     match: ContentMatch?,
     val options: Int
@@ -430,9 +455,6 @@ class NodeContext(
 
     // Marks applied to the node's children
     var activeMarks: List<Mark> = Mark.none
-
-    // Nested Marks with same type
-    var stashMarks = mutableListOf<Mark>()
 
     @Suppress("ReturnCount")
     fun findWrapping(node: Node): List<NodeType>? {
@@ -484,33 +506,6 @@ class NodeContext(
         return this.type?.create(this.attrs, content, this.marks) ?: content
     }
 
-    fun popFromStashMark(mark: Mark): Mark? {
-        var ind = -1
-        for (i in this.stashMarks.size - 1 downTo 0) {
-            if (mark == this.stashMarks[i]) {
-                ind = i
-                break
-            }
-        }
-        if (ind >= 0) {
-            return this.stashMarks.removeAt(ind)
-        }
-        return null
-    }
-
-    fun applyPending(nextType: NodeType) {
-        val pending = this.pendingMarks
-        for (i in 0 until pending.size) {
-            val mark = pending[i]
-            if ((this.type?.allowsMarkType(mark.type) ?: markMayApply(mark.type, nextType)) &&
-                !mark.isInSet(this.activeMarks)
-            ) {
-                this.activeMarks = mark.addToSet(this.activeMarks)
-                this.pendingMarks = mark.removeFromSet(this.pendingMarks)
-            }
-        }
-    }
-
     @Suppress("ReturnCount")
     fun inlineContext(node: DOMNode): Boolean {
         if (this.type != null) return this.type.inlineContent
@@ -542,13 +537,13 @@ class ParseContext(
             (if (isOpen) OPT_OPEN_LEFT else 0)
         if (topNode != null) {
             topContext = NodeContext(
-                topNode.type, topNode.attrs, Mark.none, Mark.none, true,
+                topNode.type, topNode.attrs, Mark.none, true,
                 options.topMatch ?: topNode.type.contentMatch, topOptions
             )
         } else if (isOpen) {
-            topContext = NodeContext(null, null, Mark.none, Mark.none, true, null, topOptions)
+            topContext = NodeContext(null, null, Mark.none, true, null, topOptions)
         } else {
-            topContext = NodeContext(parser.schema.topNodeType, null, Mark.none, Mark.none, true, null, topOptions)
+            topContext = NodeContext(parser.schema.topNodeType, null, Mark.none, true, null, topOptions)
         }
         this.nodes = mutableListOf(topContext)
         this.find = options.findPositions
@@ -558,37 +553,16 @@ class ParseContext(
     // Add a DOM node to the content. Text is inserted as text node,
     // otherwise, the node is passed to `addElement` or, if it has a
     // `style` attribute, `addElementWithStyles`.
-    fun addDOM(dom: DOMNode) {
+    fun addDOM(dom: DOMNode, marks: List<Mark>) {
         if (dom is com.fleeksoft.ksoup.nodes.TextNode) {
-            this.addTextNode(dom)
+            this.addTextNode(dom, marks)
         } else if (dom is Element) {
-            this.addElement(dom)
-        }
-    }
-
-    fun withStyleRules(dom: Element, f: () -> Unit) {
-        val style = dom.attribute("style")?.value ?: return f()
-        val marks = this.readStyles(parseStyles(style)) ?: return // A style with ignore: true
-        val (addMarks, removeMarks) = marks
-        val top = this.top
-
-        removeMarks.forEach {
-            this.removePendingMark(it, top)
-        }
-        addMarks.forEach {
-            this.addPendingMark(it)
-        }
-        f()
-        addMarks.forEach {
-            this.removePendingMark(it, top)
-        }
-        removeMarks.forEach {
-            this.addPendingMark(it)
+            this.addElement(dom, marks)
         }
     }
 
     @Suppress("NestedBlockDepth", "ComplexCondition")
-    fun addTextNode(dom: com.fleeksoft.ksoup.nodes.TextNode) {
+    fun addTextNode(dom: com.fleeksoft.ksoup.nodes.TextNode, marks: List<Mark>) {
         var value = dom.getWholeText()
         val top = this.top
         if (
@@ -622,7 +596,7 @@ class ParseContext(
                 value = value.replace("\\r\\n?".toRegex(), "\n")
             }
             if (value.isNotEmpty()) {
-                this.insertNode(this.parser.schema.text(value))
+                this.insertNode(this.parser.schema.text(value), marks)
             }
             this.findInText(dom)
         } else {
@@ -633,15 +607,15 @@ class ParseContext(
     // Try to find a handler for the given tag and use that to parse. If
     // none is found, the element's content nodes are added directly.
     @Suppress("ComplexMethod")
-    fun addElement(dom: Element, matchAfter: ParseRule? = null) {
+    fun addElement(dom: Element, marks: List<Mark>, matchAfter: TagParseRule? = null) {
         val name = dom.nodeName().lowercase()
-        var ruleID: ParseRule? = null
+        var ruleID: TagParseRule? = null
         if (listTags.contains(name) && this.parser.normalizeLists) normalizeList(dom)
         val ruleFromNode = this.options.ruleFromNode?.invoke(dom)
         val rule = ruleFromNode ?: this.parser.matchTag(dom, this, matchAfter).also { ruleID = it }
         if (rule?.ignore ?: ignoreTags.contains(name)) {
             this.findInside(dom)
-            this.ignoreFallback(dom)
+            this.ignoreFallback(dom, marks)
         } else if (rule == null || rule.skip == true || rule.closeParent == true) {
             if (rule?.closeParent == true) {
                 this.open = max(0, this.open - 1)
@@ -664,102 +638,117 @@ class ParseContext(
                     this.needsBlock = true
                 }
             } else if (dom.firstChild() == null) {
-                this.leafFallback(dom)
+                this.leafFallback(dom, marks)
                 return
             }
-            if (rule?.skip == true) {
-                this.addAll(dom)
+            val innerMarks = if (rule != null && rule.skip == true) {
+                marks
             } else {
-                this.withStyleRules(dom) {
-                    addAll(dom)
-                }
+                this.readStyles(dom, marks)
+            }
+            if (innerMarks != null) {
+                this.addAll(dom, innerMarks)
             }
             if (sync) {
                 this.sync(top)
             }
             this.needsBlock = oldNeedsBlock
         } else {
-            this.withStyleRules(dom) {
-                this.addElementByRule(dom, rule, ruleID?.takeIf { rule.consuming == false })
+            val innerMarks = this.readStyles(dom, marks)
+            if (innerMarks != null) {
+                this.addElementByRule(dom, rule as TagParseRule, innerMarks, ruleID?.takeIf { rule.consuming == false })
             }
         }
     }
 
     // Called for leaf DOM nodes that would otherwise be ignored
-    fun leafFallback(dom: DOMNode) {
+    fun leafFallback(dom: DOMNode, marks: List<Mark>) {
         if (dom.nodeName().equals("br", true) && this.top.type?.inlineContent == true) {
-            this.addTextNode(com.fleeksoft.ksoup.nodes.TextNode("\n"))
+            this.addTextNode(com.fleeksoft.ksoup.nodes.TextNode("\n"), marks)
         }
     }
 
     // Called for ignored nodes
-    fun ignoreFallback(dom: DOMNode) {
+    fun ignoreFallback(dom: DOMNode, marks: List<Mark>) {
         // Ignored BR nodes should at least create an inline context
         if (dom.nodeName().equals("br", true) && (this.top.type?.inlineContent == false)) {
-            this.findPlace(this.parser.schema.text("-"))
+            this.findPlace(this.parser.schema.text("-"), marks)
         }
     }
 
     // Run any style parser associated with the node's styles. Either
-    // return an array of marks, or null to indicate some of the styles
-    // had a rule with `ignore` set.
+    // return an updated array of marks, or null to indicate some of the
+    // styles had a rule with `ignore` set.
     @Suppress("LoopWithTooManyJumpStatements", "NestedBlockDepth")
-    fun readStyles(styles: List<String>): Pair<List<Mark>, List<Mark>>? {
-        var add = Mark.none
-        var remove = Mark.none
-        style@ for (i in styles.indices step 2) {
-            var after: ParseRule? = null
-            while (true) {
-                val rule = this.parser.matchStyle(styles[i], styles[i + 1], this, after) ?: break
-                if (rule.ignore == true) {
-                    return null
-                }
-                if (rule.clearMark != null) {
-                    (this.top.pendingMarks + this.top.activeMarks).forEach { m ->
-                        if (rule.clearMark!!(m)) remove = m.addToSet(remove)
+    fun readStyles(dom: Element, marks: List<Mark>): List<Mark>? {
+        var result = marks.toMutableList()
+        val styles = dom.styles()
+        // Because many properties will only show up in 'normalized' form
+        // in `style.item` (i.e. text-decoration becomes
+        // text-decoration-line, text-decoration-color, etc), we directly
+        // query the styles mentioned in our rules instead of iterating
+        // over the items.
+        if (!styles.isNullOrEmpty()) {
+            for (i in this.parser.matchedStyles.indices) {
+                val name = this.parser.matchedStyles[i]
+                val value = styles[name]
+                if (value != null) {
+                    var after: StyleParseRule? = null
+                    while (true) {
+                        val rule = this.parser.matchStyle(name, value, this, after) ?: break
+                        if (rule.ignore == true) {
+                            return null
+                        }
+                        if (rule.clearMark != null) {
+                            result = result.filter { m -> !rule.clearMark!!(m) }.toMutableList()
+                        } else {
+                            result += this.parser.schema.marks[rule.mark]!!.create(rule.attrs)
+                        }
+                        if (rule.consuming == false) {
+                            after = rule
+                        } else {
+                            break
+                        }
                     }
-                } else {
-                    add = this.parser.schema.marks[rule.mark]!!.create(rule.attrs).addToSet(add)
-                }
-                if (rule.consuming == false) {
-                    after = rule
-                } else {
-                    break
                 }
             }
         }
-        return add to remove
+        return result
     }
 
     // Look up a handler for the given node. If none are found, return
     // false. Otherwise, apply it, use its return value to drive the way
     // the node's content is wrapped, and return true.
     @Suppress("ComplexMethod")
-    fun addElementByRule(dom: Element, rule: ParseRule, continueAfter: ParseRule?) {
+    fun addElementByRule(dom: Element, rule: TagParseRule, marks: List<Mark>, continueAfter: TagParseRule?) {
         var sync = false
         var nodeType: NodeType? = null
-        var mark: Mark? = null
         val ruleNode = rule.node
+        var updatedMarks = marks
         if (ruleNode != null) {
             nodeType = this.parser.schema.nodeType(ruleNode)
             if (!nodeType.isLeaf) {
-                sync = this.enter(nodeType, rule.attrs?.takeIf { it.isNotEmpty() }, rule.preserveWhitespace)
-            } else if (!this.insertNode(nodeType.create(rule.attrs))) {
-                this.leafFallback(dom)
+                val inner = this.enter(nodeType, rule.attrs, updatedMarks, rule.preserveWhitespace)
+                if (inner != null) {
+                    sync = true
+                    updatedMarks = inner
+                }
+            } else if (!this.insertNode(nodeType.create(rule.attrs), updatedMarks)) {
+                this.leafFallback(dom, updatedMarks)
             }
         } else {
-            val markType = this.parser.schema.marks[rule.mark!!]
-            mark = markType?.create(rule.attrs)?.also { addPendingMark(it) }
+            val markType = this.parser.schema.marks[rule.mark!!]!!
+            updatedMarks = updatedMarks + markType.create(rule.attrs)
         }
         val startIn = this.top
 
         if (nodeType?.isLeaf == true) {
             this.findInside(dom)
         } else if (continueAfter != null) {
-            this.addElement(dom, continueAfter)
+            this.addElement(dom, updatedMarks, continueAfter)
         } else if (rule.getContent != null) {
             this.findInside(dom)
-            rule.getContent!!.invoke(dom, this.parser.schema)?.forEach { node, _, _ -> this.insertNode(node) }
+            rule.getContent!!.invoke(dom, this.parser.schema)?.forEach { node, _, _ -> this.insertNode(node, updatedMarks) }
         } else {
             var contentDOM = dom
             val contentElement = rule.contentElement
@@ -771,22 +760,21 @@ class ParseContext(
                 contentDOM = contentElement.element
             }
             this.findAround(dom, contentDOM, true)
-            this.addAll(contentDOM)
+            this.addAll(contentDOM, updatedMarks)
         }
         if (sync && this.sync(startIn)) this.open--
-        if (mark != null) this.removePendingMark(mark, startIn)
     }
 
     // Add all child nodes between `startIndex` and `endIndex` (or the
     // whole node, if not given). If `sync` is passed, use it to
     // synchronize after every block element.
-    fun addAll(parent: DOMNode, startIndex: Int? = null, endIndex: Int? = null) {
+    fun addAll(parent: DOMNode, marks: List<Mark>, startIndex: Int? = null, endIndex: Int? = null) {
         var index = startIndex ?: 0
         var dom: DOMNode? = if (startIndex != null) parent.childNode(startIndex) else parent.firstChild()
         val end = endIndex?.let { parent.childNode(endIndex) }
         while (dom != end) {
             this.findAtPoint(parent, index)
-            this.addDOM(dom!!)
+            this.addDOM(dom!!, marks)
             dom = dom.nextSibling()
             ++index
         }
@@ -797,9 +785,10 @@ class ParseContext(
     // context. May add intermediate wrappers and/or leave non-solid
     // nodes that we're in.
     @Suppress("LoopWithTooManyJumpStatements")
-    fun findPlace(node: Node): Boolean {
+    fun findPlace(node: Node, marks: List<Mark>): List<Mark>? {
         var route: List<NodeType>? = null
         var sync: NodeContext? = null
+        var updateMarks = marks
         for (depth in this.open downTo 0) {
             val cx = this.nodes[depth]
             val found = cx.findWrapping(node)
@@ -810,32 +799,36 @@ class ParseContext(
             }
             if (cx.solid) break
         }
-        if (route == null) return false
+        if (route == null) return null
         this.sync(sync!!)
         route.forEach {
-            this.enterInner(it, null, false)
+            updateMarks = this.enterInner(it, null, updateMarks, false)
         }
-        return true
+        return updateMarks
     }
 
     // Try to insert the given node, adjusting the context when needed.
-    fun insertNode(node: Node): Boolean {
+    fun insertNode(node: Node, marks: List<Mark>): Boolean {
+        var updatedMarks = marks
         if (node.isInline && this.needsBlock && this.top.type == null) {
             val block = this.textblockFromContext()
-            if (block != null) this.enterInner(block)
+            if (block != null) updatedMarks = this.enterInner(block, null, marks)
         }
-        if (this.findPlace(node)) {
+        val innerMarks = this.findPlace(node, updatedMarks)
+        if (innerMarks != null) {
             this.closeExtra()
             val top = this.top
-            top.applyPending(node.type)
             if (top.match != null) top.match = top.match!!.matchType(node.type)
-            var marks = top.activeMarks
-            for (i in 0 until node.marks.size) {
-                if (top.type == null || top.type.allowsMarkType(node.marks[i].type)) {
-                    marks = node.marks[i].addToSet(marks)
+            var nodeMarks = Mark.none
+            for (m in innerMarks + node.marks) {
+                val add = if (top.type != null) {
+                    top.type.allowsMarkType(m.type)
+                } else {
+                    markMayApply(m.type, node.type)
                 }
+                if (add) nodeMarks = m.addToSet(nodeMarks)
             }
-            top.content.add(node.mark(marks))
+            top.content.add(node.mark(nodeMarks))
             return true
         }
         return false
@@ -843,29 +836,44 @@ class ParseContext(
 
     // Try to start a node of the given type, adjusting the context when
     // necessary.
-    fun enter(type: NodeType, attrs: Attrs?, preserveWS: PreserveWhitespace?): Boolean {
-        val ok = this.findPlace(type.create(attrs))
-        if (ok) this.enterInner(type, attrs, true, preserveWS)
-        return ok
+    fun enter(type: NodeType, attrs: Attrs?, marks: List<Mark>, preserveWS: PreserveWhitespace?): List<Mark>? {
+        var innerMarks = this.findPlace(type.create(attrs), marks)
+        if (innerMarks != null) innerMarks = this.enterInner(type, attrs, marks, true, preserveWS)
+        return innerMarks
     }
 
     // Open a node of the given type
     fun enterInner(
         type: NodeType,
         attrs: Attrs? = null,
+        marks: List<Mark>,
         solid: Boolean = false,
         preserveWS: PreserveWhitespace? = null
-    ) {
+    ): List<Mark> {
         this.closeExtra()
         val top = this.top
-        top.applyPending(type)
         top.match = top.match?.matchType(type)
         var options = wsOptionsFor(type, preserveWS, top.options)
         if ((top.options and OPT_OPEN_LEFT) != 0 && top.content.size == 0) {
             options = options or OPT_OPEN_LEFT
         }
-        this.nodes.add(NodeContext(type, attrs, top.activeMarks, top.pendingMarks, solid, null, options))
+        var applyMarks = Mark.none
+        val result = marks.filter { m ->
+            val ok = if (top.type != null) {
+                top.type.allowsMarkType(m.type)
+            } else {
+                markMayApply(m.type, type)
+            }
+            if (ok) {
+                applyMarks = m.addToSet(applyMarks)
+                false
+            } else {
+                true
+            }
+        }
+        this.nodes.add(NodeContext(type, attrs, applyMarks, solid, null, options))
         this.open++
+        return result
     }
 
     // Make sure all nodes above this.open are finished and added to
@@ -1014,31 +1022,6 @@ class ParseContext(
         }
         return null
     }
-
-    fun addPendingMark(mark: Mark) {
-        val found = findSameMarkInSet(mark, this.top.pendingMarks)
-        if (found != null) this.top.stashMarks.add(found)
-        this.top.pendingMarks = mark.addToSet(this.top.pendingMarks)
-    }
-
-    fun removePendingMark(mark: Mark, upto: NodeContext) {
-        for (depth in this.open downTo 0) {
-            val level = this.nodes[depth]
-            val found = level.pendingMarks.lastIndexOf(mark)
-            if (found > -1) {
-                level.pendingMarks = mark.removeFromSet(level.pendingMarks)
-            } else {
-                level.activeMarks = mark.removeFromSet(level.activeMarks)
-                val stashMark = level.popFromStashMark(mark)
-                if (stashMark != null && level.type != null && level.type.allowsMarkType(stashMark.type)) {
-                    level.activeMarks = stashMark.addToSet(level.activeMarks)
-                }
-            }
-            if (level == upto) {
-                break
-            }
-        }
-    }
 }
 
 // Kludge to work around directly nested list nodes produced by some
@@ -1065,16 +1048,6 @@ fun normalizeList(dom: DOMNode) {
 fun matches(dom: DOMNode, selector: String): Boolean {
     return (dom as? Element)?.`is`(selector) ?: false
 //    return htmlDomElementMatches(dom, selector)
-}
-
-// Tokenize a style attribute into property/value pairs.
-fun parseStyles(style: String): List<String> {
-    return buildList {
-        RegexPatterns.STYLE_REGEX.findAll(style).forEach {
-            add(it.groupValues[1])
-            add(it.groupValues[2])
-        }
-    }
 }
 
 // fun copy(obj: {[prop: string]: any}) {
@@ -1108,4 +1081,10 @@ private fun scan(nodeType: NodeType, seen: MutableList<ContentMatch>, match: Con
     return false
 }
 
-fun findSameMarkInSet(mark: Mark, set: List<Mark>) = set.firstOrNull { it == mark }
+fun Element.styles(): Map<String, String>? {
+    val style = attribute("style")?.value ?: return null
+    return style.split(";").associate {
+        val (key, value) = it.split(":")
+        key.trim() to value.trim()
+    }
+}

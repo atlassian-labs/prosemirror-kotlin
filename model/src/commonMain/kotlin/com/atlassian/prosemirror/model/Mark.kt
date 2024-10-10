@@ -112,7 +112,7 @@ open class Mark constructor(
                 )
             val attrs: Attrs? = json["attrs"]?.let { JSON.decodeFromJsonElement(it) }
             val id = json["id"]?.jsonPrimitive?.contentOrNull
-            return if (withId && id != null) {
+            val mark = if (withId && id != null) {
                 type.create(attrs).also {
                     it.markId = MarkId(id)
                     (it as? UnsupportedMark)?.originalMarkName = jsonType
@@ -120,6 +120,8 @@ open class Mark constructor(
             } else {
                 type.create(attrs).also { (it as? UnsupportedMark)?.originalMarkName = jsonType }
             }
+            type.checkAttrs(mark.attrs)
+            return mark
         }
 
         // Test whether two sets of marks are identical.

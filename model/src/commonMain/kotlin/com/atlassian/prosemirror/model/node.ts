@@ -67,10 +67,11 @@ export class Node {
   /// Invoke a callback for all descendant nodes recursively between
   /// the given two positions that are relative to start of this
   /// node's content. The callback is invoked with the node, its
-  /// parent-relative position, its parent node, and its child index.
-  /// When the callback returns false for a given node, that node's
-  /// children will not be recursed over. The last parameter can be
-  /// used to specify a starting position to count from.
+  /// position relative to the original node (method receiver), 
+  /// its parent node, and its child index. When the callback returns
+  /// false for a given node, that node's children will not be
+  /// recursed over. The last parameter can be used to specify a 
+  /// starting position to count from.
   nodesBetween(from: number, to: number,
                f: (node: Node, pos: number, parent: Node | null, index: number) => void | boolean,
                startPos = 0) {
@@ -295,12 +296,16 @@ export class Node {
   }
 
   /// Check whether this node and its descendants conform to the
-  /// schema, and raise error when they do not.
+  /// schema, and raise an exception when they do not.
   check() {
-    if (!this.type.validContent(this.content))
-      throw new RangeError(`Invalid content for node ${this.type.name}: ${this.content.toString().slice(0, 50)}`)
+    this.type.checkContent(this.content)
+    this.type.checkAttrs(this.attrs)
     let copy = Mark.none
-    for (let i = 0; i < this.marks.length; i++) copy = this.marks[i].addToSet(copy)
+    for (let i = 0; i < this.marks.length; i++) {
+      let mark = this.marks[i]
+      mark.type.checkAttrs(mark.attrs)
+      copy = mark.addToSet(copy)
+    }
     if (!Mark.sameSet(copy, this.marks))
       throw new RangeError(`Invalid collection of marks for node ${this.type.name}: ${this.marks.map(m => m.type.name)}`)
     this.content.forEach(node => node.check())
@@ -323,7 +328,7 @@ export class Node {
   /// Deserialize a node from its JSON representation.
   static fromJSON(schema: Schema, json: any): Node {
     if (!json) throw new RangeError("Invalid input for Node.fromJSON")
-    let marks = null
+    let marks: Mark[] | undefined = undefined
     if (json.marks) {
       if (!Array.isArray(json.marks)) throw new RangeError("Invalid mark data for Node.fromJSON")
       marks = json.marks.map(schema.markFromJSON)
@@ -333,7 +338,9 @@ export class Node {
       return schema.text(json.text, marks)
     }
     let content = Fragment.fromJSON(schema, json.content)
-    return schema.nodeType(json.type).create(json.attrs, content, marks)
+    let node = schema.nodeType(json.type).create(json.attrs, content, marks)
+    node.type.checkAttrs(node.attrs)
+    return node
   }
 }
 

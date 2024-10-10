@@ -181,11 +181,14 @@ open class Node constructor(
         this.content.forEach(f)
     }
 
-    // Invoke a callback for all descendant nodes recursively between the given two positions that
-    // are relative to start of this node's content. The callback is invoked with the node, its
-    // parent-relative position, its parent node, and its child index.
-    // When the callback returns false for a given node, that node's children will not be recursed
-    // over. The last parameter can be used to specify a starting position to count from.
+    // Invoke a callback for all descendant nodes recursively between
+    // the given two positions that are relative to start of this
+    // node's content. The callback is invoked with the node, its
+    // position relative to the original node (method receiver),
+    // its parent node, and its child index. When the callback returns
+    // false for a given node, that node's children will not be
+    // recursed over. The last parameter can be used to specify a
+    // starting position to count from.
     fun nodesBetween(
         from: Int,
         to: Int,
@@ -543,14 +546,15 @@ open class Node constructor(
         }
     }
 
-    // Check whether this node and its descendants conform to the schema, and raise error when they do not.
+    // Check whether this node and its descendants conform to the
+    // schema, and raise an exception when they do not.
     @Suppress("MagicNumber")
     fun check() {
-        if (!this.type.validContent(this.content)) {
-            throw RangeError("Invalid content for node ${this.type.name}: ${this.content.toString().slice(0, 50)}")
-        }
+        this.type.checkContent(this.content)
+        this.type.checkAttrs(this.attrs)
         var copy = Mark.none
         for (mark in marks) {
+            mark.type.checkAttrs(mark.attrs)
             copy = mark.addToSet(copy)
         }
         if (!Mark.sameSet(copy, this.marks)) {
@@ -630,7 +634,7 @@ open class Node constructor(
                 if (it.value is JsonNull) null else JSON.decodeFromJsonElement<Any>(it.value)
             }
             val id = json["id"]?.jsonPrimitive?.contentOrNull
-            return try {
+            val node = try {
                 schema.nodeType(type!!).create(attrs, content, marks).also {
                     if (withId && id != null) {
                         it.nodeId = NodeId(id)
@@ -654,6 +658,8 @@ open class Node constructor(
                 // for round tripping
                 node.unknownFields = json.fieldsExcept("marks", "type", "content", "attrs")
             }
+            node.type.checkAttrs(node.attrs)
+            return node
         }
     }
 }
