@@ -274,10 +274,7 @@ class ResolvedPos(
             val resolveCache = doc.type.schema.resolveCache
             val cache = resolveCache[doc]
             if (cache != null) {
-                for (i in 0 until cache.elts.size) {
-                    val elt = cache.elts[i]
-                    if (elt.pos == pos) return elt
-                }
+                cache.elts.firstOrNull() { it.pos == pos }?.let { return it }
             } else {
                 resolveCache[doc] = ResolveCache()
             }

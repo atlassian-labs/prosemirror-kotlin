@@ -102,17 +102,12 @@ class Fragment {
         var text = ""
         var first = true
         val func: (node: Node, start: Int, parent: Node?, index: Int) -> Boolean = { node, pos, parent, index ->
-            val nodeText = if (node.isText) {
-                node.text?.slice(max(from, pos) - pos, to - pos) ?: ""
-            } else if (!node.isLeaf) {
-                ""
-            } else if (leafText != null) {
-                leafText(node)
-            } else if (node.type.spec.leafText != null) {
-                node.type.spec.leafText!!.invoke(node)
-            }
-            else {
-                ""
+            val nodeText = when {
+                node.isText -> node.text?.slice(max(from, pos) - pos, to - pos) ?: ""
+                !node.isLeaf -> ""
+                leafText != null -> leafText(node)
+                node.type.spec.leafText != null -> node.type.spec.leafText!!.invoke(node)
+                else -> ""
             }
             if (node.isBlock && (node.isLeaf && nodeText != null || node.isTextblock) && blockSeparator != null) {
                 if (first) {
@@ -260,7 +255,7 @@ class Fragment {
 
     // Find the index and inner offset corresponding to a given relative position in this fragment.
     // The result object will be reused (overwritten) the next time the function is called. @internal
-    fun findIndex(pos: Int, round: Int = -1): Index {
+    internal fun findIndex(pos: Int, round: Int = -1): Index {
         if (pos == 0) return retIndex(0, pos)
         if (pos == this.size) return retIndex(this.content.size, pos)
         if (pos > this.size || pos < 0) throw RangeError("Position $pos outside of fragment ($this)")
