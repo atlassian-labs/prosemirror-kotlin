@@ -2,7 +2,8 @@
 
 package com.atlassian.prosemirror.model
 
-import co.touchlab.stately.collections.ConcurrentMutableList
+import co.touchlab.stately.collections.ConcurrentMutableMap
+import com.atlassian.prosemirror.util.slice
 import com.atlassian.prosemirror.util.verbose
 import kotlinx.atomicfu.atomic
 import kotlinx.serialization.json.JsonObject
@@ -25,12 +26,20 @@ fun defaultAttrs(attrs: Map<String, Attribute>, includeNullValues: Boolean = fal
     return if (res.isEmpty()) EmptyAttrs else res.toMap()
 }
 
+fun checkAttrs(attrs: Map<String, Attribute>, values: Attrs, type: String, name: String) {
+    values.keys.forEach { name ->
+        if (name !in attrs) throw RangeError("Unsupported attribute $name for $type of type $name")
+    }
+    attrs.forEach { (name, attr) ->
+        attr.validate?.invoke(values[name])
+    }
+}
+
 // computeAttrs function not needed anymore - for correct round trip we don't combine attributes
 // on creation
-
-fun initAttrs(attrs: Map<String, AttributeSpec>?): Map<String, Attribute> {
-    return attrs?.mapValues {
-        Attribute(it.value)
+fun initAttrs(typeName: String, attrs: Map<String, AttributeSpec>?): Map<String, Attribute> {
+    return attrs?.mapValues { (name, value) ->
+        Attribute(typeName, name, value)
     } ?: emptyMap()
 }
 
@@ -93,7 +102,7 @@ class NodeType internal constructor(
 
     init {
         this.groups = spec.group?.let { listOf(it) } ?: emptyList()
-        this.attrs = initAttrs(spec.attrs)
+        this.attrs = initAttrs(name, spec.attrs)
         this.defaultAttrs = defaultAttrs(this.attrs)
         this.defaultAttrsIncludingNullValues = defaultAttrs(this.attrs, includeNullValues = true)
 
@@ -138,15 +147,7 @@ class NodeType internal constructor(
     // content restrictions, and throw an error if it doesn't match.
     fun createChecked(attrs: Attrs? = null, content: Fragment? = null, marks: List<Mark>? = null): Node {
         val thisContent = Fragment.from(content)
-        if (!this.validContent(thisContent)) {
-            throw RangeError(
-                if (verbose) {
-                    "Invalid content for node type $name: $thisContent"
-                } else {
-                    "Invalid content for node type $name"
-                }
-            )
-        }
+        this.checkContent(thisContent)
         return creator.create(this, this.computeAttrs(attrs), thisContent, Mark.setFrom(marks))
     }
 
@@ -218,8 +219,8 @@ class NodeType internal constructor(
         return creator.create(this, attrs, content.append(after), Mark.setFrom(marks))
     }
 
-    // Returns true if the given fragment is valid content for this node type with the given
-    // attributes.
+    // Returns true if the given fragment is valid content for this node
+    // type.
     fun validContent(content: Fragment): Boolean {
         val result = this.contentMatch.matchFragment(content)
         if (result == null || !result.validEnd) {
@@ -231,6 +232,24 @@ class NodeType internal constructor(
             }
         }
         return true
+    }
+
+    // Throws a RangeError if the given fragment is not valid content for this
+    // node type.
+    internal fun checkContent(content: Fragment) {
+        if (!this.validContent(content)) {
+            throw RangeError(
+                if (verbose) {
+                    "Invalid content for node type $name: ${content.toString().slice(0, 50)}"
+                } else {
+                    "Invalid content for node type $name"
+                }
+            )
+        }
+    }
+
+    internal fun checkAttrs(attrs: Attrs) {
+        checkAttrs(this.attrs, attrs, "node", this.name)
     }
 
     // Check whether the given mark type is allowed in this node.
@@ -289,6 +308,16 @@ class NodeType internal constructor(
     }
 }
 
+fun validateType(typeName: String, attrName: String, type: String): (Any?) -> Unit {
+    val types = type.split("|")
+    return { value ->
+        val name = value?.let { value::class.simpleName } ?: "null"
+        if (types.indexOf(name) < 0) {
+            throw RangeError("Expected value of type $types for attribute $attrName on type $typeName, got $name")
+        }
+    }
+}
+
 // To be type safe every NodeType should be created through create method. Otherwise it would be
 // of generic type Node
 interface NodeCreator<T : Node> {
@@ -328,16 +357,25 @@ enum class Whitespace {
 }
 
 // Attribute descriptors
-class Attribute(options: AttributeSpec) {
+class Attribute(
+    typeName: String,
+    attrName: String,
+    options: AttributeSpec
+) {
     val hasDefault: Boolean
     val default: Any?
+    val validate: ((Any?) -> Unit)?
 
     val isRequired: Boolean
         get() = !this.hasDefault
 
     init {
-        this.hasDefault = options.hasDefault
+        this.hasDefault = options.default != null //Object.prototype.hasOwnProperty.call(options, "default")
         this.default = options.default
+
+        this.validate = options.validateString?.let { validateType(typeName, attrName, it) }
+            ?: options.validateFunction
+
     }
 }
 
@@ -358,7 +396,7 @@ class MarkType internal constructor(
     var creator: MarkCreator<out Mark> = MarkCreator.DEFAULT
 
     // @internal
-    internal val attrs: Map<String, Attribute> = initAttrs(spec.attrs)
+    internal val attrs: Map<String, Attribute> = initAttrs(name, spec.attrs)
 
     // ;(this as any).excluded = null
     internal var excluded: List<MarkType>? = null
@@ -387,6 +425,10 @@ class MarkType internal constructor(
         return set.firstOrNull { it.type == this }
     }
 
+    internal fun checkAttrs(attrs: Attrs) {
+        checkAttrs(this.attrs, attrs, "mark", this.name)
+    }
+
     // Queries whether a given mark type is [excluded](#model.MarkSpec.excludes) by this one.
     fun excludes(other: MarkType): Boolean {
         val excluded = this.excluded
@@ -410,7 +452,7 @@ class MarkType internal constructor(
 }
 
 // An object describing a schema, as passed to the [`Schema`](#model.Schema) constructor.
-class SchemaSpec(
+data class SchemaSpec(
     // The node types in this schema. Maps names to [`NodeSpec`](#model.NodeSpec) objects that
     // describe the node type associated with that name. Their order is significant—it determines
     // which [parse rules](#model.NodeSpec.parseDOM) take precedence by default, and which nodes
@@ -518,7 +560,7 @@ interface NodeSpec {
     // [`DOMParser.fromSchema`](#model.DOMParser^fromSchema) to automatically derive a parser. The
     // `node` field in the rules is implied (the name of this node will be filled in automatically).
     // If you supply your own parser, you do not need to also specify parsing rules in your schema.
-    val parseDOM: List<ParseRule>?
+    val parseDOM: List<TagParseRule>?
 
     // Defines the default way a node of this type should be serialized to a string representation
     // for debugging (e.g. in error messages).
@@ -528,6 +570,15 @@ interface NodeSpec {
     // serialized to a string (as used by [`Node.textBetween`](#model.Node^textBetween) and
     // [`Node.textContent`](#model.Node^textContent)).
     val leafText: ((node: Node) -> String)?
+
+    // A single inline node in a schema can be set to be a linebreak
+    // equivalent. When converting between block types that support the
+    // node and block types that don't but have
+    // [`whitespace`](#model.NodeSpec.whitespace) set to `"pre"`,
+    // [`setBlockType`](#transform.Transform.setBlockType) will convert
+    // between newline characters to or from linebreak nodes as
+    // appropriate.
+    val linebreakReplacement: Boolean?
 
     // Determines whether this node is automatically focused during navigation. Mainly used for navigation with arrow
     // key and backspace/delete key. Defaults to false.
@@ -587,7 +638,16 @@ interface AttributeSpec {
     // that have no default must be provided whenever a node or mark of a type that has them is
     // created.
     val default: Any?
-    val hasDefault: Boolean
+    // A function or type name used to validate values of this
+    // attribute. This will be used when deserializing the attribute
+    // from JSON, and when running [`Node.check`](#model.Node.check).
+    // When a function, it should raise an exception if the value isn't
+    // of the expected type or shape. When a string, it should be a
+    // `|`-separated string of primitive types (`"number"`, `"string"`,
+    // `"boolean"`, `"null"`, and `"undefined"`), and the library will
+    // raise an error when the value is not one of those types.
+    val validateString: String?
+    val validateFunction: ((value: Any?) -> Unit)?
 }
 
 // A document schema. Holds [node](#model.NodeType) and [mark type](#model.MarkType) objects for the
@@ -607,20 +667,22 @@ class Schema {
     // A map from mark names to mark type objects.
     val marks: Map<String, MarkType>
 
+    // The [linebreak
+    // replacement](#model.NodeSpec.linebreakReplacement) node defined
+    // in this schema, if any.
+    var linebreakReplacement: NodeType? = null
+
     /**
      * From some testing on mix-contents.json (will differ based on document etc.);
      * Initial Render: 3:1 iterating (reads) vs writing
      * Selection: ~10:1
      * Typing: ~5:1
      */
-    val resolveCache = ConcurrentMutableList<ResolvedPos>()
-
-    @Suppress("MayBeConst")
-    val resolveCachePos = atomic(0)
+    val resolveCache = ConcurrentMutableMap<NodeId, ResolveCache>()
 
     // Construct a schema from a schema [specification](#model.SchemaSpec).
     constructor(spec: SchemaSpec) {
-        this.spec = spec
+        this.spec = spec.copy(nodes = spec.nodes.toMap(), marks = spec.marks.toMap())
         this.nodes = NodeType.compile(this.spec.nodes, this)
         this.marks = MarkType.compile(this.spec.marks, this)
 
@@ -636,6 +698,11 @@ class Schema {
                 ContentMatch.parse(contentExpr, this.nodes)
             }
             type.inlineContent = type.contentMatch.inlineContent
+            if (type.spec.linebreakReplacement == true) {
+                if (linebreakReplacement != null) throw RangeError("Multiple linebreak nodes defined")
+                if (!type.isInline || !type.isLeaf) throw RangeError("Linebreak replacement nodes must be inline leaf nodes")
+                linebreakReplacement = type
+            }
             type.markSet = when {
                 markExpr == "_" -> null
                 !markExpr.isNullOrEmpty() -> gatherMarks(this, markExpr.split(" "))

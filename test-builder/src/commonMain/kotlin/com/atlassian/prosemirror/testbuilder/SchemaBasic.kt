@@ -8,12 +8,13 @@ import com.atlassian.prosemirror.model.Mark
 import com.atlassian.prosemirror.model.MarkSpec
 import com.atlassian.prosemirror.model.Node
 import com.atlassian.prosemirror.model.NodeSpec
-import com.atlassian.prosemirror.model.ParseRuleImpl
 import com.atlassian.prosemirror.model.ParseRuleMatch
 import com.atlassian.prosemirror.model.PreserveWhitespace
 import com.atlassian.prosemirror.model.Schema
 import com.atlassian.prosemirror.model.SchemaSpec
-import com.fleeksoft.ksoup.nodes.Element
+import com.atlassian.prosemirror.model.StyleParseRuleImpl
+import com.atlassian.prosemirror.model.TagParseRuleImpl
+import com.atlassian.prosemirror.model.styles
 
 val pDOM: DOMOutputSpec = DOMOutputSpec.ArrayDOMOutputSpec(listOf("p", 0))
 val blockquoteDOM: DOMOutputSpec = DOMOutputSpec.ArrayDOMOutputSpec(listOf("blockquote", 0))
@@ -40,7 +41,7 @@ val nodes = mapOf<String, NodeSpec>(
     "paragraph" to NodeSpecImpl(
         content = "inline*",
         group = "block",
-        parseDOM = listOf(ParseRuleImpl(tag = "p")),
+        parseDOM = listOf(TagParseRuleImpl(tag = "p")),
         toDOM = { _ -> pDOM }
     ),
 
@@ -49,14 +50,14 @@ val nodes = mapOf<String, NodeSpec>(
         content = "block+",
         group = "block",
         defining = true,
-        parseDOM = listOf(ParseRuleImpl(tag = "blockquote")),
+        parseDOM = listOf(TagParseRuleImpl(tag = "blockquote")),
         toDOM = { _ -> blockquoteDOM }
     ),
 
     // A horizontal rule (`<hr>`).
     "horizontal_rule" to NodeSpecImpl(
         group = "block",
-        parseDOM = listOf(ParseRuleImpl(tag = "hr")),
+        parseDOM = listOf(TagParseRuleImpl(tag = "hr")),
         toDOM = { _ -> hrDOM }
     ),
 
@@ -68,12 +69,12 @@ val nodes = mapOf<String, NodeSpec>(
         group = "block",
         defining = true,
         parseDOM = listOf(
-            ParseRuleImpl(tag = "h1", attrs = mapOf("level" to 1)),
-            ParseRuleImpl(tag = "h2", attrs = mapOf("level" to 2)),
-            ParseRuleImpl(tag = "h3", attrs = mapOf("level" to 3)),
-            ParseRuleImpl(tag = "h4", attrs = mapOf("level" to 4)),
-            ParseRuleImpl(tag = "h5", attrs = mapOf("level" to 5)),
-            ParseRuleImpl(tag = "h6", attrs = mapOf("level" to 6))
+            TagParseRuleImpl(tag = "h1", attrs = mapOf("level" to 1)),
+            TagParseRuleImpl(tag = "h2", attrs = mapOf("level" to 2)),
+            TagParseRuleImpl(tag = "h3", attrs = mapOf("level" to 3)),
+            TagParseRuleImpl(tag = "h4", attrs = mapOf("level" to 4)),
+            TagParseRuleImpl(tag = "h5", attrs = mapOf("level" to 5)),
+            TagParseRuleImpl(tag = "h6", attrs = mapOf("level" to 6))
         ),
         toDOM = { node: Node ->
             DOMOutputSpec.ArrayDOMOutputSpec(listOf("h" + node.attrs["level"], 0))
@@ -88,7 +89,7 @@ val nodes = mapOf<String, NodeSpec>(
         group = "block",
         code = true,
         defining = true,
-        parseDOM = listOf(ParseRuleImpl(tag = "pre", preserveWhitespace = PreserveWhitespace.FULL)),
+        parseDOM = listOf(TagParseRuleImpl(tag = "pre", preserveWhitespace = PreserveWhitespace.FULL)),
         toDOM = { _ -> preDOM }
     ),
 
@@ -109,7 +110,7 @@ val nodes = mapOf<String, NodeSpec>(
         group = "inline",
         draggable = true,
         parseDOM = listOf(
-            ParseRuleImpl(tag = "img[src]", getNodeAttrs = { dom ->
+            TagParseRuleImpl(tag = "img[src]", getNodeAttrs = { dom ->
                 ParseRuleMatch(
                     mapOf(
                         "src" to dom.attribute("src")?.value,
@@ -143,7 +144,7 @@ val nodes = mapOf<String, NodeSpec>(
         group = "inline",
         selectable = false,
         leafText = { "\n" },
-        parseDOM = listOf(ParseRuleImpl(tag = "br")),
+        parseDOM = listOf(TagParseRuleImpl(tag = "br")),
         toDOM = { _ -> brDOM }
     )
 )
@@ -159,7 +160,7 @@ val marks = mapOf<String, MarkSpec>(
         ),
         inclusive = false,
         parseDOM = listOf(
-            ParseRuleImpl(tag = "a[href]", getNodeAttrs = { dom ->
+            TagParseRuleImpl(tag = "a[href]", getNodeAttrs = { dom ->
                 ParseRuleMatch(
                     mapOf(
                         "href" to dom.attribute("href")?.value,
@@ -186,9 +187,9 @@ val marks = mapOf<String, MarkSpec>(
     // `font-style: italic`.
     "em" to MarkSpecImpl(
         parseDOM = listOf(
-            ParseRuleImpl(tag = "i"),
-            ParseRuleImpl(tag = "em"),
-            ParseRuleImpl(style = "font-style=italic")
+            TagParseRuleImpl(tag = "i"),
+            TagParseRuleImpl(tag = "em"),
+            StyleParseRuleImpl(style = "font-style=italic")
         ),
         toDOM = { _, _ -> emDOM }
     ),
@@ -196,14 +197,14 @@ val marks = mapOf<String, MarkSpec>(
     // A strong mark. Rendered as `<strong>`, parse rules also match `<b>` and `font-weight: bold`.
     "strong" to MarkSpecImpl(
         parseDOM = listOf(
-            ParseRuleImpl(tag = "strong"),
+            TagParseRuleImpl(tag = "strong"),
             // This works around a Google Docs misbehavior where
             // pasted content will be inexplicably wrapped in `<b>`
             // tags with a font-weight normal.
-            ParseRuleImpl(tag = "b", getNodeAttrs = { node ->
-                ParseRuleMatch(null, node.styles()["font-weight"] != "normal")
+            TagParseRuleImpl(tag = "b", getNodeAttrs = { node ->
+                ParseRuleMatch(null, node.styles()?.get("font-weight") != "normal")
             }),
-            ParseRuleImpl(style = "font-weight", getStyleAttrs = { value ->
+            StyleParseRuleImpl(style = "font-weight", getStyleAttrs = { value ->
                 val regex = "^bold(er)?|[5-9]\\d{2,}".toRegex()
                 ParseRuleMatch(null, regex.matches(value))
             })
@@ -213,16 +214,16 @@ val marks = mapOf<String, MarkSpec>(
 
     // Code font mark. Represented as a `<code>` element.
     "code" to MarkSpecImpl(
-        parseDOM = listOf(ParseRuleImpl(tag = "code")),
+        parseDOM = listOf(TagParseRuleImpl(tag = "code")),
         toDOM = { _, _ -> codeDOM }
     ),
 
     "strike" to MarkSpecImpl(
-        parseDOM = listOf(ParseRuleImpl(tag = "strike")),
+        parseDOM = listOf(TagParseRuleImpl(tag = "strike")),
         toDOM = { _, _ -> strikeDOM }
     ),
     "underline" to MarkSpecImpl(
-        parseDOM = listOf(ParseRuleImpl(tag = "underline")),
+        parseDOM = listOf(TagParseRuleImpl(tag = "underline")),
         toDOM = { _, _ -> underlineDOM }
     )
 )
@@ -234,11 +235,3 @@ val marks = mapOf<String, MarkSpec>(
 // To reuse elements from this schema, extend or read from its `spec.nodes` and `spec.marks`
 // [properties](#model.Schema.spec).
 val schemaBasic = Schema(SchemaSpec(nodes = nodes, marks = marks))
-
-fun Element.styles(): Map<String, String> {
-    val style = attribute("style")?.value ?: return emptyMap()
-    return style.split(";").associate {
-        val (key, value) = it.split(":")
-        key.trim() to value.trim()
-    }
-}

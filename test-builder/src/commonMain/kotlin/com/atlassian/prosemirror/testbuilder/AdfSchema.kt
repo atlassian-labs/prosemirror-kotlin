@@ -7,6 +7,7 @@ import com.atlassian.prosemirror.model.MarkSpec
 import com.atlassian.prosemirror.model.Node
 import com.atlassian.prosemirror.model.NodeSpec
 import com.atlassian.prosemirror.model.ParseRule
+import com.atlassian.prosemirror.model.TagParseRule
 import com.atlassian.prosemirror.model.Whitespace
 
 data class NodeSpecImpl(
@@ -27,8 +28,9 @@ data class NodeSpecImpl(
     override val toDebugString: ((node: Node) -> String)? = null,
     override val leafText: ((node: Node) -> String)? = null,
     override val toDOM: ((node: Node) -> DOMOutputSpec)? = null,
-    override val parseDOM: List<ParseRule>? = null,
-    override val autoFocusable: Boolean? = null
+    override val parseDOM: List<TagParseRule>? = null,
+    override val autoFocusable: Boolean? = null,
+    override val linebreakReplacement: Boolean? = null
 ) : NodeSpec
 
 data class MarkSpecImpl(
@@ -43,8 +45,8 @@ data class MarkSpecImpl(
 
 data class AttributeSpecImpl(
     override val default: Any?,
-    override val hasDefault: Boolean
+    override val validateString: String? = null,
+    override val validateFunction: ((value: Any?) -> Unit)? = null
 ) : AttributeSpec {
-    constructor(default: Any?) : this(default, true)
-    constructor() : this(null, false)
+    constructor() : this(null)
 }

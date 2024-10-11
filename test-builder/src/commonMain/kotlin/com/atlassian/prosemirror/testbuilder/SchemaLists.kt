@@ -4,8 +4,8 @@ package com.atlassian.prosemirror.testbuilder
 
 import com.atlassian.prosemirror.model.DOMOutputSpec
 import com.atlassian.prosemirror.model.NodeSpec
-import com.atlassian.prosemirror.model.ParseRuleImpl
 import com.atlassian.prosemirror.model.ParseRuleMatch
+import com.atlassian.prosemirror.model.TagParseRuleImpl
 
 val olDOM: DOMOutputSpec = DOMOutputSpec.ArrayDOMOutputSpec(listOf("ol", 0))
 val ulDOM: DOMOutputSpec = DOMOutputSpec.ArrayDOMOutputSpec(listOf("ul", 0))
@@ -17,7 +17,7 @@ val liDOM: DOMOutputSpec = DOMOutputSpec.ArrayDOMOutputSpec(listOf("li", 0))
 val orderedList = NodeSpecImpl(
     attrs = mapOf("order" to AttributeSpecImpl(default = 1)),
     parseDOM = listOf(
-        ParseRuleImpl(tag = "ol", getNodeAttrs = { dom ->
+        TagParseRuleImpl(tag = "ol", getNodeAttrs = { dom ->
             val start = if (dom.hasAttr("start")) {
                 dom.attr("start").toInt()
             } else {
@@ -37,13 +37,13 @@ val orderedList = NodeSpecImpl(
 
 // A bullet list node spec, represented in the DOM as `<ul>`.
 val bulletList = NodeSpecImpl(
-    parseDOM = listOf(ParseRuleImpl(tag = "ul")),
+    parseDOM = listOf(TagParseRuleImpl(tag = "ul")),
     toDOM = { _ -> ulDOM }
 )
 
 // A list item (`<li>`) spec.
 val listItem = NodeSpecImpl(
-    parseDOM = listOf(ParseRuleImpl(tag = "li")),
+    parseDOM = listOf(TagParseRuleImpl(tag = "li")),
     toDOM = { _ -> liDOM },
     defining = true
 )

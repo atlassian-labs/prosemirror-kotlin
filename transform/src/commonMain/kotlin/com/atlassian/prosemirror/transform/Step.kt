@@ -105,6 +105,9 @@ class StepResult internal constructor(
                 ok(doc.replace(from, to, slice))
             } catch (e: ReplaceError) {
                 fail(e.message)
+            } catch (e: RangeError) {
+                // TODO: check if still need this catch after updating to latest prosemirror-transform
+                fail(e.message ?: "RangeError")
             }
         }
     }
