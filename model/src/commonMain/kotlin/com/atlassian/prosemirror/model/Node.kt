@@ -159,13 +159,28 @@ open class Node constructor(
     }
 
     fun computeAttr(name: String): Any? {
-        return if (attrs.containsKey(name)) attrs[name] else type.defaultAttrs[name]
+        return if (attrs.containsKey(name)) attrs[name] else defaultAttr(name)
     }
 
+    // Allows for access by inline fun below
+    fun defaultAttr(name: String): Any? = type.defaultAttrs[name]
+
+    /**
+     * If <T> is nullable, then return null where attribute doesn't exist and doesn't have a NodeType defaultAttr, or when casting to T
+     * failed
+     *
+     * If <T> is not nullable, then additionally try falling back to NodeType defaultAttr if attr value is null before throwing an exception
+     */
     inline fun <reified T : Any?> attr(name: String, default: T? = null): T {
-        return (computeAttr(name) as T? ?: default) as T
+        return computeAttr(name) as? T? ?: if (null is T) {
+            default as T // safely nullable as (null is T) means T is nullable
+        } else {
+            default ?: defaultAttr(name) as? T ?: throw IllegalArgumentException(
+                "Cannot resolve attribute $name for node ${this.type.name} - attribute doesn't exist or is null, and <T> is not nullable " +
+                    "but there is no non-null default to return"
+            )
+        }
     }
-
     // Get the child node at the given index. Raises an error when the index is out of range.
     fun child(index: Int): Node {
         return this.content.child(index)
