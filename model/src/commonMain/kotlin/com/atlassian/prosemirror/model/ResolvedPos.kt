@@ -1,5 +1,7 @@
 package com.atlassian.prosemirror.model
 
+import co.touchlab.stately.collections.ConcurrentMutableList
+import kotlinx.atomicfu.atomic
 import kotlinx.atomicfu.update
 
 // You can [_resolve_](#model.Node.resolve) a position to get more information about it. Objects of
@@ -272,22 +274,26 @@ class ResolvedPos(
 
         internal fun resolveCached(doc: Node, pos: Int): ResolvedPos {
             val resolveCache = doc.type.schema.resolveCache
-
-            resolveCache.forEach { cached ->
-                if (cached.pos == pos && cached.doc === doc) return cached
+            var cache = resolveCache[doc.nodeId]
+            if (cache != null) {
+                cache.elts.firstOrNull() { it.pos == pos }?.let { return it }
+            } else {
+                cache = ResolveCache()
+                resolveCache[doc.nodeId] = cache
             }
             val result = resolve(doc, pos)
-            doc.type.schema.resolveCachePos.update { cachePos ->
-                if (cachePos >= resolveCache.size) {
-                    resolveCache.add(result)
-                } else {
-                    resolveCache[cachePos] = result
-                }
-                (cachePos + 1) % RESOLVE_CACHE_SIZE
+            cache.i.update {
+                cache.elts.add(it, result)
+                (it + 1) % RESOLVE_CACHE_SIZE
             }
             return result
         }
     }
+}
+
+class ResolveCache {
+    val elts: ConcurrentMutableList<ResolvedPos> = ConcurrentMutableList()
+    val i = atomic(0)
 }
 
 private const val RESOLVE_CACHE_SIZE = 12

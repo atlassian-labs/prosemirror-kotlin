@@ -222,6 +222,18 @@ class NodeTest {
         )
         assertThat(d.textBetween(0, d.content.size, "", "<anonymous>")).isEqualTo("Hello <anonymous>")
     }
+    // TODO: convert the following tests
+//    it("adds block separator around empty paragraphs", () => {
+//        ist(doc(p("one"), p(), p("two")).textBetween(0, 12, "\n"), "one\n\ntwo")
+//    })
+//
+//    it("adds block separator around leaf nodes", () => {
+//        ist(doc(p("one"), hr(), hr(), p("two")).textBetween(0, 12, "\n", "---"), "one\n---\n---\ntwo")
+//    })
+//
+//    it("doesn't add block separator around non-rendered leaf nodes", () => {
+//        ist(doc(p("one"), hr(), hr(), p("two")).textBetween(0, 12, "\n"), "one\ntwo")
+//    })
 
     @Test
     fun `works on a whole doc`() {
@@ -237,6 +249,29 @@ class NodeTest {
     fun `works on a nested element`() {
         assertThat(doc { ul { li { p { +"hi" } } + li { p { em { +"a" } + "b" } } } }.textContent).isEqualTo("hiab")
     }
+
+    // TODO: convert the following tests
+//    describe("check", () => {
+//        it("notices invalid content", () => {
+//            ist.throws(() => doc(li("x")).check(),
+//            /Invalid content for node doc/)
+//        })
+//
+//        it("notices marks in wrong places", () => {
+//            ist.throws(() => doc(schema.nodes.paragraph.create(null, [], [schema.marks.em.create()])).check(),
+//            /Invalid content for node doc/)
+//        })
+//
+//        it("notices incorrect sets of marks", () => {
+//            ist.throws(() => schema.text("a", [schema.marks.em.create(), schema.marks.em.create()]).check(),
+//            /Invalid collection of marks/)
+//        })
+//
+//        it("notices wrong attribute types", () => {
+//            ist.throws(() => schema.nodes.image.create({src: true}).check(),
+//            /Expected value of type string for attribute src on type image, got boolean/)
+//        })
+//    })
 
     fun from(arg: Node, expect: Node) {
         assertThat(expect.copy(Fragment.from(arg))).isEqualTo(expect)

@@ -107,7 +107,7 @@ describe("DOMParser", () => {
           attrs: { id: { default: null }},
           parseDOM: [{
             tag: "span.comment",
-            getAttrs(dom) { return { id: parseInt((dom as HTMLElement).getAttribute('data-id')!, 10) } }
+            getAttrs(dom: HTMLElement) { return { id: parseInt(dom.getAttribute('data-id')!, 10) } }
           }],
           excludes: '',
           toDOM(mark: Mark) { return ["span", {class: "comment", "data-id": mark.attrs.id }, 0] }
@@ -408,6 +408,21 @@ describe("DOMParser", () => {
       ), 1, 1), eq)
     })
 
+    it("can temporary shadow a mark with another configuration of the same type", () => {
+      let s = new Schema({nodes: schema.spec.nodes, marks: {color: {
+        attrs: {color: {}},
+        toDOM: m => ["span", {style: `color: ${m.attrs.color}`}],
+        parseDOM: [{style: "color", getAttrs: v => ({color: v})}]
+      }}})
+      let d = DOMParser.fromSchema(s)
+        .parse(domFrom('<p><span style="color: red">abc<span style="color: blue">def</span>ghi</span></p>'))
+      ist(d, s.node("doc", null, [s.node("paragraph", null, [
+        s.text("abc", [s.mark("color", {color: "red"})]),
+        s.text("def", [s.mark("color", {color: "blue"})]),
+        s.text("ghi", [s.mark("color", {color: "red"})])
+      ])]), eq)
+    })
+
     function find(html: string, doc: PMNode) {
       return () => {
         let dom = document.createElement("div")
@@ -554,7 +569,7 @@ describe("DOMParser", () => {
                 foo: {group: "inline", inline: true, parseDOM: [{tag: "foo"}]},
                 bar: {group: "inline", inline: true, parseDOM: [{tag: "bar"}]}}
       })
-      ist(DOMParser.schemaRules(schema).map(r => r.tag).join(" "), "i em foo bar")
+      ist(DOMParser.schemaRules(schema).map(r => (r as any).tag).join(" "), "i em foo bar")
     })
 
     it("understands priority", () => {
@@ -565,7 +580,7 @@ describe("DOMParser", () => {
                 foo: {group: "inline", inline: true, parseDOM: [{tag: "foo"}]},
                 bar: {group: "inline", inline: true, parseDOM: [{tag: "bar", priority: 60}]}}
       })
-      ist(DOMParser.schemaRules(schema).map(r => r.tag).join(" "), "em bar foo i")
+      ist(DOMParser.schemaRules(schema).map(r => (r as any).tag).join(" "), "em bar foo i")
     })
 
     function nsParse(doc: Node, namespace?: string) {
@@ -642,5 +657,14 @@ describe("DOMSerializer", () => {
     let node = deepEm.serializeNode(p(strong("foo", code("bar"), em(code("baz"))), em("quux"), "xyz"), {document})
     ist((node as HTMLElement).innerHTML,
         "<strong>foo<code>bar</code></strong><em><i data-emphasis=\"true\"><strong><code>baz</code></strong>quux</i></em>xyz")
+  })
+
+  it("refuses to use values from attributes as DOM specs", () => {
+    let weird = new DOMSerializer(Object.assign({}, serializer.nodes, {
+      image: (node: PMNode) => ["span", ["img", {src: node.attrs.src}], node.attrs.alt]
+    }), serializer.marks)
+    ist.throws(() => weird.serializeNode(img({src: "x.png", alt: ["script", {src: "http://evil.com/inject.js"}]}),
+                                         {document}),
+               /Using an array from an attribute object as a DOM spec/)
   })
 })

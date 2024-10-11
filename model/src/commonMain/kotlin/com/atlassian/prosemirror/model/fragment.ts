@@ -45,29 +45,25 @@ export class Fragment {
   /// Call the given callback for every descendant node. `pos` will be
   /// relative to the start of the fragment. The callback may return
   /// `false` to prevent traversal of a given node's children.
-  descendants(f: (node: Node, pos: number, parent: Node | null) => boolean | void) {
+  descendants(f: (node: Node, pos: number, parent: Node | null, index: number) => boolean | void) {
     this.nodesBetween(0, this.size, f)
   }
 
   /// Extract the text between `from` and `to`. See the same method on
   /// [`Node`](#model.Node.textBetween).
   textBetween(from: number, to: number, blockSeparator?: string | null, leafText?: string | null | ((leafNode: Node) => string)) {
-    let text = "", separated = true
+    let text = "", first = true
     this.nodesBetween(from, to, (node, pos) => {
-      if (node.isText) {
-        text += node.text!.slice(Math.max(from, pos) - pos, to - pos)
-        separated = !blockSeparator
-      } else if (node.isLeaf) {
-        if (leafText) {
-          text += typeof leafText === "function" ? leafText(node) : leafText;
-        } else if (node.type.spec.leafText) {
-          text += node.type.spec.leafText(node);
-        }
-        separated = !blockSeparator;
-      } else if (!separated && node.isBlock) {
-        text += blockSeparator
-        separated = true
+      let nodeText = node.isText ? node.text!.slice(Math.max(from, pos) - pos, to - pos)
+        : !node.isLeaf ? ""
+        : leafText ? (typeof leafText === "function" ? leafText(node) : leafText)
+        : node.type.spec.leafText ? node.type.spec.leafText(node)
+        : ""
+      if (node.isBlock && (node.isLeaf && nodeText || node.isTextblock) && blockSeparator) {
+        if (first) first = false
+        else text += blockSeparator
       }
+      text += nodeText
     }, 0)
     return text
   }
@@ -89,7 +85,7 @@ export class Fragment {
   /// Cut out the sub-fragment between the two given positions.
   cut(from: number, to = this.size) {
     if (from == 0 && to == this.size) return this
-    let result = [], size = 0
+    let result: Node[] = [], size = 0
     if (to > from) for (let i = 0, pos = 0; pos < to; i++) {
       let child = this.content[i], end = pos + child.nodeSize
       if (end > from) {
@@ -193,7 +189,7 @@ export class Fragment {
 
   /// Find the index and inner offset corresponding to a given relative
   /// position in this fragment. The result object will be reused
-  /// (overwritten) the next time the function is called. (Not public.)
+  /// (overwritten) the next time the function is called. @internal
   findIndex(pos: number, round = -1): {index: number, offset: number} {
     if (pos == 0) return retIndex(0, pos)
     if (pos == this.size) return retIndex(this.content.length, pos)
