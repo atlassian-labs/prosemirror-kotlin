@@ -3,6 +3,7 @@ package com.atlassian.prosemirror.model
 import com.fleeksoft.ksoup.nodes.Document
 import com.fleeksoft.ksoup.nodes.Element
 import com.fleeksoft.ksoup.nodes.Node as DOMNode
+import com.atlassian.prosemirror.model.util.mutableWeakMapOf
 import com.fleeksoft.ksoup.nodes.TextNode
 import com.fleeksoft.ksoup.parser.ParseSettings
 import com.fleeksoft.ksoup.parser.Tag
@@ -177,7 +178,7 @@ fun gatherMarksToDOM(obj: Map<String, MarkType>): Map<String, (mark: Mark, isInl
 
 fun doc(document: Document? = null) = document ?: Document("http://atlassian.net")
 
-val suspiciousAttributeCache = mutableMapOf<Any, List<Any>?>()
+val suspiciousAttributeCache = mutableWeakMapOf<Any, List<Any>?>()
 
 fun suspiciousAttributes(attrs: Map<String, Any?>): List<Any>? {
     return suspiciousAttributeCache.getOrPut(attrs) {

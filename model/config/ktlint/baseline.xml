@@ -535,24 +535,25 @@
         <error line="811" column="52" source="standard:function-signature" />
     </file>
     <file name="src/commonMain/kotlin/com/atlassian/prosemirror/model/ToDom.kt">
-        <error line="29" column="5" source="standard:blank-line-before-declaration" />
+        <error line="3" column="1" source="standard:import-ordering" />
         <error line="30" column="5" source="standard:blank-line-before-declaration" />
         <error line="31" column="5" source="standard:blank-line-before-declaration" />
-        <error line="50" column="33" source="standard:function-signature" />
-        <error line="50" column="53" source="standard:function-signature" />
-        <error line="50" column="79" source="standard:function-signature" />
-        <error line="64" column="32" source="standard:function-signature" />
-        <error line="64" column="52" source="standard:function-signature" />
-        <error line="64" column="80" source="standard:function-signature" />
-        <error line="64" column="107" source="standard:function-signature" />
-        <error line="99" column="37" source="standard:function-signature" />
-        <error line="99" column="49" source="standard:function-signature" />
-        <error line="99" column="68" source="standard:function-signature" />
-        <error line="100" column="33" source="standard:multiline-expression-wrapping" />
-        <error line="190" column="5" source="standard:blank-line-before-declaration" />
-        <error line="284" column="30" source="standard:function-signature" />
-        <error line="284" column="49" source="standard:function-signature" />
-        <error line="284" column="64" source="standard:function-signature" />
+        <error line="32" column="5" source="standard:blank-line-before-declaration" />
+        <error line="51" column="33" source="standard:function-signature" />
+        <error line="51" column="53" source="standard:function-signature" />
+        <error line="51" column="79" source="standard:function-signature" />
+        <error line="65" column="32" source="standard:function-signature" />
+        <error line="65" column="52" source="standard:function-signature" />
+        <error line="65" column="80" source="standard:function-signature" />
+        <error line="65" column="107" source="standard:function-signature" />
+        <error line="100" column="37" source="standard:function-signature" />
+        <error line="100" column="49" source="standard:function-signature" />
+        <error line="100" column="68" source="standard:function-signature" />
+        <error line="101" column="33" source="standard:multiline-expression-wrapping" />
+        <error line="191" column="5" source="standard:blank-line-before-declaration" />
+        <error line="285" column="30" source="standard:function-signature" />
+        <error line="285" column="49" source="standard:function-signature" />
+        <error line="285" column="64" source="standard:function-signature" />
     </file>
     <file name="src/commonMain/kotlin/com/atlassian/prosemirror/model/parser/AnySerialiser.kt">
         <error line="24" column="1" source="standard:indent" />
@@ -663,6 +664,16 @@
         <error line="8" column="22" source="standard:function-signature" />
         <error line="8" column="33" source="standard:function-signature" />
         <error line="8" column="40" source="standard:function-signature" />
+    </file>
+    <file name="src/commonMain/kotlin/com/atlassian/prosemirror/model/util/WeakMap.kt">
+        <error line="5" column="18" source="standard:function-signature" />
+        <error line="5" column="26" source="standard:function-signature" />
+        <error line="5" column="47" source="standard:function-signature" />
+        <error line="15" column="5" source="standard:blank-line-before-declaration" />
+        <error line="16" column="5" source="standard:blank-line-before-declaration" />
+        <error line="16" column="13" source="standard:function-signature" />
+        <error line="16" column="21" source="standard:function-signature" />
+        <error line="16" column="29" source="standard:function-signature" />
     </file>
     <file name="src/commonTest/kotlin/com/atlassian/prosemirror/model/ContentTest.kt">
         <error line="15" column="11" source="standard:function-signature" />
@@ -887,9 +898,23 @@
         <error line="12" column="41" source="standard:function-signature" />
         <error line="12" column="53" source="standard:function-signature" />
     </file>
+    <file name="src/iosMain/kotlin/com/atlassian/prosemirror/model/util/WeakMap.ios.kt">
+        <error line="5" column="23" source="standard:colon-spacing" />
+        <error line="10" column="22" source="standard:function-signature" />
+        <error line="10" column="30" source="standard:function-signature" />
+        <error line="10" column="38" source="standard:function-signature" />
+        <error line="13" column="1" source="standard:no-blank-line-before-rbrace" />
+    </file>
     <file name="src/jvmMain/kotlin/com/atlassian/prosemirror/model/Platform.jvm.kt">
         <error line="13" column="30" source="standard:function-signature" />
         <error line="13" column="41" source="standard:function-signature" />
         <error line="13" column="53" source="standard:function-signature" />
+    </file>
+    <file name="src/jvmMain/kotlin/com/atlassian/prosemirror/model/util/WeakMap.jvm.kt">
+        <error line="5" column="27" source="standard:colon-spacing" />
+        <error line="10" column="22" source="standard:function-signature" />
+        <error line="10" column="30" source="standard:function-signature" />
+        <error line="10" column="38" source="standard:function-signature" />
+        <error line="13" column="1" source="standard:no-blank-line-before-rbrace" />
     </file>
 </baseline>
