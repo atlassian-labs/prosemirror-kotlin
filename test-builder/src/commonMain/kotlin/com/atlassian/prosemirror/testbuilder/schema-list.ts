@@ -10,7 +10,7 @@ const olDOM: DOMOutputSpec = ["ol", 0], ulDOM: DOMOutputSpec = ["ul", 0], liDOM:
 /// starts counting, and defaults to 1. Represented as an `<ol>`
 /// element.
 export const orderedList = {
-  attrs: {order: {default: 1}},
+  attrs: {order: {default: 1, validate: "number"}},
   parseDOM: [{tag: "ol", getAttrs(dom: HTMLElement) {
     return {order: dom.hasAttribute("start") ? +dom.getAttribute("start")! : 1}
   }}],
@@ -152,6 +152,19 @@ export function splitListItem(itemType: NodeType, itemAttrs?: Attrs): Command {
     if (!canSplit(tr.doc, $from.pos, 2, types)) return false
     if (dispatch) dispatch(tr.split($from.pos, 2, types).scrollIntoView())
     return true
+  }
+}
+
+/// Acts like [`splitListItem`](#schema-list.splitListItem), but
+/// without resetting the set of active marks at the cursor.
+export function splitListItemKeepMarks(itemType: NodeType, itemAttrs?: Attrs): Command {
+  let split = splitListItem(itemType, itemAttrs)
+  return (state, dispatch) => {
+    return split(state, dispatch && (tr => {
+      let marks = state.storedMarks || (state.selection.$to.parentOffset && state.selection.$from.marks())
+      if (marks) tr.ensureMarks(marks)
+      dispatch(tr)
+    }))
   }
 }
 

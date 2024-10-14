@@ -109,14 +109,14 @@
         <error line="185" column="1" source="standard:no-blank-line-in-list" />
         <error line="188" column="13" source="standard:multiline-expression-wrapping" />
         <error line="189" column="20" source="standard:multiline-expression-wrapping" />
-        <error line="196" column="1" source="standard:no-blank-line-in-list" />
-        <error line="198" column="17" source="standard:multiline-expression-wrapping" />
-        <error line="199" column="20" source="standard:multiline-expression-wrapping" />
-        <error line="214" column="1" source="standard:no-blank-line-in-list" />
-        <error line="216" column="15" source="standard:multiline-expression-wrapping" />
+        <error line="199" column="1" source="standard:no-blank-line-in-list" />
+        <error line="201" column="17" source="standard:multiline-expression-wrapping" />
+        <error line="202" column="20" source="standard:multiline-expression-wrapping" />
         <error line="220" column="1" source="standard:no-blank-line-in-list" />
-        <error line="221" column="17" source="standard:multiline-expression-wrapping" />
-        <error line="225" column="20" source="standard:multiline-expression-wrapping" />
+        <error line="222" column="15" source="standard:multiline-expression-wrapping" />
+        <error line="226" column="1" source="standard:no-blank-line-in-list" />
+        <error line="227" column="17" source="standard:multiline-expression-wrapping" />
+        <error line="231" column="20" source="standard:multiline-expression-wrapping" />
     </file>
     <file name="src/commonMain/kotlin/com/atlassian/prosemirror/testbuilder/SchemaLists.kt">
         <error line="17" column="19" source="standard:multiline-expression-wrapping" />

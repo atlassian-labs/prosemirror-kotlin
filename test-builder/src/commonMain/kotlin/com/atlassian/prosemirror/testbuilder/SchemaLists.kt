@@ -15,7 +15,7 @@ val liDOM: DOMOutputSpec = DOMOutputSpec.ArrayDOMOutputSpec(listOf("li", 0))
 // the number at which the list starts counting, and defaults to 1. Represented as an `<ol>`
 // element.
 val orderedList = NodeSpecImpl(
-    attrs = mapOf("order" to AttributeSpecImpl(default = 1)),
+    attrs = mapOf("order" to AttributeSpecImpl(default = 1, validateString = "Int|null")),
     parseDOM = listOf(
         TagParseRuleImpl(tag = "ol", getNodeAttrs = { dom ->
             val start = if (dom.hasAttr("start")) {

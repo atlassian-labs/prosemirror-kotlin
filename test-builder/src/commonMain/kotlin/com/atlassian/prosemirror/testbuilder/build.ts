@@ -65,12 +65,22 @@ function takeAttrs(attrs: Attrs | null, args: [a?: Attrs | ChildSpec, ...b: Chil
   return result
 }
 
-export type NodeBuilder = (attrsOrFirstChild?: Attrs | ChildSpec, ...children: ChildSpec[]) => Node
+export type NodeBuilder = (attrsOrFirstChild?: Attrs | ChildSpec, ...children: ChildSpec[]) => Node & {tag: Tags}
 export type MarkBuilder = (attrsOrFirstChild?: Attrs | ChildSpec, ...children: ChildSpec[]) => ChildSpec
+
+type Builders<S extends Schema> = {
+  schema: S;
+} & {
+  [key in keyof S['nodes']]: NodeBuilder
+} & {
+  [key in keyof S['marks']]: MarkBuilder
+} & {
+  [name: string]: NodeBuilder | MarkBuilder
+}
 
 /// Create a builder function for nodes with content.
 function block(type: NodeType, attrs: Attrs | null = null): NodeBuilder {
-  let result: NodeBuilder = function(...args) {
+  let result = function(...args: any[]) {
     let myAttrs = takeAttrs(attrs, args)
     let {nodes, tag} = flatten(type.schema, args as ChildSpec[], id)
     let node = type.create(myAttrs, nodes)
@@ -78,7 +88,7 @@ function block(type: NodeType, attrs: Attrs | null = null): NodeBuilder {
     return node
   }
   if (type.isLeaf) try { (result as any).flat = [type.create(attrs)] } catch(_) {}
-  return result
+  return result as NodeBuilder
 }
 
 // Create a builder function for marks.
@@ -93,7 +103,7 @@ function mark(type: MarkType, attrs: Attrs | null): MarkBuilder {
   }
 }
 
-export function builders(schema: Schema, names?: {[name: string]: Attrs}) {
+export function builders<Nodes extends string = any, Marks extends string = any>(schema: Schema<Nodes, Marks>, names?: {[name: string]: Attrs}) {
   let result = {schema}
   for (let name in schema.nodes) (result as any)[name] = block(schema.nodes[name], {})
   for (let name in schema.marks) (result as any)[name] = mark(schema.marks[name], {})
@@ -103,5 +113,5 @@ export function builders(schema: Schema, names?: {[name: string]: Attrs}) {
     if (type = schema.nodes[typeName]) (result as any)[name] = block(type, value)
     else if (type = schema.marks[typeName]) (result as any)[name] = mark(type, value)
   }
-  return result
+  return result as Builders<Schema<Nodes, Marks>>
 }

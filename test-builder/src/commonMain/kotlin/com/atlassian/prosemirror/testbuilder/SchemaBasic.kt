@@ -64,7 +64,7 @@ val nodes = mapOf<String, NodeSpec>(
     // A heading textblock, with a `level` attribute that should hold the number 1 to 6. Parsed and
     // serialized as `<h1>` to `<h6>` elements.
     "heading" to NodeSpecImpl(
-        attrs = mutableMapOf("level" to AttributeSpecImpl(default = 1)),
+        attrs = mutableMapOf("level" to AttributeSpecImpl(default = 1, validateString = "Int")),
         content = "inline*",
         group = "block",
         defining = true,
@@ -103,9 +103,9 @@ val nodes = mapOf<String, NodeSpec>(
     "image" to NodeSpecImpl(
         inline = true,
         attrs = mutableMapOf(
-            "src" to AttributeSpecImpl(),
-            "alt" to AttributeSpecImpl(default = null),
-            "title" to AttributeSpecImpl(default = null)
+            "src" to AttributeSpecImpl(default = "", validateString = "String"),
+            "alt" to AttributeSpecImpl(default = null, validateString = "String|null"),
+            "title" to AttributeSpecImpl(default = null, validateString = "String|null")
         ),
         group = "inline",
         draggable = true,
@@ -155,8 +155,8 @@ val marks = mapOf<String, MarkSpec>(
     // parsed as an `<a>` element.
     "link" to MarkSpecImpl(
         attrs = mutableMapOf<String, AttributeSpec>(
-            "href" to AttributeSpecImpl(),
-            "title" to AttributeSpecImpl(default = null)
+            "href" to AttributeSpecImpl(default = "", validateString = "String"),
+            "title" to AttributeSpecImpl(default = null, validateString = "String|null")
         ),
         inclusive = false,
         parseDOM = listOf(
@@ -189,7 +189,10 @@ val marks = mapOf<String, MarkSpec>(
         parseDOM = listOf(
             TagParseRuleImpl(tag = "i"),
             TagParseRuleImpl(tag = "em"),
-            StyleParseRuleImpl(style = "font-style=italic")
+            StyleParseRuleImpl(style = "font-style=italic"),
+            StyleParseRuleImpl(style = "font-style=normal", clearMark = { m ->
+                m.type.name == "em"
+            })
         ),
         toDOM = { _, _ -> emDOM }
     ),
@@ -203,6 +206,9 @@ val marks = mapOf<String, MarkSpec>(
             // tags with a font-weight normal.
             TagParseRuleImpl(tag = "b", getNodeAttrs = { node ->
                 ParseRuleMatch(null, node.styles()?.get("font-weight") != "normal")
+            }),
+            StyleParseRuleImpl(style = "font-weight=400", clearMark = { m ->
+                m.type.name == "strong"
             }),
             StyleParseRuleImpl(style = "font-weight", getStyleAttrs = { value ->
                 val regex = "^bold(er)?|[5-9]\\d{2,}".toRegex()

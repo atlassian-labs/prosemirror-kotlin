@@ -89,3 +89,11 @@ Check the latest package at Maven central on: https://packages.atlassian.com/mav
 ```kotlin
 implementation("com.atlassian.prosemirror:test-builder:1.0.2")
 ```
+### Versioning
+- Implemented changes to match version:
+  - [1.1.1](https://github.com/ProseMirror/prosemirror-test-builder/releases/tag/1.1.1)
+    of prosemirror-test-builder
+  - [1.2.3](https://github.com/ProseMirror/prosemirror-schema-basic/releases/tag/1.2.3)
+    of prosemirror-schema-basic
+  - [1.4.1](https://github.com/ProseMirror/prosemirror-schema-list/releases/tag/1.4.1)
+    of prosemirror-schema-list

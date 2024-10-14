@@ -493,35 +493,58 @@ class DomTest {
             doc { p { strong { +"Hello" } } }
         )
     }
+
+    @Test
+    fun `allows clearing of pending marks`() {
+        recover(
+            "<blockquote style='font-style: italic'><p style='font-style: normal'>One</p><p>Two</p></blockquote>",
+            doc { blockquote { p { +"One" } + p { em { +"Two" } } } }
+        )
+    }
+
+    @Test
+    fun `allows clearing of active marks`() {
+        recover(
+            "<ul><li style='font-style:italic'><p><span>Foo</span><span></span>" +
+                "<span style='font-style:normal'>Bar</span></p></li></ul>",
+            doc { ul { li { p { em { +"Foo" } + "Bar" } } } }
+        )
+    }
+
+    @Test
+    fun `ignores unknown inline tags`() {
+        recover(
+            "<p><u>a</u>bc</p>",
+            doc { p { +"abc" } }
+        )
+    }
+
+    @Test
+    fun `keeps applying a mark for the all of the node's content`() {
+        recover(
+            "<p><strong><span>xx</span>bar</strong></p>",
+            doc { p { strong { +"xxbar" } } }
+        )
+    }
+
+    @Test
+    fun `doesn't ignore whitespace-only nodes in preserveWhitespace full mode`() {
+        recover(
+            "<span> </span>x",
+            doc { p { +" x" } },
+            options = ParseOptionsImpl(preserveWhitespace = PreserveWhitespace.FULL)
+        )
+    }
+
+    @Test
+    fun `closes block with inline content on seeing block-level children`() {
+        recover(
+            "<div><br><div>CCC</div><div>DDD</div><br></div>",
+            doc { p { br {} } + p { +"CCC" } + p { +"DDD" } + p { br {} } }
+        )
+    }
 }
 
-//        it("allows clearing of pending marks",
-//            recover("<blockquote style='font-style: italic'><p style='font-style: normal'>One</p><p>Two</p></blockquote",
-//                doc(blockquote(p("One"), p(em("Two"))))))
-//
-//        it("allo clearing of active marks",
-//            recover("<ul><li style='font-style:italic'><p><span>Foo</span><span></span>" +
-//                "<span style='font-style:normal'>Bar</span></p></li></ul>",
-//                doc(ul(li(p(em("Foo"), "Bar"))))))
-//
-//        it("ignores unknown inline tags",
-//            recover("<p><u>a</u>bc</p>",
-//                doc(p("abc"))))
-//
-//        it("can add marks specified before their parent node is opened",
-//            recover("<em>hi</em> you",
-//                doc(p(em("hi"), " you"))))
-//
-//        it("keeps applying a mark for the all of the node's content",
-//            recover("<p><strong><span>xx</span>bar</strong></p>",
-//                doc(p(strong("xxbar")))))
-//
-//        it("doesn't ignore whitespace-only nodes in preserveWhitespace full mode",
-//            recover("<span> </span>x", doc(p(" x")), {preserveWhitespace: "full"}))
-//
-//        it("closes block with inline content on seeing block-level children",
-//            recover("<div><br><div>CCC</div><div>DDD</div><br></div>",
-//                doc(p(br()), p("CCC"), p("DDD"), p(br()))))
 //
 //        function parse(html: string, options: ParseOptions, doc: PMNode) {
 //        return () => {
