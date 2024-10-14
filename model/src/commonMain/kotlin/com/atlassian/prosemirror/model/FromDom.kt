@@ -1,6 +1,7 @@
 package com.atlassian.prosemirror.model
 
 import com.fleeksoft.ksoup.nodes.Node as DOMNode
+import com.atlassian.prosemirror.model.util.contains
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Element
 import kotlin.jvm.JvmInline
@@ -54,7 +55,7 @@ interface ParseOptions {
     // given [top node](#model.ParseOptions.topNode).
     val context: ResolvedPos?
 
-    val ruleFromNode: ((node: DOMNode) -> TagParseRule?)?
+    val ruleFromNode: ((node: DOMNode) -> ParseOptionsRule?)?
 
     val topOpen: Boolean?
 }
@@ -67,13 +68,13 @@ data class ParseOptionsImpl(
     override val topNode: Node? = null,
     override val topMatch: ContentMatch? = null,
     override val context: ResolvedPos? = null,
-    override val ruleFromNode: ((node: DOMNode) -> TagParseRule?)? = null,
+    override val ruleFromNode: ((node: DOMNode) -> ParseOptionsRule?)? = null,
     override val topOpen: Boolean? = null
 ) : ParseOptions
 
 // Fields that may be present in both [tag](#model.TagParseRule) and
 // [style](#model.StyleParseRule) parse rules.
-interface ParseRule {
+interface BaseParseRule {
     // Can be used to change the order in which the parse rules in a
     // schema are tried. Those with higher priority come first. Rules
     // without a priority are counted as having priority 50. This
@@ -110,15 +111,21 @@ interface ParseRule {
     // the current node.
     val closeParent: Boolean?
 
-    // When true, ignore the node that matches this rule, but do parse
-    // its content.
-    val skip: Boolean?
-
     // Attributes for the node or mark created by this rule. When
     // `getAttrs` is provided, it takes precedence.
     var attrs: Attrs?
 
+    fun hasSkip(): Boolean
+}
+
+interface ParseRule: BaseParseRule {
+    // When true, ignore the node that matches this rule, but do parse
+    // its content.
+    val skip: Boolean?
+
     fun copyRule(): ParseRule
+
+    override fun hasSkip(): Boolean = skip == true
 }
 
 // Parse rule targeting a DOM element.
@@ -166,6 +173,50 @@ interface TagParseRule: ParseRule {
     val preserveWhitespace: PreserveWhitespace?
 }
 
+interface ParseOptionsRule: BaseParseRule {
+    val skip: DOMNode?
+
+    // The namespace to match. Nodes are only matched when the
+    // namespace matches or this property is null.
+    val namespace: String?
+
+    // The name of the node type to create when this rule matches. Each
+    // rule should have either a `node`, `mark`, or `ignore` property
+    // (except when it appears in a [node](#model.NodeSpec.parseDOM) or
+    // [mark spec](#model.MarkSpec.parseDOM), in which case the `node`
+    // or `mark` property will be derived from its position).
+    var node: String?
+
+    // A function used to compute the attributes for the node or mark
+    // created by this rule. Can also be used to describe further
+    // conditions the DOM element or style must match. When it returns
+    // `false`, the rule won't match. When it returns null or undefined,
+    // that is interpreted as an empty/default set of attributes.
+    val getNodeAttrs: ((node: Element) -> ParseRuleMatch)?
+
+    // For rules that produce non-leaf nodes, by default the content of
+    // the DOM element is parsed as content of the node. If the child
+    // nodes are in a descendent node, this may be a CSS selector
+    // string that the parser must use to find the actual content
+    // element, or a function that returns the actual content element
+    // to the parser.
+    val contentElement: ContentElement?
+
+    // Can be used to override the content of a matched node. When
+    // present, instead of parsing the node's child nodes, the result of
+    // this function is used.
+    val getContent: ((node: DOMNode, schema: Schema) -> Fragment?)?
+
+    // Controls whether whitespace should be preserved when parsing the
+    // content inside the matched element. `false` means whitespace may
+    // be collapsed, `true` means that whitespace should be preserved
+    // but newlines normalized to spaces, and `"full"` means that
+    // newlines should also be preserved.
+    val preserveWhitespace: PreserveWhitespace?
+
+    override fun hasSkip(): Boolean = skip != null
+}
+
 // A parse rule targeting a style property.
 interface StyleParseRule: ParseRule {
     // A CSS property name to match. This rule will match inline styles
@@ -211,6 +262,23 @@ data class TagParseRuleImpl(
 ) : TagParseRule, ParseRule {
     override fun copyRule() = this.copy()
 }
+
+data class ParseOptionsRuleImpl(
+    override val namespace: String? = null,
+    override val priority: Int? = null,
+    override val consuming: Boolean? = null,
+    override val context: String? = null,
+    override var node: String? = null,
+    override var mark: String? = null,
+    override val ignore: Boolean? = null,
+    override val closeParent: Boolean? = null,
+    override val skip: DOMNode? = null,
+    override var attrs: Attrs? = null,
+    override val getNodeAttrs: ((node: Element) -> ParseRuleMatch)? = null,
+    override val contentElement: ContentElement? = null,
+    override val getContent: ((node: DOMNode, schema: Schema) -> Fragment?)? = null,
+    override val preserveWhitespace: PreserveWhitespace? = null
+) : ParseOptionsRule
 
 data class StyleParseRuleImpl(
 //    override val tag: String? = null,
@@ -320,7 +388,7 @@ class DOMParser(
         for (i in start until this.tags.size) {
             val rule = this.tags[i]
             if (matches(dom, rule.tag!!) &&
-                (rule.namespace == null || dom.baseUri() == rule.namespace) &&
+                (rule.namespace == null || (dom as? Element)?.tag()?.namespace() == rule.namespace) &&
                 (rule.context == null || context.matchesContext(rule.context!!))
             ) {
                 val getNodeAttrs = rule.getNodeAttrs
@@ -511,7 +579,7 @@ class NodeContext(
         if (this.type != null) return this.type.inlineContent
         if (this.content.isNotEmpty()) return this.content[0].isInline
         val name = node.parentNode()?.nodeName()?.lowercase() ?: false
-        return blockTags.contains(name)
+        return !blockTags.contains(name)
     }
 }
 
@@ -608,23 +676,22 @@ class ParseContext(
     // none is found, the element's content nodes are added directly.
     @Suppress("ComplexMethod")
     fun addElement(dom: Element, marks: List<Mark>, matchAfter: TagParseRule? = null) {
-        val name = dom.nodeName().lowercase()
+        var current = dom
+        val name = current.nodeName().lowercase()
         var ruleID: TagParseRule? = null
-        if (listTags.contains(name) && this.parser.normalizeLists) normalizeList(dom)
-        val ruleFromNode = this.options.ruleFromNode?.invoke(dom)
-        val rule = ruleFromNode ?: this.parser.matchTag(dom, this, matchAfter).also { ruleID = it }
+        if (listTags.contains(name) && this.parser.normalizeLists) normalizeList(current)
+        val ruleFromNode = this.options.ruleFromNode?.invoke(current)
+        val rule = ruleFromNode ?: this.parser.matchTag(current, this, matchAfter).also { ruleID = it }
         if (rule?.ignore ?: ignoreTags.contains(name)) {
-            this.findInside(dom)
-            this.ignoreFallback(dom, marks)
-        } else if (rule == null || rule.skip == true || rule.closeParent == true) {
+            this.findInside(current)
+            this.ignoreFallback(current, marks)
+        } else if (rule == null || rule.hasSkip() || rule.closeParent == true) {
+            val ruleSkip = (rule as? ParseOptionsRule)?.skip
             if (rule?.closeParent == true) {
                 this.open = max(0, this.open - 1)
+            } else if (ruleSkip is Element) {
+                current = ruleSkip
             }
-            // TODO block below does not make sense since rule.skip is defined as Boolean so it can't have nodeType
-            // ever
-//             else if (rule && (rule.skip as any).nodeType) {
-//                 dom = rule.skip as any as Element
-//             }
             var sync = false
             var top = this.top
             val oldNeedsBlock = this.needsBlock
@@ -637,26 +704,26 @@ class ParseContext(
                 if (top.type == null) {
                     this.needsBlock = true
                 }
-            } else if (dom.firstChild() == null) {
-                this.leafFallback(dom, marks)
+            } else if (current.firstChild() == null) {
+                this.leafFallback(current, marks)
                 return
             }
-            val innerMarks = if (rule != null && rule.skip == true) {
+            val innerMarks = if (rule != null && rule.hasSkip()) {
                 marks
             } else {
-                this.readStyles(dom, marks)
+                this.readStyles(current, marks)
             }
             if (innerMarks != null) {
-                this.addAll(dom, innerMarks)
+                this.addAll(current, innerMarks)
             }
             if (sync) {
                 this.sync(top)
             }
             this.needsBlock = oldNeedsBlock
         } else {
-            val innerMarks = this.readStyles(dom, marks)
+            val innerMarks = this.readStyles(current, marks)
             if (innerMarks != null) {
-                this.addElementByRule(dom, rule as TagParseRule, innerMarks, ruleID?.takeIf { rule.consuming == false })
+                this.addElementByRule(current, rule as TagParseRule, innerMarks, ruleID?.takeIf { rule.consuming == false })
             }
         }
     }
@@ -928,7 +995,7 @@ class ParseContext(
 
     fun findInside(parent: DOMNode) {
         this.find?.forEach {
-            if (it.pos == null && (parent is Element) && parent.children().contains(it.node)) {
+            if (it.pos == null && (parent is Element) && parent.contains(it.node)) {
                 it.pos = this.currentPos
             }
         }
@@ -1013,12 +1080,12 @@ class ParseContext(
         if (context != null) {
             for (d in context.depth downTo 0) {
                 val deflt = context.node(d).contentMatchAt(context.indexAfter(d)).defaultType
-                if (deflt != null && deflt.isTextblock && deflt.defaultAttrs.isNotEmpty()) return deflt
+                if (deflt != null && deflt.isTextblock) return deflt
             }
         }
         for (name in this.parser.schema.nodes) {
             val type = this.parser.schema.nodeType(name.key)
-            if (type.isTextblock && type.defaultAttrs.isNotEmpty()) return type
+            if (type.isTextblock) return type
         }
         return null
     }
@@ -1083,8 +1150,9 @@ private fun scan(nodeType: NodeType, seen: MutableList<ContentMatch>, match: Con
 
 fun Element.styles(): Map<String, String>? {
     val style = attribute("style")?.value ?: return null
-    return style.split(";").associate {
-        val (key, value) = it.split(":")
-        key.trim() to value.trim()
-    }
+    return style.split(";")
+        .map { if (it.contains(":")) it else "$it:" }
+        .associate { item ->
+            item.split(":", limit = 2).let { it[0].trim() to it[1].trim() }
+        }
 }
