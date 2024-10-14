@@ -4,6 +4,8 @@ package com.atlassian.prosemirror.model
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import assertk.assertions.isInstanceOf
+import assertk.assertions.isNull
 import com.atlassian.prosemirror.testbuilder.AttributeSpecImpl
 import com.atlassian.prosemirror.testbuilder.NodeSpecImpl
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder
@@ -17,6 +19,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertFails
 import kotlin.test.fail
 
 val customSchemaSpec = SchemaSpec(
@@ -29,8 +32,8 @@ val customSchemaSpec = SchemaSpec(
         "contact" to NodeSpecImpl(
             inline = true,
             attrs = mapOf(
-                "name" to AttributeSpecImpl(),
-                "email" to AttributeSpecImpl()
+                "name" to AttributeSpecImpl("default"),
+                "email" to AttributeSpecImpl() // no default value intentional
             ),
             leafText = { node -> "${node.attr<String>("name")} <${node.attr<String>("email")}>" }
         ),
@@ -363,4 +366,69 @@ class NodeTest {
         assertThat(contact.textContent).isEqualTo("Bob <bob@example.com>")
         assertThat(paragraph.textContent).isEqualTo("Hello Bob <bob@example.com>")
     }
+
+    @Test
+    fun `should use default if attr does not exist`() {
+        val d = createContactTestDoc(mapOf(
+            "email" to "alice@example.com"
+        ))
+        val contactNode = d.child(0).child(0)
+        // Use default regardless of <T> being nullable
+        assertThat(contactNode.attr<String>("name")).isEqualTo("default")
+        assertThat(contactNode.attr<String?>("name")).isEqualTo("default")
+    }
+
+    @Test
+    fun `maybe use default if attr is null`() {
+        val d = createContactTestDoc(mapOf(
+            "name" to null,
+            "email" to "alice@example.com"
+        ))
+        val contactNode = d.child(0).child(0)
+        // If attr is null and default null, then only return null if we're asked for nullable - otherwise use
+        // nodeSpec's default
+        assertThat(contactNode.attr<String>("name")).isEqualTo("default")
+        assertThat(contactNode.attr<String>("name", "default2")).isEqualTo("default2")
+        assertThat(contactNode.attr<String?>("name")).isNull()
+        assertThat(contactNode.attr<String?>("name", "default2")).isEqualTo("default2")
+    }
+
+    @Test
+    fun `should use default if attr is wrong type`() {
+        val d = createContactTestDoc(mapOf(
+            "name" to 123,
+            "email" to 123
+        ))
+        val contactNode = d.child(0).child(0)
+        // Use default due to wrong type, or null if no default and <T> is nullable
+        assertThat(contactNode.attr<String>("name")).isEqualTo("default")
+        assertThat(contactNode.attr<String>("email", "default")).isEqualTo("default")
+        assertThat(contactNode.attr<String?>("email")).isNull()
+    }
+
+    @Suppress("UnusedPrivateMember")
+    @Test
+    fun `throw IllegalArgumentException if default cannot be resolved`() {
+        val d = createContactTestDoc(mapOf(
+            "email" to null
+        ))
+        val contactNode = d.child(0).child(0)
+        // If attr is null, default null, and nodeSpec default null, then we cannot return if <T> is not nullable
+        val caughtException = assertFails("Expected a IllegalArgumentException") {
+            contactNode.attr<String>("email")
+        }
+        assertThat(caughtException).isInstanceOf(IllegalArgumentException::class)
+    }
+
+    private fun createContactTestDoc(attrs: Map<String, Any?>) = customSchema.nodes["doc"]!!.createChecked(
+        emptyMap(),
+        listOf(
+            customSchema.nodes["paragraph"]!!.createChecked(
+                emptyMap(),
+                listOf(
+                    customSchema.nodes["contact"]!!.createChecked(attrs)
+                )
+            )
+        )
+    )
 }
