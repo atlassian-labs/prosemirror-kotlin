@@ -472,22 +472,22 @@ fun replaceRange(tr: Transform, from: Int, to: Int, slice: Slice): Transform? {
     // target depth, starting with the preferred depths.
     val preferredTargetIndex = targetDepths.indexOf(preferredTarget)
 
-    val leftNodes = mutableListOf<Node>()
+    val leftNodes = mutableListOf<Node?>()
     var preferredDepth = slice.openStart
     var content = slice.content
     var i = 0
     while (true) {
-        val node = content.firstChild!!
+        val node = content.firstChild
         leftNodes.add(node)
         if (i == slice.openStart) break
-        content = node.content
+        content = node!!.content
         i++
     }
 
     // Back up preferredDepth to cover defining textblocks directly
     // above it, possibly skipping a non-defining textblock.
     for (d in preferredDepth - 1 downTo 0) {
-        val type = leftNodes[d].type
+        val type = leftNodes[d]?.type ?: continue
         val def = definesContent(type)
         if (def && _from.node(preferredTargetIndex).type != type) {
             preferredDepth = d

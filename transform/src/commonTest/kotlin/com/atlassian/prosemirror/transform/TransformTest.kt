@@ -2,6 +2,7 @@ package com.atlassian.prosemirror.transform
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import assertk.assertions.isTrue
 import com.atlassian.prosemirror.model.Attrs
 import com.atlassian.prosemirror.model.Mark
 import com.atlassian.prosemirror.model.Node
@@ -11,13 +12,17 @@ import com.atlassian.prosemirror.model.SchemaSpec
 import com.atlassian.prosemirror.model.Slice
 import com.atlassian.prosemirror.testbuilder.AttributeSpecImpl
 import com.atlassian.prosemirror.testbuilder.MarkSpecImpl
+import com.atlassian.prosemirror.testbuilder.NodeBuildCompanion
+import com.atlassian.prosemirror.testbuilder.NodeBuilder
 import com.atlassian.prosemirror.testbuilder.NodeSpecImpl
+import com.atlassian.prosemirror.testbuilder.PMNodeBuilder
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.doc
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.pos
 import com.atlassian.prosemirror.testbuilder.schema
 import com.atlassian.prosemirror.util.safeMode
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 @Suppress("LargeClass")
@@ -686,101 +691,166 @@ class TransformTest {
             "ordered_list"
         )
 
-// TODO EASY: convert remaining wrap tests
-//
-//        it("includes half-covered parent nodes", () =>
-//        wrap(doc(blockquote(p("<1>one"), p("two<a>")), p("three<b>")),
-//            doc(blockquote(blockquote(p("<1>one"), p("two<a>")), p("three<b>"))),
-//            "blockquote"))
-//    })
-//
-//    describe("setBlockType", () => {
-//        function type(doc: Node, expect: Node, nodeType: string, attrs?: Attrs) {
-//        testTransform(
-//            new Transform(doc).setBlockType(
-//                (doc as any).tag.a,
-//                (doc as any).tag.b || (doc as any).tag.a,
-//                schema.nodes[nodeType],
-//                attrs
-//            ),
-//            expect
-//        )
-//    }
-//
-//        it("can change a single textblock", () =>
-//        type(doc(p("am<a> i")),
-//            doc(h2("am i")),
-//            "heading", {level: 2}))
-//
-//        it("can change multiple blocks", () =>
-//        type(doc(h1("<a>hello"), p("there"), p("<b>you"), p("end")),
-//            doc(pre("hello"), pre("there"), pre("you"), p("end")),
-//            "code_block"))
-//
-//        it("can change a wrapped block", () =>
-//        type(doc(blockquote(p("one<a>"), p("two<b>"))),
-//            doc(blockquote(h1("one<a>"), h1("two<b>"))),
-//            "heading", {level: 1}))
-//
-//        it("clears markup when necessary", () =>
-//        type(doc(p("hello<a> ", em("world"))),
-//            doc(pre("hello world")),
-//            "code_block"))
-//
-//        it("only clears markup when needed", () =>
-//        type(doc(p("hello<a> ", em("world"))),
-//            doc(h1("hello<a> ", em("world"))),
-//            "heading", {level: 1}))
-//
-//        it("works after another step", () => {
-//            let d = doc(p("f<x>oob<y>ar"), p("baz<a>"))
-//            let tr = new Transform(d).delete(
-//                (d as any).tag.x,
-//                (d as any).tag.y),
-//                pos = tr.mapping.map((d as any).tag.a
-//            )
-//            tr.setBlockType(pos, pos, schema.nodes.heading, {level: 1})
-//            testTransform(tr, doc(p("f<x><y>ar"), h1("baz<a>")))
-//        })
-//
-//        it("skips nodes that can't be changed due to constraints", () =>
-//        type(doc(p("<a>hello", img()), p("okay"), ul(li(p("foo<b>")))),
-//            doc(pre("<a>hello"), pre("okay"), ul(li(p("foo<b>")))),
-//            "code_block"))
-//    })
-//
-//    describe("setNodeMarkup", () => {
-//        function markup(doc: Node, expect: Node, type: string, attrs?: Attrs) {
-//        testTransform(new Transform(doc).setNodeMarkup((doc as any).tag.a, schema.nodes[type], attrs), expect)
-//    }
-//
-//        it("can change a textblock", () =>
-//        markup(doc("<a>", p("foo")),
-//            doc(h1("foo")),
-//            "heading", {level: 1}))
-//
-//        it("can change an inline node", () =>
-//        markup(doc(p("foo<a>", img(), "bar")),
-//            doc(p("foo", img({src: "bar", alt: "y"}), "bar")),
-//            "image", {src: "bar", alt: "y"}))
-//    })
-// endregion
+    @Test
+    fun `includes half-covered parent nodes`() =
+        wrap(
+            doc { blockquote { p { +"<1>one" } + p { +"two<a>" } } + p { +"three<b>"} },
+            doc { blockquote { blockquote { p { +"<1>one" } + p { +"two<a>" } } + p { +"three<b>"} } },
+            "blockquote"
+        )
+    // endregion
 
-    // region replace
-    fun repl(doc: Node, source: Node, expect: Node) {
-        val slice = source.slice(pos(source, "a")!!, pos(source, "b")!!)
-        repl(doc, slice, expect)
-    }
-
-    fun repl(doc: Node, source: Slice?, expect: Node) {
-        val slice = source ?: Slice.empty
+    // region setBlockType
+    private fun type(doc: Node, expect: Node, nodeType: String, attrs: Attrs? = null) {
         testTransform(
-            Transform(doc).replace(
+            Transform(doc).setBlockType(
                 pos(doc, "a")!!,
                 pos(doc, "b") ?: pos(doc, "a")!!,
-                slice
+                schema.nodes[nodeType]!!,
+                attrs
             ),
             expect
+        )
+    }
+
+    @Test
+    fun `can change a single textblock`() =
+        type(
+            doc { p { +"am<a> i" } },
+            doc { h2 { +"am i" } },
+            "heading",
+            mapOf("level" to 2)
+        )
+
+    @Test
+    fun `can change multiple blocks`() =
+        type(
+            doc { h1 { +"<a>hello" } + p { +"there" } + p { +"<b>you" } + p { +"end" } },
+            doc { pre { +"hello" } + pre { +"there" } + pre { +"you" } + p { +"end" } },
+            "code_block"
+        )
+
+    @Test
+    fun `can change a wrapped block`() =
+        type(
+            doc { blockquote { p { +"one<a>" } + p { +"two<b>" } } },
+            doc { blockquote { h1 { +"one<a>" } + h1 { +"two<b>" } } },
+            "heading",
+            mapOf("level" to 1)
+        )
+
+    @Test
+    fun `clears markup when necessary`() =
+        type(
+            doc { p { +"hello<a> " + em { +"world" } } },
+            doc { pre { +"hello world" } },
+            "code_block"
+        )
+
+    @Test
+    fun `only clears markup when needed`() =
+        type(
+            doc { p { +"hello<a> " + em { +"world" } } },
+            doc { h1 { +"hello<a> " + em { +"world" } } },
+            "heading",
+            mapOf("level" to 1)
+        )
+
+    @Test
+    fun `works after another step`() {
+        val d = doc { p { +"f<x>oob<y>ar" } + p { +"baz<a>" } }
+        val tr = Transform(d).delete(pos(d, "x")!!, pos(d, "y")!!)
+        val pos = tr.mapping.map(pos(d, "a")!!)
+        tr.setBlockType(pos, pos, schema.nodes["heading"]!!, mapOf("level" to 1))
+        testTransform(tr, doc { p { +"f<x><y>ar" } + h1 { +"baz<a>" } })
+    }
+
+    @Test
+    fun `skips nodes that can't be changed due to constraints`() {
+        type(
+            doc { p { +"<a>hello" + img {} } + p { +"okay" } + ul { li { p { +"foo<b>" } } } },
+            doc { pre { +"<a>hello" } + pre { +"okay" } + ul { li { p { +"foo<b>" } } } },
+            "code_block"
+        )
+    }
+    // endregion
+
+    // region setNodeMarkup
+    fun markup(doc: Node, expect: Node, type: String, attrs: Attrs? = null) {
+        testTransform(
+            Transform(doc).setNodeMarkup(
+                pos(doc, "a")!!,
+                schema.nodes[type]!!,
+                attrs
+            ),
+            expect
+        )
+    }
+
+    @Test
+    fun `can change a textblock`() =
+        markup(
+            doc { +"<a>" + p { +"foo" } },
+            doc { h1 { +"foo" } },
+            "heading",
+            mapOf("level" to 1)
+        )
+
+    @Test
+    fun `can change an inline node`() =
+        markup(
+            doc { p { +"foo<a>" + img {} + "bar" } },
+            doc { p { +"foo" + img(mapOf("src" to "bar", "alt" to "y")) {} + "bar" } },
+            "image",
+            mapOf("src" to "bar", "alt" to "y")
+        )
+
+    // endregion
+
+    // region replace
+    /// repl
+    /// @param doc
+    /// @param source
+    /// @param expect
+    /// @param useDocFirstChild if true, use the first child of the doc as the target.
+    /// Useful because NodeBuilder only adds tags are added to the root doc.
+    /// @param useSourceFirstChild if true, use the first child of the source as the target.
+    /// Useful because NodeBuilder only adds tags are added to the root doc.
+    /// @param useExpectFirstChild if true, use the first child of the expect as the target.
+    /// Useful because NodeBuilder only adds tags are added to the root doc.
+    fun repl(
+        doc: Node,
+        source: Node,
+        expect: Node,
+        useDocFirstChild: Boolean = false,
+        useSourceFirstChild: Boolean = false,
+        useExpectFirstChild: Boolean = false
+    ) {
+        val sourceOffset = if (useSourceFirstChild) -1 else 0
+        val slice = if (useSourceFirstChild) {
+            source.firstChild!!
+        } else {
+            source
+        }.slice(pos(source, "a")!! + sourceOffset, pos(source, "b")!! + sourceOffset)
+        repl(doc, slice, expect, useDocFirstChild, useExpectFirstChild)
+    }
+
+    fun repl(doc: Node, source: Slice?, expect: Node, useDocFirstChild: Boolean = false, useExpectFirstChild: Boolean = false) {
+        val slice = source ?: Slice.empty
+        val docOffset = if (useDocFirstChild) -1 else 0
+        val theDoc = if (useDocFirstChild) {
+            doc.firstChild!!
+        } else {
+            doc
+        }
+        testTransform(
+            Transform(theDoc).replace(
+                pos(doc, "a")!! + docOffset,
+                (pos(doc, "b") ?: pos(doc, "a")!!) + docOffset,
+                slice
+            ),
+            expect,
+            useExpectFirstChild
         )
     }
 
@@ -946,390 +1016,744 @@ class TransformTest {
             doc { p { +"he<before>llo big w<after>orld" } }
         )
 
-// TODO EASY convert remaining replace tests
+    @Test
+    fun `respects open empty nodes at the edges`() =
+        repl(
+            doc { p { +"one<a>two" } },
+            doc { p { +"<a>" } + p { +"hello" } + p { +"<b>b" } },
+            doc { p { +"one" } + p { +"hello" } + p { +"<a>two" } }
+        )
 
-//        it("respects open empty nodes at the edges", () =>
-//        repl(doc(p("one<a>two")),
-//            doc(p("a<a>"), p("hello"), p("<b>b")),
-//            doc(p("one"), p("hello"), p("<a>two"))))
-//
-//        it("can completely overwrite a paragraph", () =>
-//        repl(doc(p("one<a>"), p("t<inside>wo"), p("<b>three<end>")),
-//            doc(p("a<a>"), p("TWO"), p("<b>b")),
-//            doc(p("one<a>"), p("TWO"), p("<inside>three<end>"))))
-//
-//        it("joins marks", () =>
-//        repl(doc(p("foo ", em("bar<a>baz"), "<b> quux")),
-//            doc(p("foo ", em("xy<a>zzy"), " foo<b>")),
-//            doc(p("foo ", em("barzzy"), " foo quux"))))
-//
-//        it("can replace text with a break", () =>
-//        repl(doc(p("foo<a>b<inside>b<b>bar")),
-//            doc(p("<a>", br(), "<b>")),
-//            doc(p("foo", br(), "<inside>bar"))))
-//
-//        it("can join different blocks", () =>
-//        repl(doc(h1("hell<a>o"), p("by<b>e")),
-//            null,
-//            doc(h1("helle"))))
-//
-//        it("can restore a list parent", () =>
-//        repl(doc(h1("hell<a>o"), "<b>"),
-//            doc(ol(li(p("on<a>e")), li(p("tw<b>o")))),
-//            doc(h1("helle"), ol(li(p("tw"))))))
-//
-//        it("can restore a list parent and join text after it", () =>
-//        repl(doc(h1("hell<a>o"), p("yo<b>u")),
-//            doc(ol(li(p("on<a>e")), li(p("tw<b>o")))),
-//            doc(h1("helle"), ol(li(p("twu"))))))
-//
-//        it("can insert into an empty block", () =>
-//        repl(doc(p("a"), p("<a>"), p("b")),
-//            doc(p("x<a>y<b>z")),
-//            doc(p("a"), p("y<a>"), p("b"))))
-//
-//        it("doesn't change the nesting of blocks after the selection", () =>
-//        repl(doc(p("one<a>"), p("two"), p("three")),
-//            doc(p("outside<a>"), blockquote(p("inside<b>"))),
-//            doc(p("one"), blockquote(p("inside")), p("two"), p("three"))))
-//
-//        it("can close a parent node", () =>
-//        repl(doc(blockquote(p("b<a>c"), p("d<b>e"), p("f"))),
-//            doc(blockquote(p("x<a>y")), p("after"), "<b>"),
-//            doc(blockquote(p("b<a>y")), p("after"), blockquote(p("<b>e"), p("f")))))
-//
-//        it("accepts lopsided regions", () =>
-//        repl(doc(blockquote(p("b<a>c"), p("d<b>e"), p("f"))),
-//            doc(blockquote(p("x<a>y")), p("z<b>")),
-//            doc(blockquote(p("b<a>y")), p("z<b>e"), blockquote(p("f")))))
-//
-//        it("can close nested parent nodes", () =>
-//        repl(doc(blockquote(blockquote(p("one"), p("tw<a>o"), p("t<b>hree<3>"), p("four<4>")))),
-//            doc(ol(li(p("hello<a>world")), li(p("bye"))), p("ne<b>xt")),
-//            doc(
-//              blockquote(blockquote(p("one"), p("tw<a>world"), ol(li(p("bye"))), p("ne<b>hree<3>"), p("four<4>")))))
-//            )
-//
-//        it("will close open nodes to the right", () =>
-//        repl(doc(p("x"), "<a>"),
-//            doc("<a>", ul(li(p("a")), li("<b>", p("b")))),
-//            doc(p("x"), ul(li(p("a")), li(p())), "<a>")))
-//
-//        it("can delete the whole document", () =>
-//        repl(doc("<a>", h1("hi"), p("you"), "<b>"),
-//            null,
-//            doc(p())))
-//
-//        it("preserves an empty parent to the left", () =>
-//        repl(doc(blockquote("<a>", p("hi")), p("b<b>x")),
-//            doc(p("<a>hi<b>")),
-//            doc(blockquote(p("hix")))))
-//
-//        it("drops an empty parent to the right", () =>
-//        repl(doc(p("x<a>hi"), blockquote(p("yy"), "<b>"), p("c")),
-//            doc(p("<a>hi<b>")),
-//            doc(p("xhi"), p("c"))))
-//
-//        it("drops an empty node at the start of the slice", () =>
-//        repl(doc(p("<a>x")),
-//            doc(blockquote(p("hi"), "<a>"), p("b<b>")),
-//            doc(p(), p("bx"))))
-//
-//        it("drops an empty node at the end of the slice", () =>
-//        repl(doc(p("<a>x")),
-//            doc(p("b<a>"), blockquote("<b>", p("hi"))),
-//            doc(p(), blockquote(p()), p("x"))))
-//
-//        it("does nothing when given an unfittable slice", () =>
-//        repl(p("<a>x"),
-//            new Slice(Fragment.from([blockquote(), hr()]), 0, 0),
-//        p("x")))
-//
-//        it("doesn't drop content when things only fit at the top level", () =>
-//        repl(doc(p("foo"), "<a>", p("bar<b>")),
-//            ol(li(p("<a>a")), li(p("b<b>"))),
-//            doc(p("foo"), p("a"), ol(li(p("b"))))))
-//
-//        it("preserves openEnd when top isn't placed", () =>
-//        repl(doc(ul(li(p("ab<a>cd")), li(p("ef<b>gh")))),
-//            doc(ul(li(p("ABCD")), li(p("EFGH")))).slice(5, 13, true),
-//            doc(ul(li(p("abCD")), li(p("EFgh"))))))
-//
-//        it("will auto-close a list item when it fits in a list", () =>
-//        repl(doc(ul(li(p("foo")), "<a>", li(p("bar")))),
-//            ul(li(p("a<a>bc")), li(p("de<b>f"))),
-//            doc(ul(li(p("foo")), li(p("bc")), li(p("de")), li(p("bar"))))))
-//
-//        it("finds the proper openEnd value when unwrapping a deep slice", () =>
-//        repl(doc("<a>", p(), "<b>"),
-//            doc(blockquote(blockquote(blockquote(p("hi"))))).slice(3, 6, true),
-//            doc(p("hi"))))
-//
-//        // A schema that allows marks on top-level block nodes
-//        let ms = new Schema({
-//            nodes: schema.spec.nodes.update("doc", Object.assign({}, schema.spec.nodes.get("doc"), {marks: "_"})),
-//            marks: schema.spec.marks
-//        })
-//
-//        it("preserves marks on block nodes", () => {
-//            let tr = new Transform(ms.node("doc", null, [
-//                ms.node("paragraph", null, [ms.text("hey")], [ms.mark("em")]),
-//                ms.node("paragraph", null, [ms.text("ok")], [ms.mark("strong")])
-//            ]))
-//            tr.replace(2, 7, tr.doc.slice(2, 7))
-//            ist(tr.doc, tr.before, eq)
-//        })
-//
-//        it("preserves marks on open slice block nodes", () => {
-//            let tr = new Transform(ms.node("doc", null, [ms.node("paragraph", null, [ms.text("a")])]))
-//            tr.replace(3, 3, ms.node("doc", null, [
-//                ms.node("paragraph", null, [ms.text("b")], [ms.mark("em")])
-//            ]).slice(1, 3))
-//            ist(tr.doc.childCount, 2)
-//            ist(tr.doc.lastChild!.marks.length, 1)
-//        })
-//
-//        // A schema that enforces a heading and a body at the top level
-//        let hbSchema = new Schema({
-//            nodes: schema.spec.nodes.append({
-//            doc: Object.assign({}, schema.spec.nodes.get("doc"), {content: "heading body"}),
-//            body: {content: "block+"}
-//        })
-//        })
-//        let hb = builders(hbSchema, {
-//        p: {nodeType: "paragraph"},
-//        b: {nodeType: "body"},
-//        h: {nodeType: "heading", level: 1},
-//    }) as any
-//
-//        it("can unwrap a paragraph when replacing into a strict schema", () => {
-//            let tr = new Transform(hb.doc(hb.h("Head"), hb.b(hb.p("Content"))))
-//            tr.replace(0, tr.doc.content.size, tr.doc.slice(7, 16))
-//            ist(tr.doc, hb.doc(hb.h("Content"), hb.b(hb.p())), eq)
-//        })
-//
-//        it("can unwrap a body after a placed node", () => {
-//            let tr = new Transform(hb.doc(hb.h("Head"), hb.b(hb.p("Content"))))
-//            tr.replace(7, 7, tr.doc.slice(0, tr.doc.content.size))
-//            ist(tr.doc, hb.doc(hb.h("Head"), hb.b(hb.h("Head"), hb.p("Content"), hb.p("Content"))), eq)
-//        })
-//
-//        it("can wrap a paragraph in a body, even when it's not the first node", () => {
-//            let tr = new Transform(hb.doc(hb.h("Head"), hb.b(hb.p("One"), hb.p("Two"))))
-//            tr.replace(0, tr.doc.content.size, tr.doc.slice(8, 16))
-//            ist(tr.doc, hb.doc(hb.h("One"), hb.b(hb.p("Two"))), eq)
-//        })
-//
-//        it("can split a fragment and place its children in different parents", () => {
-//            let tr = new Transform(hb.doc(hb.h("Head"), hb.b(hb.h("One"), hb.p("Two"))))
-//            tr.replace(0, tr.doc.content.size, tr.doc.slice(7, 17))
-//            ist(tr.doc, hb.doc(hb.h("One"), hb.b(hb.p("Two"))), eq)
-//        })
-//
-//        it("will insert filler nodes before a node when necessary", () => {
-//            let tr = new Transform(hb.doc(hb.h("Head"), hb.b(hb.p("One"))))
-//            tr.replace(0, tr.doc.content.size, tr.doc.slice(6, tr.doc.content.size))
-//            ist(tr.doc, hb.doc(hb.h(), hb.b(hb.p("One"))), eq)
-//        })
-//
-//        it("doesn't fail when moving text would solve an unsatisfied content constraint", () => {
-//            let s = new Schema({
-//                nodes: schema.spec.nodes.append({
-//                title: {content: "text*"},
-//                doc: {content: "title? block*"}
-//            })
-//            })
-//            let tr = new Transform(s.node("doc", null, s.node("title", null, s.text("hi"))))
-//            tr.replace(1, 1, s.node("bullet_list", null, [
-//                s.node("list_item", null, s.node("paragraph", null, s.text("one"))),
-//                s.node("list_item", null, s.node("paragraph", null, s.text("two")))
-//            ]).slice(2, 12))
-//            ist(tr.steps.length, 0, ">")
-//        })
-//
-//        it("doesn't fail when pasting a half-open slice with a title and a code block into an empty title", () => {
-//            let s = new Schema({
-//                nodes: schema.spec.nodes.append({
-//                title: {content: "text*"},
-//                doc: {content: "title? block*"}
-//            })
-//            })
-//            let tr = new Transform(s.node("doc", null, [s.node("title", null, [])]))
-//            tr.replace(1, 1, s.node("doc", null, [
-//                s.node("title", null, s.text("title")),
-//                s.node("code_block", null, s.text("two")),
-//            ]).slice(1))
-//            ist(tr.steps.length, 0, ">")
-//        })
-//
-//        it("doesn't fail when pasting a half-open slice with a heading and a code block into an empty title", () => {
-//            let s = new Schema({
-//                nodes: schema.spec.nodes.append({
-//                title: {content: "text*"},
-//                doc: {content: "title? block*"}
-//            })
-//            })
-//            let tr = new Transform(s.node("doc", null, [s.node("title")]))
-//            tr.replace(1, 1, s.node("doc", null, [
-//                s.node("heading", {level: 1}, [s.text("heading")]),
-//                s.node("code_block", null, [s.text("code")]),
-//            ]).slice(1))
-//            ist(tr.steps.length, 0, ">")
-//        })
-//
-//        it("can handle replacing in nodes with fixed content", () => {
-//            let s = new Schema({
-//                nodes: {
-//                doc: {content: "block+"},
-//                a: {content: "inline*"},
-//                b: {content: "inline*"},
-//                block: {content: "a b"},
-//                text: {group: "inline"}
-//            }
-//            })
-//
-//            let doc = s.node("doc", null, [
-//            s.node("block", null, [s.node("a", null, [s.text("aa")]), s.node("b", null, [s.text("bb")])])
-//            ])
-//            let from = 3, to = doc.content.size
-//            ist(new Transform(doc).replace(from, to, doc.slice(from, to)).doc, doc, eq)
-//        })
-// endregion
+    @Test
+    fun `can completely overwrite a paragraph`() =
+        repl(
+            doc { p { +"one<a>" } + p { +"t<inside>wo" } + p { +"<b>three<end>" } },
+            doc { p { +"a<a>" } + p { +"TWO" } + p { +"<b>b" } },
+            doc { p { +"one<a>" } + p { +"TWO" } + p { +"<inside>three<end>" } }
+        )
 
-// TODO EASY convert replaceRange tests
-// region replaceRange
-//    describe("replaceRange", () => {
-//        function repl(doc: Node, source: Node, expect: Node) {
-//        let slice = !source ? Slice.empty : source instanceof Slice ? source
-//        : source.slice((source as any).tag.a, (source as any).tag.b, true)
-//        testTransform(
-//            new Transform(doc).replaceRange((doc as any).tag.a, (doc as any).tag.b || (doc as any).tag.a, slice),
-//            expect
-//        )
-//    }
-//
-//        it("replaces inline content", () =>
-//        repl(doc(p("foo<a>b<b>ar")), p("<a>xx<b>"), doc(p("foo<a>xx<b>ar"))))
-//
-//        it("replaces an empty paragraph with a heading", () =>
-//        repl(doc(p("<a>")), doc(h1("<a>text<b>")), doc(h1("text"))))
-//
-//        it("replaces a fully selected paragraph with a heading", () =>
-//        repl(doc(p("<a>abc<b>")), doc(h1("<a>text<b>")), doc(h1("text"))))
-//
-//        it("recreates a list when overwriting a paragraph", () =>
-//        repl(doc(p("<a>")), doc(ul(li(p("<a>foobar<b>")))), doc(ul(li(p("foobar"))))))
-//
-//        it("drops context when it doesn't fit", () =>
-//        repl(doc(ul(li(p("<a>")), li(p("b")))), doc(h1("<a>h<b>")), doc(ul(li(p("h<a>")), li(p("b"))))))
-//
-//        it("can replace a node when endpoints are in different children", () =>
-//        repl(doc(p("a"), ul(li(p("<a>b")), li(p("c"), blockquote(p("d<b>")))), p("e")),
-//            doc(h1("<a>x<b>")),
-//            doc(p("a"), h1("x"), p("e"))))
-//
-//        it("keeps defining context when inserting at the start of a textblock", () =>
-//        repl(doc(p("<a>foo")),
-//            doc(ul(li(p("<a>one")), li(p("two<b>")))),
-//            doc(ul(li(p("one")), li(p("twofoo"))))))
-//
-//        it("drops defining context when it matches the parent structure", () =>
-//        repl(doc(blockquote(p("<a>"))),
-//            doc(blockquote(p("<a>one<b>"))),
-//            doc(blockquote(p("one")))))
-//
-//        it("closes open nodes at the start", () =>
-//        repl(doc("<a>", p("abc"), "<b>"),
-//            doc(ul(li("<a>")), p("def"), "<b>"),
-//            doc(ul(li(p())), p("def"))))
-//    })
-// endregion
+    @Test
+    fun `joins marks`() =
+        repl(
+            doc { p { +"foo " + em { +"bar<a>baz" } + "<b> quux" } },
+            doc { p { +"foo " + em { +"xy<a>zzy" } + " foo<b>" } },
+            doc { p { +"foo " + em { +"barzzy" } + " foo quux" } }
+        )
 
-// TODO EASY convert replaceRangeWith tests
-// region replaceRangeWith
-//    describe("replaceRangeWith", () => {
-//        function repl(doc: Node, node: Node, expect: Node) {
-//        testTransform(
-//           new Transform(doc).replaceRangeWith((doc as any).tag.a, (doc as any).tag.b || (doc as any).tag.a, node),
-//           expect
-//        )
-//    }
-//
-//        it("can insert an inline node", () =>
-//        repl(doc(p("fo<a>o")), img(), doc(p("fo", img(), "<a>o"))))
-//
-//        it("can replace content with an inline node", () =>
-//        repl(doc(p("<a>fo<b>o")), img(), doc(p("<a>", img(), "o"))))
-//
-//        it("can replace a block node with an inline node", () =>
-//        repl(doc("<a>", blockquote(p("a")), "<b>"), img(), doc(p(img))))
-//
-//        it("can replace a block node with a block node", () =>
-//        repl(doc("<a>", blockquote(p("a")), "<b>"), hr(), doc(hr())))
-//
-//        it("can insert a block quote in the middle of text", () =>
-//        repl(doc(p("foo<a>bar")), hr(), doc(p("foo"), hr(), p("bar"))))
-//
-//        it("can replace empty parents with a block node", () =>
-//        repl(doc(blockquote(p("<a>"))), hr(), doc(blockquote(hr()))))
-//
-//        it("can move an inserted block forward out of parent nodes", () =>
-//        repl(doc(h1("foo<a>")), hr(), doc(h1("foo"), hr())))
-//
-//        it("can move an inserted block backward out of parent nodes", () =>
-//        repl(doc(p("a"), blockquote(p("<a>b"))), hr(), doc(p("a"), blockquote(hr, p("b")))))
-//    })
-// endregion
+    @Test
+    fun `can replace a text with a break`() =
+        repl(
+            doc { p { +"foo<a>b<inside>b<b>bar" } },
+            doc { p { +"<a>" + br {} + "<b>" } },
+            doc { p { +"foo" + br {} + "<inside>bar" } }
+        )
 
-// TODO EASY convert deleteRange tests
-// region deleteRange
-//    describe("deleteRange", () => {
-//        function del(doc: Node, expect: Node) {
-//        testTransform(
-//          new Transform(doc).deleteRange((doc as any).tag.a, (doc as any).tag.b || (doc as any).tag.a),
-//          expect
-//        )
-//    }
-//
-//        it("deletes the given range", () =>
-//        del(doc(p("fo<a>o"), p("b<b>ar")), doc(p("fo<a><b>ar"))))
-//
-//        it("deletes empty parent nodes", () =>
-//        del(doc(blockquote(ul(li("<a>", p("foo"), "<b>")), p("x"))),
-//            doc(blockquote("<a><b>", p("x")))))
-//
-//        it("doesn't delete parent nodes that can be empty", () =>
-//        del(doc(p("<a>foo<b>")), doc(p("<a><b>"))))
-//
-//        it("is okay with deleting empty ranges", () =>
-//        del(doc(p("<a><b>")), doc(p("<a><b>"))))
-//
-//        it("will delete a whole covered node even if selection ends are in different nodes", () =>
-//        del(doc(ul(li(p("<a>foo")), li(p("bar<b>"))), p("hi")), doc(p("hi"))))
-//
-//        it("leaves wrapping textblock when deleting all text in it", () =>
-//        del(doc(p("a"), p("<a>b<b>")), doc(p("a"), p())))
-//
-//        it("expands to cover the whole parent node", () =>
-//        del(doc(p("a"), blockquote(blockquote(p("<a>foo")), p("bar<b>")), p("b")),
-//            doc(p("a"), p("b"))))
-//
-//        it("expands to cover the whole document", () =>
-//        del(doc(h1("<a>foo"), p("bar"), blockquote(p("baz<b>"))),
-//            doc(p())))
-//
-//        it("doesn't expand beyond same-depth textblocks", () =>
-//        del(doc(h1("<a>foo"), p("bar"), p("baz<b>")),
-//            doc(h1())))
-//
-//        it("deletes the open token when deleting from start to past end of block", () =>
-//        del(doc(h1("<a>foo"), p("b<b>ar")),
-//            doc(p("ar"))))
-//
-//        it("doesn't delete the open token when the range end is at end of its own block", () =>
-//        del(doc(p("one"), h1("<a>two"), blockquote(p("three<b>")), p("four")),
-//            doc(p("one"), h1(), p("four"))))
-//    })
-// })
-// endregion
+    @Test
+    fun `can join different blocks`() =
+        repl(
+            doc { h1 { +"hell<a>o" } + p { +"by<b>e" } },
+            null,
+            doc { h1 { +"helle" } }
+        )
+
+    @Test
+    fun `can restore a list parent`() =
+        repl(
+            doc { h1 { +"hell<a>o" } + p { +"<b>" } },
+            doc { ol { li { p { +"on<a>e" } } + li { p { +"tw<b>o" } } } },
+            doc { h1 { +"helle" } + ol { li { p { +"tw" } } } }
+        )
+
+    @Test
+    fun `can restore a list parent and join text after it`() =
+        repl(
+            doc { h1 { +"hell<a>o" } + p { +"yo<b>u" } },
+            doc { ol { li { p { +"on<a>e" } } + li { p { +"tw<b>o" } } } },
+            doc { h1 { +"helle" } + ol { li { p { +"twu" } } } }
+        )
+
+    @Test
+    fun `can insert a block into an empty block`() =
+        repl(
+            doc { p { +"a" } + p { +"<a>" } + p { +"b" } },
+            doc { p { +"x<a>y<b>z" } },
+            doc { p { +"a" } + p { +"y<a>" } + p { +"b" } }
+        )
+
+    @Test
+    fun `doesn't change the nesting of blocks after the selection`() =
+        repl(
+            doc { p { +"one<a>" } + p { +"two" } + p { +"three" } },
+            doc { p { +"outside<a>" } + blockquote { p { +"inside<b>" } } },
+            doc { p { +"one" } + blockquote { p { +"inside" } } + p { +"two" } + p { +"three" } }
+        )
+
+    @Test
+    fun `can close a parent node`() =
+        repl(
+            doc { blockquote { p { +"b<a>c" } + p { +"d<b>e" } + p { +"f" } } },
+            doc { blockquote { p { +"x<a>y" } } + p { +"after" } + "<b>" },
+            doc { blockquote { p { +"b<a>y" } } + p { +"after" } + blockquote { p { +"<b>e" } + p { +"f" } } }
+        )
+
+    @Test
+    fun `accepts lopsided regions`() =
+        repl(
+            doc { blockquote { p { +"b<a>c" } + p { +"d<b>e" } + p { +"f" } } },
+            doc { blockquote { p { +"x<a>y" } } + p { +"z<b>" } },
+            doc { blockquote { p { +"b<a>y" } } + p { +"z<b>e" } + blockquote { p { +"f" } } }
+        )
+
+    @Test
+    fun `can close nested parent nodes`() =
+        repl(
+            doc { blockquote { blockquote { p { +"one" } + p { +"tw<a>o" } + p { +"t<b>hree<3>" } + p { +"four<4>" } } } },
+            doc { ol { li { p { +"hello<a>world" } } + li { p { +"bye" } } } + p { +"ne<b>xt" } },
+            doc { blockquote { blockquote { p { +"one" } + p { +"tw<a>world" } + ol { li { p { +"bye" } } } + p { +"ne<b>hree<3>" } + p { +"four<4>" } } } }
+        )
+
+    @Test
+    fun `will close open nodes to the right`() =
+        repl(
+            doc { p { +"x" } + "<a>" },
+            doc { +"<a>" + ul { li { p { +"a" } } + li { +"<b>" + p { +"b" } } } },
+            doc { p { +"x" } + ul { li { p { +"a" } } + li { p { } } } + "<a>" }
+        )
+
+    @Test
+    fun `can delete the whole document`() =
+        repl(
+            doc { p { +"<a>" } + h1 { +"hi" } + p { +"you" } + p { +"<b>" } },
+            null,
+            doc { p {} }
+        )
+
+    @Test
+    fun `preserves an empty parent to the left`() =
+        repl(
+            doc { blockquote { +"<a>" + p { +"hi" } } + p { +"b<b>x" } },
+            doc { p { +"<a>hi<b>" } },
+            doc { blockquote { p { +"hix" } } }
+        )
+
+    @Test
+    fun `drops an empty parent to the right`() =
+        repl(
+            doc { p { +"x<a>hi" } + blockquote { p { +"yy" } + "<b>" } + p { +"c" } },
+            doc { p { +"<a>hi<b>" } },
+            doc { p { +"xhi" } + p { +"c" } }
+        )
+
+    @Test
+    fun `drops an empty node at the start of the slice`() =
+        repl(
+            doc { p { +"<a>x" } },
+            doc { blockquote { p { +"hi" } + "<a>" } + p { +"b<b>" } },
+            doc { p {} + p { +"bx" } }
+        )
+
+    @Test
+    fun `drops an empty node at the end of the slice`() =
+        repl(
+            doc { p { +"<a>x" } },
+            doc { p { +"b<a>" } + blockquote { +"<b>" + p { +"hi" } } },
+            doc { p { } + blockquote { p { } }  + p { +"x" } }
+        )
+
+    @Test
+    fun `does nothing when given an unfittable slice`() {
+        val doc = doc { p { +"<a>x" } }
+        val source = doc { blockquote { } + hr { }}
+        val expectedDoc = doc { p { +"x" } }
+        PMNodeBuilder.Companion.tags()
+        repl(
+            doc,
+            Slice(source.content, 0, 0),
+            expectedDoc,
+            useDocFirstChild = true,
+            useExpectFirstChild = true
+        )
+    }
+
+    @Test
+    fun `doesn't drop content when things only fit at the top level`() =
+        repl(
+            doc { p { +"foo" } + "<a>" + p { +"bar<b>" } },
+            doc { ol { li { p { +"<a>a" } } + li { p { +"b<b>" } } } },
+            doc { p { +"foo" } + p { +"a" } + ol { li { p { +"b" } } } },
+            useSourceFirstChild = true
+        )
+
+    @Test
+    fun `preserves openEnd when top isn't placed`() =
+        repl(
+            doc { ul { li { p { +"ab<a>cd" } } + li { p { +"ef<b>gh" } } } },
+            doc { ul { li { p { +"ABCD" } } + li { p { +"EFGH" } } } }.slice(5, 13, true),
+            doc { ul { li { p { +"abCD" } } + li { p { +"EFgh" } } } }
+        )
+
+    @Test
+    fun `will auto-close a list item when it fits in a list`() =
+        repl(
+            doc { ul { li { p { +"foo" } } + "<a>" + li { p { +"bar" } } } },
+            doc { ul { li { p { +"a<a>bc" } } + li { p { +"de<b>f" } } } },
+            doc { ul { li { p { +"foo" } } + li { p { +"bc" } } + li { p { +"de" } } + li { p { +"bar" } } } },
+            useSourceFirstChild = true
+        )
+
+    @Test
+    fun `finds the proper openEnd value when unwrapping a deep slice`() =
+        repl(
+            doc { +"<a>" + p {} + "<b>" },
+            doc { blockquote { blockquote { blockquote { p { +"hi" } } } } }.slice(3, 6, true),
+            doc { p { +"hi" } }
+        )
+
+    // A schema that allows marks on top-level block nodes
+    private val ms = Schema(
+        SchemaSpec(
+            nodes = schema.spec.nodes + mapOf(
+                "doc" to (schema.spec.nodes["doc"] as NodeSpecImpl).copy(marks = "_")
+            ),
+            marks = schema.spec.marks
+        )
+    )
+
+    @Test
+    fun `preserves marks on block nodes`() {
+        val tr = Transform(
+            ms.node(
+                "doc",
+                null,
+                listOf(
+                    ms.node("paragraph", null, listOf(ms.text("hey")), listOf(ms.mark("em"))),
+                    ms.node("paragraph", null, listOf(ms.text("ok")), listOf(ms.mark("strong")))
+                )
+            )
+        )
+        tr.replace(2, 7, tr.doc.slice(2, 7))
+        assertEquals(tr.doc, tr.before)
+    }
+
+    @Test
+    fun `preserves marks on open slice block nodes`() {
+        val tr = Transform(
+            ms.node(
+                "doc",
+                null,
+                listOf(
+                    ms.node("paragraph", null, listOf(ms.text("a")))
+                )
+            )
+        )
+        tr.replace(
+            3,
+            3,
+            ms.node(
+                "doc",
+                null,
+                listOf(
+                    ms.node("paragraph", null, listOf(ms.text("b")), listOf(ms.mark("em")))
+                )
+            ).slice(1, 3)
+        )
+        assertEquals(tr.doc.childCount, 2)
+        assertEquals(tr.doc.lastChild!!.marks.size, 1)
+    }
+
+    // A schema that enforces a heading and a body at the top level
+    companion object {
+        private val hbSchema = Schema(
+            SchemaSpec(
+                nodes = schema.spec.nodes + mapOf(
+                    "doc" to (schema.spec.nodes["doc"] as NodeSpecImpl).copy(content = "heading body"),
+                    "body" to NodeSpecImpl("block+")
+                )
+            )
+        )
+    }
+
+    private class HbNodeBuilder(
+        pos: Int = 0,
+        marks: List<Mark> = emptyList(),
+        override val schema: Schema = hbSchema
+    ) : NodeBuilder<HbNodeBuilder>(pos, marks, schema) {
+        override val checked: Boolean
+            get() = false
+
+        override fun create(pos: Int, marks: List<Mark>, schema: Schema): NodeBuilder<HbNodeBuilder> {
+            return HbNodeBuilder(pos, marks, schema)
+        }
+
+        companion object : NodeBuildCompanion<HbNodeBuilder>(hbSchema) {
+            override val checked: Boolean
+                get() = false
+
+            override fun create(): HbNodeBuilder {
+                return HbNodeBuilder(schema = this.schema)
+            }
+        }
+
+    }
+
+    private fun NodeBuilder<HbNodeBuilder>.hbP(func: NodeBuilder<HbNodeBuilder>.() -> Unit) =
+        node("paragraph", func)
+    private fun NodeBuilder<HbNodeBuilder>.b(func: NodeBuilder<HbNodeBuilder>.() -> Unit) =
+        node("body", func)
+    private fun NodeBuilder<HbNodeBuilder>.h(func: NodeBuilder<HbNodeBuilder>.() -> Unit) =
+        node("heading", func, mapOf("level" to 1))
+
+    @Test
+    fun `can unwrap a paragraph when replacing into a strict schema`() {
+        val doc = HbNodeBuilder.doc {
+            h { +"Head" }
+            b { hbP { +"Content" } }
+        }
+        val tr = Transform(doc)
+        tr.replace(0, tr.doc.content.size, tr.doc.slice(7, 16))
+        assertEquals(
+            tr.doc,
+            HbNodeBuilder.doc {
+                h { +"Content" }
+                b { hbP {} }
+            }
+        )
+    }
+
+    @Test
+    fun `can unwrap a body after a placed node`() {
+        val tr = Transform(
+            HbNodeBuilder.doc {
+                h { +"Head" }
+                b { hbP { +"Content" } }
+            }
+        )
+        tr.replace(7, 7, tr.doc.slice(0, tr.doc.content.size))
+        assertEquals(
+            tr.doc,
+            HbNodeBuilder.doc {
+                h { +"Head" }
+                b { h { +"Head" } + hbP { +"Content" } + hbP { +"Content" } }
+            }
+        )
+    }
+
+    @Test
+    fun `can wrap a paragraph in a body even when it's not the first node`() {
+        val tr = Transform(
+            HbNodeBuilder.doc {
+                h { +"Head" }
+                b { hbP { +"One" } + hbP { +"Two" } }
+            }
+        )
+        tr.replace(0, tr.doc.content.size, tr.doc.slice(8, 16))
+        assertEquals(
+            tr.doc,
+            HbNodeBuilder.doc {
+                h { +"One" }
+                b { hbP { +"Two" } }
+            }
+        )
+    }
+
+    @Test
+    fun `can split a fragment and place its children in different parents`() {
+        val tr = Transform(
+            HbNodeBuilder.doc {
+                h { +"Head" }
+                b { h { +"One" } + hbP { +"Two" } }
+            }
+        )
+        tr.replace(0, tr.doc.content.size, tr.doc.slice(7, 17))
+        assertEquals(
+            tr.doc,
+            HbNodeBuilder.doc {
+                h { +"One" }
+                b { hbP { +"Two" } }
+            }
+        )
+    }
+
+    @Test
+    fun `will insert filler nodes before a node when necessary`() {
+        val tr = Transform(
+            HbNodeBuilder.doc {
+                h { +"Head" }
+                b { hbP { +"One" } }
+            }
+        )
+        tr.replace(0, tr.doc.content.size, tr.doc.slice(6, tr.doc.content.size))
+        assertEquals(
+            tr.doc,
+            HbNodeBuilder.doc {
+                h { }
+                b { hbP { +"One" } }
+            }
+        )
+    }
+
+    @Test
+    fun `doesn't fail when moving text would solve an unsatisfied content constraint`() {
+        val s = Schema(
+            SchemaSpec(
+                nodes = schema.spec.nodes + mapOf(
+                    "title" to NodeSpecImpl("text*"),
+                    "doc" to NodeSpecImpl("title? block*")
+                )
+            )
+        )
+        val tr = Transform(s.node("doc", null, s.node("title", null, s.text("hi"))))
+        tr.replace(
+            1,
+            1,
+            s.node(
+                "bullet_list", null, listOf(
+                    s.node("list_item", null, s.node("paragraph", null, s.text("one"))),
+                    s.node("list_item", null, s.node("paragraph", null, s.text("two"))),
+                )
+            ).slice(2, 12)
+        )
+        assertThat(tr.steps.size > 0).isTrue()
+    }
+
+    @Test
+    fun `doesn't fail when pasting a half-open slice with a title and a code block into an empty title`() {
+        val s = Schema(
+            SchemaSpec(
+                nodes = schema.spec.nodes + mapOf(
+                    "title" to NodeSpecImpl("text*"),
+                    "doc" to NodeSpecImpl("title? block*")
+                )
+            )
+        )
+        val tr = Transform(s.node("doc", null, s.node("title", null, emptyList())))
+        tr.replace(
+            1,
+            1,
+            s.node(
+                "doc", null, listOf(
+                    s.node("title", null, s.text("title")),
+                    s.node("code_block", null, s.text("two"))
+                )
+            ).slice(1)
+        )
+        assertThat(tr.steps.size > 0).isTrue()
+    }
+
+    @Test
+    fun `doesn't fail when pasting a half-open slice with a heading and a code block into an empty title`() {
+        val s = Schema(
+            SchemaSpec(
+                nodes = schema.spec.nodes + mapOf(
+                    "title" to NodeSpecImpl("text*"),
+                    "doc" to NodeSpecImpl("title? block*")
+                )
+            )
+        )
+        val tr = Transform(s.node("doc", null, listOf(s.node("title"))))
+        tr.replace(
+            1,
+            1,
+            s.node(
+                "doc", null, listOf(
+                    s.node("heading", mapOf("level" to 1), s.text("heading")),
+                    s.node("code_block", null, s.text("code"))
+                )
+            ).slice(1)
+        )
+        assertThat(tr.steps.size > 0).isTrue()
+    }
+
+    @Test
+    fun `can handle replacing in nodes with fixed content`() {
+        val s = Schema(
+            SchemaSpec(
+                nodes = mapOf(
+                    "doc" to NodeSpecImpl("block+"),
+                    "a" to NodeSpecImpl("inline*"),
+                    "b" to NodeSpecImpl("inline*"),
+                    "block" to NodeSpecImpl("a b"),
+                    "text" to NodeSpecImpl(group = "inline")
+                )
+            )
+        )
+
+        val doc = s.node(
+            "doc",
+            null,
+            listOf(
+                s.node(
+                    "block",
+                    null,
+                    listOf(
+                        s.node("a", null, listOf(s.text("aa"))),
+                        s.node("b", null, listOf(s.text("bb"))
+                        )
+                    )
+                )
+            )
+        )
+        val from = 3
+        val to = doc.content.size
+        val tr = Transform(doc).replace(from, to, doc.slice(from, to))
+        assertEquals(tr.doc, doc)
+    }
+    // endregion
+
+    // region replaceRange
+    private fun replRange(
+        doc: Node,
+        source: Node,
+        expect: Node,
+        useSourceFirstChild: Boolean = false,
+        ) {
+        val theSource = if (useSourceFirstChild) {
+            source.firstChild!!
+        } else {
+            source
+        }
+        val sourceOffset = if (useSourceFirstChild) -1 else 0
+        val slice = theSource.slice(pos(source, "a")!! + sourceOffset, pos(source, "b")!! + sourceOffset, true)
+        testTransform(
+            Transform(doc).replaceRange(pos(doc, "a")!!, pos(doc, "b") ?: pos(doc, "a")!!, slice),
+            expect
+        )
+    }
+
+    @Test
+    fun `replaces inline content`() =
+        replRange(
+            doc { p { +"foo<a>b<b>ar" } },
+            doc { p { +"<a>xx<b>" } },
+            doc { p { +"foo<a>xx<b>ar" } },
+            useSourceFirstChild = true
+        )
+
+    @Test
+    fun `replaces an empty paragraph with a heading`() =
+        replRange(
+            doc { p { +"<a>" } },
+            doc { h1 { +"<a>text<b>" } },
+            doc { h1 { +"text" } }
+        )
+
+    @Test
+    fun `replaces a fully selected paragraph with a heading`() =
+        replRange(
+            doc { p { +"<a>abc<b>" } },
+            doc { h1 { +"<a>text<b>" } },
+            doc { h1 { +"text" } }
+        )
+
+    @Test
+    fun `recreates a list when overwriting a paragraph`() =
+        replRange(
+            doc { p { +"<a>" } },
+            doc { ul { li { p { +"<a>foobar<b>" } } } },
+            doc { ul { li { p { +"foobar" } } } }
+        )
+
+    @Test
+    fun `drops context when it doesn't fit`() =
+        replRange(
+            doc { ul { li { p { +"<a>" } } + li { p { +"b" } } } },
+            doc { h1 { +"<a>h<b>" } },
+            doc { ul { li { p { +"h<a>" } } + li { p { +"b" } } } }
+        )
+
+    @Test
+    fun `can replace a node when endpoints are in different children`() =
+        replRange(
+            doc { p { +"a" } + ul { li { p { +"<a>b" } } + li { p { +"c" } + blockquote { p { +"d<b>"} } } } + p { +"e" } },
+            doc { h1 { +"<a>x<b>" } },
+            doc { p { +"a" } + h1 { +"x" } + p { +"e" } }
+        )
+
+    @Test
+    fun `keeps defining context when inserting at the start of a textblock`() =
+        replRange(
+            doc { p { +"<a>foo" } },
+            doc { ul { li { p { +"<a>one" } } + li { p { +"two<b>" } } } },
+            doc { ul { li { p { +"one" } } + li { p { +"twofoo" } } } }
+        )
+
+    @Test
+    fun `drops defining context when it matches the parent structure`() =
+        replRange(
+            doc { blockquote { p { +"<a>" } } },
+            doc { blockquote { p { +"<a>one<b>" } } },
+            doc { blockquote { p { +"one" } } }
+        )
+
+    @Test
+    fun `closes open nodes at the start`() =
+        replRange(
+            doc { +"<a>" + p { +"abc" } + "<b>" },
+            doc { ul { li { +"<a>" } } + p { +"def" } + "<b>" },
+            doc { ul { li { p {} } } + p { +"def" } }
+        )
+    // endregion
+
+    // region replaceRangeWith
+    private fun replRangeWith(
+        doc: Node,
+        node: Node,
+        expect: Node
+    ) {
+        testTransform(
+            Transform(doc).replaceRangeWith(pos(doc, "a")!!, pos(doc, "b") ?: pos(doc, "a")!!, node),
+            expect
+        )
+    }
+
+    @Test
+    fun `can insert an inline node`() =
+        replRangeWith(
+            doc { p { +"fo<a>o" } },
+            doc { img {} }.firstChild!!,
+            doc { p { +"fo" + img {} + "<a>o" } }
+        )
+
+    @Test
+    fun `can replace content with an inline node`() =
+        replRangeWith(
+            doc { p { +"<a>fo<b>o" } },
+            doc { img {} }.firstChild!!,
+            doc { p { +"<a>" + img {} + "o" } }
+        )
+
+    @Test
+    fun `can replace a block node with an inline node`() =
+        replRangeWith(
+            doc { +"<a>" + blockquote { p { +"a" } } + "<b>" },
+            doc { img {} }.firstChild!!,
+            doc { p { img {} } }
+        )
+
+    @Test
+    fun `can replace a block node with a block node`() =
+        replRangeWith(
+            doc { +"<a>" + blockquote { p { +"a" } } + "<b>" },
+            doc { hr {} }.firstChild!!,
+            doc { hr {} }
+        )
+
+    @Test
+    fun `can insert a block quote in the middle of text`() =
+        replRangeWith(
+            doc { p { +"foo<a>bar" } },
+            doc { hr {} }.firstChild!!,
+            doc { p { +"foo" } + hr {} + p { +"bar" } }
+        )
+
+    @Test
+    fun `can replace empty parents with a block node`() =
+        replRangeWith(
+            doc { blockquote { p { +"<a>" } } },
+            doc { hr {} }.firstChild!!,
+            doc { blockquote { hr {} } }
+        )
+
+    @Test
+    fun `can move an inserted block forward out of parent nodes`() =
+        replRangeWith(
+            doc { h1 { +"foo<a>" } },
+            doc { hr {} }.firstChild!!,
+            doc { h1 { +"foo" } + hr {} }
+        )
+
+    @Test
+    fun `can move an inserted block backward out of parent nodes`() =
+        replRangeWith(
+            doc { p { +"a" } + blockquote { p { +"<a>b" } } },
+            doc { hr {} }.firstChild!!,
+            doc { p { +"a" } + blockquote { hr {} + p { +"b"} } }
+        )
+    // endregion
+
+    // region deleteRange
+    private fun delRange(doc: Node, expect: Node) {
+        testTransform(
+            Transform(doc).deleteRange(pos(doc, "a")!!, pos(doc, "b") ?: pos(doc, "a")!!),
+            expect
+        )
+    }
+
+    @Test
+    fun `deletes the given range`() =
+        delRange(
+            doc { p { +"fo<a>o" } + p { +"b<b>ar" } },
+            doc { p { +"fo<a><b>ar" } }
+        )
+
+    @Test
+    fun `deletes empty parent nodes`() =
+        delRange(
+            doc { blockquote { ul { li { +"<a>" + p { +"foo" } +"<b>" } } + p { +"x" } } },
+            doc { blockquote { +"<a><b>" + p { +"x" } } }
+        )
+
+    @Test
+    fun `doesn't delete parent nodes that can be empty`() =
+        delRange(
+            doc { p { +"<a>foo<b>" } },
+            doc { p { +"<a><b>" } }
+        )
+
+    @Test
+    fun `is okay with deleting empty ranges`() =
+        delRange(
+            doc { p { +"<a><b>" } },
+            doc { p { +"<a><b>" } }
+        )
+
+    @Test
+    fun `will delete a whole covered node even if selection ends are in different nodes`() =
+        delRange(
+            doc { ul { li { p { +"<a>foo" } } + li { p { +"bar<b>" } } } + p { +"hi" } },
+            doc { p { +"hi" } }
+        )
+
+    @Test
+    fun `leaves wrapping textblock when deleting all text in it`() =
+        delRange(
+            doc { p { +"a" } + p { +"<a>b<b>" } },
+            doc { p { +"a" } + p {} }
+        )
+
+    @Test
+    fun `expands to cover the whole parent node`() =
+        delRange(
+            doc { p { +"a" } + blockquote { blockquote { p { +"<a>foo" } } + p { +"bar<b>" } } + p { +"b" } },
+            doc { p { +"a" } + p { +"b" } }
+        )
+
+    @Test
+    fun `expands to cover the whole document`() =
+        delRange(
+            doc { h1 { +"<a>foo" } + p { +"bar" } + blockquote { p { +"baz<b>" } } },
+            doc { p {} }
+        )
+
+    @Test
+    fun `doesn't expand beyond same-depth textblocks`() =
+        delRange(
+            doc { h1 { +"<a>foo" } + p { +"bar" } + p { +"baz<b>" } },
+            doc { h1 {} }
+        )
+
+    @Test
+    fun `deletes the open token when deleting from start to past end of block`() =
+        delRange(
+            doc { h1 { +"<a>foo" } + p { +"b<b>ar" } },
+            doc { p { +"ar" } }
+        )
+
+    @Test
+    fun `doesn't delete the open token when the range end is at end of its own block`() =
+        delRange(
+            doc { p { +"one" } + h1 { +"<a>two" } + blockquote { p { +"three<b>"} } + p { +"four" } },
+            doc { p { +"one" } + h1 {} + p { +"four" } }
+        )
+    // endregion
 }
