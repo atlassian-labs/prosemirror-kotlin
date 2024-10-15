@@ -240,9 +240,9 @@ class NodeType internal constructor(
         if (!this.validContent(content)) {
             throw RangeError(
                 if (verbose) {
-                    "Invalid content for node type $name: ${content.toString().slice(0, 50)}"
+                    "Invalid content for node $name: ${content.toString().slice(0, 50)}"
                 } else {
-                    "Invalid content for node type $name"
+                    "Invalid content for node $name"
                 }
             )
         }
