@@ -11,6 +11,12 @@ import kotlin.test.Test
 import com.atlassian.prosemirror.testbuilder.schema as testSchema
 import com.atlassian.prosemirror.testbuilder.AttributeSpecImpl
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder
+import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.pos
+import com.fleeksoft.ksoup.nodes.Element
+import com.fleeksoft.ksoup.nodes.Node as DOMNode
+import assertk.assertions.isTrue
+import com.fleeksoft.ksoup.nodes.TextNode
+import kotlin.test.assertFailsWith
 
 class CommentNodeBuilder(
     pos: Int = 0,
@@ -35,6 +41,7 @@ class CustomNodeBuildCompanion(schema: Schema): NodeBuildCompanion<CommentNodeBu
 }
 
 class DomTest {
+    //region DOMParser
     fun test(doc: Node, html: String) {
         val schema = doc.type.schema
         val innerHTML = DOMSerializer.fromSchema(schema).serializeFragmentToHtml(doc.content)
@@ -543,328 +550,588 @@ class DomTest {
             doc { p { br {} } + p { +"CCC" } + p { +"DDD" } + p { br {} } }
         )
     }
-}
 
-//
-//        function parse(html: string, options: ParseOptions, doc: PMNode) {
-//        return () => {
-//        let dom = document.createElement("div")
-//        dom.innerHTML = html
-//        let result = parser.parse(dom, options)
-//        ist(result, doc, eq)
-//    }
-//    }
-//
-//        it("accepts the topNode option",
-//            parse("<li>wow</li><li>such</li>", {topNode: schema.nodes.bullet_list.createAndFill()!},
-//                ul(li(p("wow")), li(p("such")))))
-//
-//        let item = schema.nodes.list_item.createAndFill()!
-//        it("accepts the topMatch option",
-//            parse("<ul><li>x</li></ul>", {topNode: item, topMatch: item.contentMatchAt(1)!},
-//                li(ul(li(p("x"))))))
-//
-//        it("accepts from and to options",
-//            parse("<hr><p>foo</p><p>bar</p><img>", {from: 1, to: 3},
-//                doc(p("foo"), p("bar"))))
-//
-//        it("accepts the preserveWhitespace option",
-//            parse("foo   bar", {preserveWhitespace: true},
-//                doc(p("foo   bar"))))
-//
-//        function open(html: string, nodes: (string | PMNode)[], openStart: number, openEnd: number, options?: ParseOptions) {
-//        return () => {
-//        let dom = document.createElement("div")
-//        dom.innerHTML = html
-//        let result = parser.parseSlice(dom, options)
-//        ist(result, new Slice(Fragment.from(nodes.map(n => typeof n == "string" ? schema.text(n) : n)), openStart, openEnd), eq)
-//    }
-//    }
-//
-//        it("can parse an open slice",
-//            open("foo", ["foo"], 0, 0))
-//
-//        it("will accept weird siblings",
-//            open("foo<p>bar</p>", ["foo", p("bar")], 0, 1))
-//
-//        it("will open all the way to the inner nodes",
-//            open("<ul><li>foo</li><li>bar<br></li></ul>", [ul(li(p("foo")), li(p("bar", br())))], 3, 3))
-//
-//        it("accepts content open to the left",
-//            open("<li><ul><li>a</li></ul></li>", [li(ul(li(p("a"))))], 4, 4))
-//
-//        it("accepts content open to the right",
-//            open("<li>foo</li><li></li>", [li(p("foo")), li()], 2, 1))
-//
-//        it("will create textblocks for block nodes",
-//            open("<div><div>foo</div><div>bar</div></div>", [p("foo"), p("bar")], 1, 1))
-//
-//        it("can parse marks at the start of defaulted textblocks",
-//            open("<div>foo</div><div><em>bar</em></div>",
-//                [p("foo"), p(em("bar"))], 1, 1))
-//
-//        it("will not apply invalid marks to nodes",
-//            open("<ul style='font-weight: bold'><li>foo</li></ul>", [ul(li(p(strong("foo"))))], 3, 3))
-//
-//        it("will apply pending marks from parents to all children",
-//            open("<ul style='font-weight: bold'><li>foo</li><li>bar</li></ul>", [ul(li(p(strong("foo"))), li(p(strong("bar"))))], 3, 3))
-//
-//        it("can parse nested mark with same type",
-//            open("<p style='font-weight: bold'>foo<strong style='font-weight: bold;'>bar</strong>baz</p>",
-//                [p(strong("foobarbaz"))], 1, 1))
-//
-//        it("drops block-level whitespace",
-//            open("<div> </div>", [], 0, 0, {preserveWhitespace: true}))
-//
-//        it("keeps whitespace in inline elements",
-//            open("<b> </b>", [p(strong(" ")).child(0)], 0, 0, {preserveWhitespace: true}))
-//
-//        it("can parse nested mark with same type but different attrs", () => {
-//            let markSchema = new Schema({
-//                nodes: schema.spec.nodes,
-//                marks: schema.spec.marks.update("s", {
-//                attrs: {
-//                'data-s': { default: 'tag' }
-//            },
-//                excludes: '',
-//                parseDOM: [{
-//                tag: "s",
-//            }, {
-//                style: "text-decoration",
-//                getAttrs() {
-//                    return {
-//                        'data-s': 'style'
-//                    }
-//                }
-//            }]
-//            })
-//            })
-//            let b = builders(markSchema)
-//            let dom = document.createElement("div")
-//            dom.innerHTML = "<p style='text-decoration: line-through;'>o<s style='text-decoration: line-through;'>o</s>o</p>"
-//            let result = DOMParser.fromSchema(markSchema).parseSlice(dom)
-//            ist(result, new Slice(Fragment.from(
-//                b.schema.nodes.paragraph.create(
-//                    undefined,
-//                    [
-//                        b.schema.text('o', [b.schema.marks.s.create({ 'data-s': 'style' })]),
-//                        b.schema.text('o', [b.schema.marks.s.create({ 'data-s': 'style' }), b.schema.marks.s.create({ 'data-s': 'tag' })]),
-//                        b.schema.text('o', [b.schema.marks.s.create({ 'data-s': 'style' })])
-//                    ]
-//                )
-//            ), 1, 1), eq)
-//
-//            dom.innerHTML = "<p><span style='text-decoration: line-through;'><s style='text-decoration: line-through;'>o</s>o</span>o</p>"
-//            result = DOMParser.fromSchema(markSchema).parseSlice(dom)
-//            ist(result, new Slice(Fragment.from(
-//                b.schema.nodes.paragraph.create(
-//                    undefined,
-//                    [
-//                        b.schema.text('o', [b.schema.marks.s.create({ 'data-s': 'style' }), b.schema.marks.s.create({ 'data-s': 'tag' })]),
-//                        b.schema.text('o', [b.schema.marks.s.create({ 'data-s': 'style' })]),
-//                        b.schema.text('o')
-//                    ]
-//                )
-//            ), 1, 1), eq)
-//        })
-//
-//        it("can temporary shadow a mark with another configuration of the same type", () => {
-//            let s = new Schema({nodes: schema.spec.nodes, marks: {color: {
-//                attrs: {color: {}},
-//                toDOM: m => ["span", {style: `color: ${m.attrs.color}`}],
-//                parseDOM: [{style: "color", getAttrs: v => ({color: v})}]
-//            }}})
-//            let d = DOMParser.fromSchema(s)
-//                .parse(domFrom('<p><span style="color: red">abc<span style="color: blue">def</span>ghi</span></p>'))
-//            ist(d, s.node("doc", null, [s.node("paragraph", null, [
-//                s.text("abc", [s.mark("color", {color: "red"})]),
-//                s.text("def", [s.mark("color", {color: "blue"})]),
-//                s.text("ghi", [s.mark("color", {color: "red"})])
-//            ])]), eq)
-//        })
-//
-//        function find(html: string, doc: PMNode) {
-//        return () => {
-//        let dom = document.createElement("div")
-//        dom.innerHTML = html
-//        let tag = dom.querySelector("var"), prev = tag.previousSibling!, next = tag.nextSibling, pos
-//        if (prev && next && prev.nodeType == 3 && next.nodeType == 3) {
-//            pos = {node: prev, offset: prev.nodeValue.length}
-//            prev.nodeValue += next.nodeValue
-//            next.parentNode.removeChild(next)
-//        } else {
-//            pos = {node: tag.parentNode, offset: Array.prototype.indexOf.call(tag.parentNode.childNodes, tag)}
-//        }
-//        tag.parentNode.removeChild(tag)
-//        let result = parser.parse(dom, {
-//        findPositions: [pos]
-//    })
-//        ist(result, doc, eq)
-//        ist((pos as any).pos, (doc as any).tag.a)
-//    }
-//    }
-//
-//        it("can find a position at the start of a paragraph",
-//            find("<p><var></var>hello</p>",
-//                doc(p("<a>hello"))))
-//
-//        it("can find a position at the end of a paragraph",
-//            find("<p>hello<var></var></p>",
-//                doc(p("hello<a>"))))
-//
-//        it("can find a position inside text",
-//            find("<p>hel<var></var>lo</p>",
-//                doc(p("hel<a>lo"))))
-//
-//        it("can find a position inside an ignored node",
-//            find("<p>hi</p><object><var></var>foo</object><p>ok</p>",
-//                doc(p("hi"), "<a>", p("ok"))))
-//
-//        it("can find a position between nodes",
-//            find("<ul><li>foo</li><var></var><li>bar</li></ul>",
-//                doc(ul(li(p("foo")), "<a>", li(p("bar"))))))
-//
-//        it("can find a position at the start of the document",
-//            find("<var></var><p>hi</p>",
-//                doc("<a>", p("hi"))))
-//
-//        it("can find a position at the end of the document",
-//            find("<p>hi</p><var></var>",
-//                doc(p("hi"), "<a>")))
-//
-//        let quoteSchema = new Schema({nodes: schema.spec.nodes, marks: schema.spec.marks, topNode: "blockquote"})
-//
-//        it("uses a custom top node when parsing",
-//            test(quoteSchema.node("blockquote", null, quoteSchema.node("paragraph", null, quoteSchema.text("hello"))),
-//                "<p>hello</p>"))
-//
-//        function contextParser(context: string) {
-//        return new DOMParser(schema, [{tag: "foo", node: "horizontal_rule", context} as ParseRule]
-//        .concat(DOMParser.schemaRules(schema) as ParseRule[]))
-//    }
-//
-//        it("recognizes context restrictions", () => {
-//            ist(contextParser("blockquote/").parse(domFrom("<foo></foo><blockquote><foo></foo><p><foo></foo></p></blockquote>")),
-//                doc(blockquote(hr(), p())), eq)
-//        })
-//
-//        it("accepts group names in contexts", () => {
-//            ist(contextParser("block/").parse(domFrom("<foo></foo><blockquote><foo></foo><p></p></blockquote>")),
-//                doc(blockquote(hr(), p())), eq)
-//        })
-//
-//        it("understands nested context restrictions", () => {
-//            ist(contextParser("blockquote/ordered_list//")
-//                .parse(domFrom("<foo></foo><blockquote><foo></foo><ol><li><p>a</p><foo></foo></li></ol></blockquote>")),
-//                doc(blockquote(ol(li(p("a"), hr())))), eq)
-//        })
-//
-//        it("understands double slashes in context restrictions", () => {
-//            ist(contextParser("blockquote//list_item/")
-//                .parse(domFrom("<foo></foo><blockquote><foo></foo><ol><foo></foo><li><p>a</p><foo></foo></li></ol></blockquote>")),
-//                doc(blockquote(ol(li(p("a"), hr())))), eq)
-//        })
-//
-//        it("understands pipes in context restrictions", () => {
-//            ist(contextParser("list_item/|blockquote/")
-//                .parse(domFrom("<foo></foo><blockquote><p></p><foo></foo></blockquote><ol><li><p>a</p><foo></foo></li></ol>")),
-//                doc(blockquote(p(), hr()), ol(li(p("a"), hr()))), eq)
-//        })
-//
-//        it("uses the passed context", () => {
-//            let cxDoc = doc(blockquote("<a>", hr()))
-//            ist(contextParser("doc//blockquote/").parse(domFrom("<blockquote><foo></foo></blockquote>"), {
-//                topNode: blockquote(),
-//                context: cxDoc.resolve((cxDoc as any).tag.a)
-//            }), blockquote(blockquote(hr())), eq)
-//        })
-//
-//        it("uses the passed context when parsing a slice", () => {
-//            let cxDoc = doc(blockquote("<a>", hr()))
-//            ist(contextParser("doc//blockquote/").parseSlice(domFrom("<foo></foo>"), {
-//                context: cxDoc.resolve((cxDoc as any).tag.a)
-//            }), new Slice(blockquote(hr()).content, 0, 0), eq)
-//        })
-//
-//        it("can close parent nodes from a rule", () => {
-//            let closeParser = new DOMParser(schema, [{tag: "br", closeParent: true} as ParseRule]
-//                .concat(DOMParser.schemaRules(schema)))
-//            ist(closeParser.parse(domFrom("<p>one<br>two</p>")), doc(p("one"), p("two")), eq)
-//        })
-//
-//        it("supports non-consuming node rules", () => {
-//            let parser = new DOMParser(schema, [{tag: "ol", consuming: false, node: "blockquote"} as ParseRule]
-//                .concat(DOMParser.schemaRules(schema)))
-//            ist(parser.parse(domFrom("<ol><p>one</p></ol>")), doc(blockquote(ol(li(p("one"))))), eq)
-//        })
-//
-//        it("supports non-consuming style rules", () => {
-//            let parser = new DOMParser(schema, [{style: "font-weight", consuming: false, mark: "em"} as ParseRule]
-//                .concat(DOMParser.schemaRules(schema)))
-//            ist(parser.parse(domFrom("<p><span style='font-weight: 800'>one</span></p>")), doc(p(em(strong("one")))), eq)
-//        })
-//
-//        it("doesn't get confused by nested mark tags",
-//            recover("<div><strong><strong>A</strong></strong>B</div><span>C</span>",
-//                doc(p(strong("A"), "B"), p("C"))))
-//
-//        it("ignores styles on skipped nodes", () => {
-//            let dom = document.createElement("div")
-//            dom.innerHTML = "<p>abc <span style='font-weight: strong'>def</span></p>"
-//            ist(parser.parse(dom, {
-//                ruleFromNode: node => {
-//                return node.nodeType == 1 && (node as HTMLElement).tagName == "SPAN" ? {skip: node as any} : null
-//            }
-//            }), doc(p("abc def")), eq)
-//
-//        })
-//    })
-//
-//    describe("schemaRules", () => {
-//        it("defaults to schema order", () => {
-//            let schema = new Schema({
-//                marks: {em: {parseDOM: [{tag: "i"}, {tag: "em"}]}},
-//                nodes: {doc: {content: "inline*"},
-//                text: {group: "inline"},
-//                foo: {group: "inline", inline: true, parseDOM: [{tag: "foo"}]},
-//                bar: {group: "inline", inline: true, parseDOM: [{tag: "bar"}]}}
-//            })
-//            ist(DOMParser.schemaRules(schema).map(r => r.tag).join(" "), "i em foo bar")
-//        })
-//
-//        it("understands priority", () => {
-//            let schema = new Schema({
-//                marks: {em: {parseDOM: [{tag: "i", priority: 40}, {tag: "em", priority: 70}]}},
-//                nodes: {doc: {content: "inline*"},
-//                text: {group: "inline"},
-//                foo: {group: "inline", inline: true, parseDOM: [{tag: "foo"}]},
-//                bar: {group: "inline", inline: true, parseDOM: [{tag: "bar", priority: 60}]}}
-//            })
-//            ist(DOMParser.schemaRules(schema).map(r => r.tag).join(" "), "em bar foo i")
-//        })
-//
-//        function nsParse(doc: Node, namespace?: string) {
-//        let schema = new Schema({
-//            nodes: {doc: {content: "h*"}, text: {},
-//            h: {parseDOM: [{tag: "h", namespace}]}}
-//        })
-//        return DOMParser.fromSchema(schema).parse(doc)
-//    }
-//
-//        it("includes nodes when namespace is correct", () => {
-//            let doc = xmlDocument.createElement("doc")
-//            let h = xmlDocument.createElementNS("urn:ns", "h")
-//            doc.appendChild(h)
-//            ist(nsParse(doc, "urn:ns").childCount, 1)
-//        })
-//
-//        it("excludes nodes when namespace is wrong", () => {
-//            let doc = xmlDocument.createElement("doc")
-//            let h = xmlDocument.createElementNS("urn:nt", "h")
-//            doc.appendChild(h)
-//            ist(nsParse(doc, "urn:ns").childCount, 0)
-//        })
-//
+    private fun parse(html: String, options: ParseOptions, doc: Node) {
+        val schema = doc.type.schema
+        val dom = doc().createElement("div")
+        dom.html(html)
+        val result = DOMParser.fromSchema(schema).parse(dom, options)
+        assertThat(result).isEqualTo(doc)
+    }
+
+    @Test
+    fun `accepts the topNode option`() {
+        parse(
+            "<li>wow</li><li>such</li>",
+            ParseOptionsImpl(topNode = testSchema.nodes["bullet_list"]!!.createAndFill()!!),
+            doc { ul { li { p { +"wow" } } + li { p { +"such" } } } }.firstChild!!
+        )
+    }
+
+    @Test
+    fun `accepts the topMatch option`() {
+        val item = testSchema.nodes["list_item"]!!.createAndFill()!!
+        parse(
+            "<ul><li>x</li></ul>",
+            ParseOptionsImpl(topNode = item, topMatch = item.contentMatchAt(1)!!),
+            doc { li { ul { li { p { +"x" } } } } }.firstChild!!
+        )
+    }
+
+    @Test
+    fun `accepts from and to options`() {
+        parse(
+            "<hr><p>foo</p><p>bar</p><img>",
+            ParseOptionsImpl(from = 1, to = 3),
+            doc { p { +"foo" } + p { +"bar" } }
+        )
+    }
+
+    @Test
+    fun `accepts the preserveWhitespace option`() {
+        parse(
+            "foo   bar",
+            ParseOptionsImpl(preserveWhitespace = PreserveWhitespace.YES),
+            doc { p { +"foo   bar" } }
+        )
+    }
+
+    private fun open(html: String, nodes: List<Node>, openStart: Int, openEnd: Int, options: ParseOptions = ParseOptionsImpl()) {
+        val schema = testSchema
+        val dom = doc().createElement("div")
+        dom.html(html)
+        val result = DOMParser.fromSchema(schema).parseSlice(dom, options)
+        assertThat(result).isEqualTo(
+            Slice(
+                Fragment.from(nodes),
+                openStart,
+                openEnd
+            )
+        )
+    }
+
+    @Test
+    fun `can parse an open slice`() {
+        open("foo", listOf(testSchema.text("foo")), 0, 0)
+    }
+
+    @Test
+    fun `will accept weird siblings`() {
+        val doc = doc { p { +"bar" } }
+        open("foo<p>bar</p>", listOf(testSchema.text("foo"), doc.firstChild!!), 0, 1)
+    }
+
+    @Test
+    fun `will open all the way to the inner nodes`() {
+        val doc = doc { ul { li { p { +"foo" } } + li { p { +"bar" + br {} } } } }
+        open(
+            "<ul><li>foo</li><li>bar<br></li></ul>",
+            doc.content.content,
+            3,
+            3
+        )
+    }
+
+    @Test
+    fun `accepts content open to the left`() {
+        val doc = doc { li { ul { li { p { +"a" } } } } }
+        open("<li><ul><li>a</li></ul></li>", listOf(doc.firstChild!!), 4, 4)
+    }
+
+    @Test
+    fun `accepts content open to the right`() {
+        val doc = doc { li { p { +"foo" } } + li {} }
+        open("<li>foo</li><li></li>", doc.content.content, 2, 1)
+    }
+
+    @Test
+    fun `will create textblocks for block nodes`() {
+        val doc = doc { p { +"foo" } + p { +"bar" } }
+        open("<div><div>foo</div><div>bar</div></div>", doc.content.content, 1, 1)
+    }
+
+    @Test
+    fun `can parse marks at the start of defaulted textblocks`() {
+        val doc = doc { p { +"foo" } + p { em { +"bar" } } }
+        open("<div>foo</div><div><em>bar</em></div>", doc.content.content, 1, 1)
+    }
+
+    @Test
+    fun `will not apply invalid marks to nodes`() {
+        val doc = doc { ul { li { p { strong { +"foo" } } } } }
+        open("<ul style='font-weight: bold'><li>foo</li></ul>", listOf(doc.firstChild!!), 3, 3)
+    }
+
+    @Test
+    fun `will apply pending marks from parents to all children`() {
+        val doc = doc { ul { li { p { strong { +"foo" } } } + li { p { strong { +"bar" } } } } }
+        open("<ul style='font-weight: bold'><li>foo</li><li>bar</li></ul>", doc.content.content, 3, 3)
+    }
+
+    @Test
+    fun `can parse nested mark with same type`() {
+        val doc = doc { p { strong { +"foobarbaz" } } }
+        open(
+            "<p style='font-weight: bold'>foo<strong style='font-weight: bold;'>bar</strong>baz</p>",
+            doc.content.content,
+            1,
+            1
+        )
+    }
+
+    @Test
+    fun `drops block-level whitespace`() {
+        open("<div> </div>", listOf(), 0, 0, ParseOptionsImpl(preserveWhitespace = PreserveWhitespace.YES))
+    }
+
+    @Test
+    fun `keeps whitespace in inline elements`() {
+        val doc = doc { p { strong { +" " } } }
+        open(
+            "<b> </b>",
+            listOf(doc.firstChild!!.firstChild!!),
+            0,
+            0,
+            ParseOptionsImpl(preserveWhitespace = PreserveWhitespace.YES)
+        )
+    }
+
+    @Test
+    fun `can parse nested mark with same type but different attrs`() {
+        val markSchema = Schema(
+            SchemaSpec(
+                nodes = testSchema.spec.nodes,
+                marks = testSchema.spec.marks + mapOf(
+                    "s" to MarkSpecImpl(
+                        attrs = mapOf("data-s" to AttributeSpecImpl(default = "tag")),
+                        excludes = "",
+                        parseDOM = listOf(
+                            TagParseRuleImpl(tag = "s"),
+                            StyleParseRuleImpl(
+                                style = "text-decoration",
+                                getStyleAttrs = {
+                                    ParseRuleMatch(mapOf("data-s" to "style"))
+                                }
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        val b = CustomNodeBuildCompanion(markSchema)
+        val dom = doc().createElement("div")
+        dom.html("<p style='text-decoration: line-through;'>o<s style='text-decoration: line-through;'>o</s>o</p>")
+        var result = DOMParser.fromSchema(markSchema).parseSlice(dom)
+        assertThat(result).isEqualTo(
+            Slice(
+                Fragment.from(
+                    b.schema.nodes["paragraph"]!!.createAndFill(
+                        attrs = null,
+                        content = Fragment.from(
+                            listOf(
+                                b.schema.text("o", listOf(b.schema.marks["s"]!!.create(mapOf("data-s" to "style")))),
+                                b.schema.text(
+                                    "o",
+                                    listOf(
+                                        b.schema.marks["s"]!!.create(mapOf("data-s" to "style")),
+                                        b.schema.marks["s"]!!.create(mapOf("data-s" to "tag"))
+                                    )
+                                ),
+                                b.schema.text("o", listOf(b.schema.marks["s"]!!.create(mapOf("data-s" to "style")))
+                                )
+                            )
+                        )
+                    )!!
+                ),
+                1,
+                1
+            )
+        )
+
+        dom.html("<p><span style='text-decoration: line-through;'><s style='text-decoration: line-through;'>o</s>o</span>o</p>")
+        result = DOMParser.fromSchema(markSchema).parseSlice(dom)
+        assertThat(result).isEqualTo(
+            Slice(
+                Fragment.from(
+                    b.schema.nodes["paragraph"]!!.createAndFill(
+                        attrs = null,
+                        content = Fragment.from(
+                            listOf(
+                                b.schema.text(
+                                    "o",
+                                    listOf(
+                                        b.schema.marks["s"]!!.create(mapOf("data-s" to "style")),
+                                        b.schema.marks["s"]!!.create(mapOf("data-s" to "tag"))
+                                    )
+                                ),
+                                b.schema.text("o", listOf(b.schema.marks["s"]!!.create(mapOf("data-s" to "style")))),
+                                b.schema.text("o")
+                            )
+                        )
+                    )!!
+                ),
+                1,
+                1
+            )
+        )
+    }
+
+    @Test
+    fun `can temporary shadow a mark with another configuration of the same type`() {
+        val markSchema = Schema(
+            SchemaSpec(
+                nodes = testSchema.spec.nodes,
+                marks = mapOf(
+                    "color" to MarkSpecImpl(
+                        attrs = mapOf("color" to AttributeSpecImpl()),
+                        parseDOM = listOf(
+                            StyleParseRuleImpl(
+                                style = "color",
+                                getStyleAttrs = { ParseRuleMatch(mapOf("color" to it)) }
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        val b = CustomNodeBuildCompanion(markSchema)
+        val dom = doc().createElement("div")
+        dom.html("<p><span style='color: red'>abc<span style='color: blue'>def</span>ghi</span></p>")
+        val result = DOMParser.fromSchema(markSchema).parse(dom)
+        assertThat(result).isEqualTo(
+            b.schema.nodes["doc"]!!.create(
+                null,
+                listOf(
+                    b.schema.nodes["paragraph"]!!.create(
+                        attrs = null,
+                        content =
+                        listOf(
+                            b.schema.text("abc", listOf(b.schema.marks["color"]!!.create(mapOf("color" to "red")))),
+                            b.schema.text("def", listOf(b.schema.marks["color"]!!.create(mapOf("color" to "blue")))),
+                            b.schema.text("ghi", listOf(b.schema.marks["color"]!!.create(mapOf("color" to "red")))
+                            )
+                        )
+                    )
+                )
+            ),
+        )
+    }
+
+    private fun find(html: String, doc: Node) {
+        val schema = doc.type.schema
+        val dom = doc().createElement("div")
+        dom.html(html)
+        val tag = dom.selectFirst("var")!!
+        val prev = tag.previousElementSibling()
+        val next = tag.nextElementSibling()
+        val pos = if (prev is TextNode && next is TextNode) {
+            val prevText = prev.text()
+            prev.text(prevText + next.text())
+            next.remove()
+            ParseOptionPosition(prev, offset = prevText.length, pos = null)
+        } else {
+            ParseOptionPosition(tag.parent()!!, offset = tag.parent()!!.childNodes().indexOf(tag), pos = null)
+        }
+        tag.remove()
+        val result = DOMParser.fromSchema(schema).parse(dom, ParseOptionsImpl(findPositions = listOf(pos)))
+        assertThat(result).isEqualTo(doc)
+        assertThat(pos.pos).isEqualTo(pos(doc, "a"))
+    }
+
+    @Test
+    fun `can find a position at the start of a paragraph`() {
+        find("<p><var></var>hello</p>", doc { p { +"<a>hello" } })
+    }
+
+    @Test
+    fun `can find a position at the end of a paragraph`() {
+        find("<p>hello<var></var></p>", doc { p { +"hello<a>" } })
+    }
+
+    @Test
+    fun `can find a position inside text`() {
+        find("<p>hel<var></var>lo</p>", doc { p { +"hel<a>lo" } })
+    }
+
+    @Test
+    fun `can find a position inside an ignored node`() {
+        find("<p>hi</p><object><var></var>foo</object><p>ok</p>", doc { p { +"hi" } +"<a>" + p { +"ok" } })
+    }
+
+    @Test
+    fun `can find a position between nodes`() {
+        find("<ul><li>foo</li><var></var><li>bar</li></ul>", doc { ul { li { p { +"foo" } } + "<a>" + li { p { +"bar" } } } })
+    }
+
+    @Test
+    fun `can find a position at the start of the document`() {
+        find("<var></var><p>hi</p>", doc { + "<a>" + p { +"hi" }})
+    }
+
+    @Test
+    fun `can find a position at the end of the document`() {
+        find("<p>hi</p><var></var>", doc { p { +"hi" } + "<a>" })
+    }
+
+    @Test
+    fun `uses a custom top node when parsing`() {
+        val quoteSchema = Schema(
+            SchemaSpec(
+                nodes = testSchema.spec.nodes,
+                marks = testSchema.spec.marks,
+                topNode = "blockquote"
+            )
+        )
+        val quote = quoteSchema.nodes["blockquote"]!!.create(
+            attrs = null,
+            content = listOf(
+                quoteSchema.nodes["paragraph"]!!.create(
+                    attrs = null,
+                    content = listOf(quoteSchema.text("hello"))
+                )
+            )
+        )
+        test(quote, "<p>hello</p>")
+    }
+
+    private fun contextParser(context: String) = DOMParser(
+        testSchema,
+        listOf(TagParseRuleImpl(tag = "foo", node = "horizontal_rule", context = context)) + DOMParser.schemaRules(testSchema)
+    )
+
+    private fun domFrom(html: String) = doc().createElement("div").html(html)
+
+    @Test
+    fun `recognizes context restrictions`() {
+        val result = contextParser("blockquote/").parse(
+            domFrom("<foo></foo><blockquote><foo></foo><p><foo></foo></p></blockquote>")
+        )
+        val expected = doc { blockquote { hr {} + p {} } }
+        assertThat(result).isEqualTo(expected)
+    }
+
+    @Test
+    fun `accepts group names in contexts`() {
+        val result = contextParser("block/").parse(
+            domFrom("<foo></foo><blockquote><foo></foo><p></p></blockquote>")
+        )
+        val expected = doc { blockquote { hr {} + p {} } }
+        assertThat(result).isEqualTo(expected)
+    }
+
+    @Test
+    fun `understands nested context restrictions`() {
+        val result = contextParser("blockquote/ordered_list//").parse(
+            domFrom("<foo></foo><blockquote><foo></foo><ol><li><p>a</p><foo></foo></li></ol></blockquote>")
+        )
+        val expected = doc { blockquote { ol { li { p { +"a" } + hr {} } } } }
+        assertThat(result).isEqualTo(expected)
+    }
+
+    @Test
+    fun `understands double slashes in context restrictions`() {
+        val result = contextParser("blockquote//list_item/").parse(
+            domFrom("<foo></foo><blockquote><foo></foo><ol><foo></foo><li><p>a</p><foo></foo></li></ol></blockquote>")
+        )
+        val expected = doc { blockquote { ol { li { p { +"a"} + hr {} } } }}
+        assertThat(result).isEqualTo(expected)
+    }
+
+    @Test
+    fun `understands pipes in context restrictions`() {
+        val result = contextParser("list_item/|blockquote/").parse(
+            domFrom("<foo></foo><blockquote><p></p><foo></foo></blockquote><ol><li><p>a</p><foo></foo></li></ol>")
+        )
+        val expected = doc { blockquote { p {} + hr {} } + ol { li { p { +"a" } + hr {} } } }
+        assertThat(result).isEqualTo(expected)
+    }
+
+    @Test
+    fun `uses the passed context`() {
+        val cxDoc = doc { blockquote { +"<a>" + hr {} } }
+        val result = contextParser("doc//blockquote/").parse(
+            domFrom("<blockquote><foo></foo></blockquote>"),
+            ParseOptionsImpl(
+                topNode = testSchema.nodes["blockquote"]!!.createAndFill()!!,
+                context = cxDoc.resolve(pos(cxDoc, "a")!!)
+            )
+        )
+        val expected = doc { blockquote { blockquote { hr {} } } }
+        assertThat(result).isEqualTo(expected.firstChild!!)
+    }
+
+    @Test
+    fun `uses the passed context when parsing a slice`() {
+        val cxDoc = doc { blockquote { +"<a>" + hr {} } }
+        val result = contextParser("doc//blockquote/").parseSlice(
+            domFrom("<foo></foo>"),
+            ParseOptionsImpl(
+                context = cxDoc.resolve(pos(cxDoc, "a")!!)
+            )
+        )
+        val expected = Slice(
+            Fragment.from(doc { blockquote { hr {} } }.firstChild!!.content),
+            0,
+            0
+        )
+        assertThat(result).isEqualTo(expected)
+    }
+
+    @Test
+    fun `can close parent nodes from a rule`() {
+        val closeParser = DOMParser(
+            testSchema,
+            listOf(TagParseRuleImpl(tag = "br", closeParent = true)) + DOMParser.schemaRules(testSchema)
+        )
+        val result = closeParser.parse(domFrom("<p>one<br>two</p>"))
+        val expected = doc { p { +"one" } + p { +"two" } }
+        assertThat(result).isEqualTo(expected)
+    }
+
+    @Test
+    fun `supports non-consuming node rules`() {
+        val parser = DOMParser(
+            testSchema,
+            listOf(TagParseRuleImpl(tag = "ol", consuming = false, node = "blockquote")) + DOMParser.schemaRules(testSchema)
+        )
+        val result = parser.parse(domFrom("<ol><p>one</p></ol>"))
+        val expected = doc { blockquote { ol { li { p { +"one" } } } } }
+        assertThat(result).isEqualTo(expected)
+    }
+
+    @Test
+    fun `supports non-consuming style rules`() {
+        val parser = DOMParser(
+            testSchema,
+            listOf(
+                StyleParseRuleImpl(style = "font-weight", consuming = false, mark = "em")
+            ) + DOMParser.schemaRules(testSchema)
+        )
+        val result = parser.parse(domFrom("<p><span style='font-weight: 800'>one</span></p>"))
+        val expected = doc { p { em { strong { +"one" } } } }
+        assertThat(result).isEqualTo(expected)
+    }
+
+    @Test
+    fun `doesn't get confused by nested mark tags`() {
+        recover(
+            "<div><strong><strong>A</strong></strong>B</div><span>C</span>",
+            doc { p { strong { +"A" } + "B" } + p { +"C" } }
+        )
+    }
+
+    @Test
+    fun `ignores styles on skipped nodes`() {
+        val dom = doc().createElement("div")
+        dom.html("<p>abc <span style='font-weight: strong'>def</span></p>")
+        val result = DOMParser.fromSchema(testSchema).parse(
+            dom,
+            ParseOptionsImpl(
+                ruleFromNode = { node ->
+                    if (node is Element && node.nodeName() == "SPAN") {
+                        ParseOptionsRuleImpl(skip = node)
+                    } else {
+                        null
+                    }
+                }
+            )
+        )
+        val expected = doc { p { +"abc def" } }
+        assertThat(result).isEqualTo(expected)
+    }
+    //endregion
+
+    //region schemaRules
+    @Test
+    fun `defaults to schema order`() {
+        val schema = Schema(
+            SchemaSpec(
+                marks = mapOf(
+                    "em" to MarkSpecImpl(
+                        parseDOM = listOf(TagParseRuleImpl(tag = "i"), TagParseRuleImpl(tag = "em"))
+                    )
+                ),
+                nodes = mapOf(
+                    "doc" to NodeSpecImpl(content = "inline*"),
+                    "text" to NodeSpecImpl(group = "inline"),
+                    "foo" to NodeSpecImpl(
+                        group = "inline",
+                        inline = true,
+                        parseDOM = listOf(TagParseRuleImpl(tag = "foo"))
+                    ),
+                    "bar" to NodeSpecImpl(
+                        group = "inline",
+                        inline = true,
+                        parseDOM = listOf(TagParseRuleImpl(tag = "bar"))
+                    )
+                )
+            )
+        )
+        val result = DOMParser.schemaRules(schema).mapNotNull { (it as? TagParseRule)?.tag }.joinToString(" ")
+        assertThat(result).isEqualTo("i em foo bar")
+    }
+
+    @Test
+    fun `understands priority`() {
+        val schema = Schema(
+            SchemaSpec(
+                marks = mapOf(
+                    "em" to MarkSpecImpl(
+                        parseDOM = listOf(TagParseRuleImpl(tag = "i", priority = 40), TagParseRuleImpl(tag = "em", priority = 70))
+                    )
+                ),
+                nodes = mapOf(
+                    "doc" to NodeSpecImpl(content = "inline*"),
+                    "text" to NodeSpecImpl(group = "inline"),
+                    "foo" to NodeSpecImpl(
+                        group = "inline",
+                        inline = true,
+                        parseDOM = listOf(TagParseRuleImpl(tag = "foo"))
+                    ),
+                    "bar" to NodeSpecImpl(
+                        group = "inline",
+                        inline = true,
+                        parseDOM = listOf(TagParseRuleImpl(tag = "bar", priority = 60))
+                    )
+                )
+            )
+        )
+        val result = DOMParser.schemaRules(schema).mapNotNull { (it as? TagParseRule)?.tag }.joinToString(" ")
+        assertThat(result).isEqualTo("em bar foo i")
+    }
+
+    private fun nsParse(doc: DOMNode, namespace: String? = null): Node {
+        val schema = Schema(
+            SchemaSpec(
+                nodes = mapOf(
+                    "doc" to NodeSpecImpl(content = "h*"),
+                    "text" to NodeSpecImpl(),
+                    "h" to NodeSpecImpl(
+                        parseDOM = listOf(TagParseRuleImpl(tag = "h", namespace = namespace))
+                    )
+                )
+            )
+        )
+        return DOMParser.fromSchema(schema).parse(doc)
+    }
+
+    @Test
+    fun `includes nodes when namespace is correct`() {
+        val doc = doc().createElement("doc")
+        val h = doc().createElementNS("urn:ns", "h")
+        doc.appendChild(h)
+        assertThat(nsParse(doc, "urn:ns").childCount).isEqualTo(1)
+    }
+
+    @Test
+    fun `excludes nodes when namespace is wrong`() {
+        val doc = doc().createElement("doc")
+        val h = doc().createElementNS("urn:nt", "h")
+        doc.appendChild(h)
+        assertThat(nsParse(doc, "urn:ns").childCount).isEqualTo(0)
+    }
+
+    // Skipping this test because ksoup doesn't allow null namespace
 //        it("excludes nodes when namespace is absent", () => {
 //            let doc = xmlDocument.createElement("doc")
 //            // in HTML documents, createElement gives namespace
@@ -873,61 +1140,137 @@ class DomTest {
 //            doc.appendChild(h)
 //            ist(nsParse(doc, "urn:ns").childCount, 0)
 //        })
-//
-//        it("excludes nodes when namespace is wrong and xhtml", () => {
-//            let doc = xmlDocument.createElement("doc")
-//            let h = xmlDocument.createElementNS("urn:nt", "h")
-//            doc.appendChild(h)
-//            ist(nsParse(doc, "http://www.w3.org/1999/xhtml").childCount, 0)
-//        })
-//
-//        it("excludes nodes when namespace is wrong and empty", () => {
-//            let doc = xmlDocument.createElement("doc")
-//            let h = xmlDocument.createElementNS("urn:nt", "h")
-//            doc.appendChild(h)
-//            ist(nsParse(doc, "").childCount, 0)
-//        })
-//
+
+    @Test
+    fun `exclude nodes when namespace is wrong and xhtml`() {
+        val doc = doc().createElement("doc")
+        val h = doc().createElementNS("urn:nt", "h")
+        doc.appendChild(h)
+        assertThat(nsParse(doc, "http://www.w3.org/1999/xhtml").childCount).isEqualTo(0)
+    }
+
+    @Test
+    fun `exclude nodes when namespace is wrong and empty`() {
+        val doc = doc().createElement("doc")
+        val h = doc().createElementNS("urn:nt", "h")
+        doc.appendChild(h)
+        assertThat(nsParse(doc, "").childCount).isEqualTo(0)
+    }
+
+    // Skipping this test because ksoup doesn't allow null namespace
 //        it("includes nodes when namespace is correct and empty", () => {
 //            let doc = xmlDocument.createElement("doc")
 //            let h = xmlDocument.createElementNS(null, "h")
 //            doc.appendChild(h)
 //            ist(nsParse(doc).childCount, 1)
 //        })
-//    })
-// })
-//
-// describe("DOMSerializer", () => {
-//    let noEm = new DOMSerializer(serializer.nodes, Object.assign({}, serializer.marks, {em: null}))
-//
-//    it("can omit a mark", () => {
-//        ist((noEm.serializeNode(p("foo", em("bar"), strong("baz")), {document}) as HTMLElement).innerHTML,
-//            "foobar<strong>baz</strong>")
-//    })
-//
-//    it("doesn't split other marks for omitted marks", () => {
-//        ist((noEm.serializeNode(p("foo", code("bar"), em(code("baz"), "quux"), "xyz"), {document}) as HTMLElement).innerHTML,
-//            "foo<code>barbaz</code>quuxxyz")
-//    })
-//
-//    it("can render marks with complex structure", () => {
-//        let deepEm = new DOMSerializer(serializer.nodes, Object.assign({}, serializer.marks, {
-//            em() { return ["em", ["i", {"data-emphasis": true}, 0]] }
-//        }))
-//        let node = deepEm.serializeNode(p(strong("foo", code("bar"), em(code("baz"))), em("quux"), "xyz"), {document})
-//        ist((node as HTMLElement).innerHTML,
-//            "<strong>foo<code>bar</code></strong><em><i data-emphasis=\"true\"><strong><code>baz</code></strong>quux</i></em>xyz")
-//    })
-//
-//    it("refuses to use values from attributes as DOM specs", () => {
-//        let weird = new DOMSerializer(Object.assign({}, serializer.nodes, {
-//            image: (node: PMNode) => ["span", ["img", {src: node.attrs.src}], node.attrs.alt]
-//        }), serializer.marks)
-//        ist.throws(() => weird.serializeNode(img({src: "x.png", alt: ["script", {src: "http://evil.com/inject.js"}]}),
-//        {document}),
-//        /Using an array from an attribute object as a DOM spec/)
-//    })
-// })
+    //endregion
+
+    //region DOMSerializer
+    @Test
+    fun `can omit a mark`() {
+        val node = noEm.serializeNode(
+            doc { p { +"foo" + em { +"bar" } + strong { +"baz" } } }.firstChild!!,
+            doc()
+        ) as Element
+        assertThat(node.html()).isEqualTo("foobar<strong>baz</strong>")
+    }
+
+    @Test
+    fun `doesn't split other marks for omitted marks`() {
+        val node = noEm.serializeNode(
+            doc { p { +"foo" + code { +"bar" } + em { code { +"baz" } + "quux" } + "xyz" } }.firstChild!!,
+            doc()
+        ) as Element
+        assertThat(node.html()).isEqualTo("foo<code>barbaz</code>quuxxyz")
+    }
+
+    @Test
+    fun `can render marks with complex structure`() {
+        val deepEm = DOMSerializer(
+            serializer.nodes,
+            serializer.marks + mapOf(
+                "em" to { _, _ ->
+                    DOMOutputSpec.ArrayDOMOutputSpec(
+                        listOf(
+                            "em",
+                            DOMOutputSpec.ArrayDOMOutputSpec(
+                                listOf(
+                                    "i",
+                                    mapOf("data-emphasis" to true),
+                                    0
+                                )
+                            )
+                        )
+                    )
+                }
+            )
+        )
+        val node = deepEm.serializeNode(
+            doc { p { strong { +"foo" + code { +"bar" } + em { code { +"baz" } } } + em { +"quux" } + "xyz" } }.firstChild!!,
+            doc()
+        ) as Element
+        val expected = "<strong>foo<code>bar</code></strong><em><i data-emphasis=\"true\"><strong><code>baz</code></strong>quux</i></em>xyz"
+        assertThat(node.html()).isEqualTo(expected)
+    }
+
+    @Test
+    fun `refuses to use values from attributes as DOM specs`() {
+        val weird = DOMSerializer(
+            serializer.nodes + mapOf(
+                "image" to { node ->
+                    DOMOutputSpec.ArrayDOMOutputSpec(
+                        listOf(
+                            "span",
+                            DOMOutputSpec.ArrayDOMOutputSpec(
+                                listOf(
+                                    "img",
+                                    mapOf("src" to node.attrs["src"])
+                                )
+                            ),
+                            if ((node.attrs["alt"] as? List<Any>) != null) {
+                                DOMOutputSpec.ArrayDOMOutputSpec(
+                                    node.attrs["alt"] as List<Any>
+                                )
+                            } else {
+                                node.attrs["alt"] ?: ""
+                            }
+                        ),
+                    )
+                }
+            ),
+            serializer.marks
+        )
+        val ex = assertFailsWith<IllegalArgumentException> {
+            weird.serializeNode(
+                doc {
+                    p {
+                        img(
+                            mapOf(
+                                "src" to "x.png",
+                                "alt" to listOf(
+                                    "script",
+                                    mapOf("src" to "http://evil.com/inject.js")
+                                )
+                            )
+                        ) { }
+                    }
+                }.firstChild!!.firstChild!!,
+                doc()
+            )
+        }
+        assertThat(ex.message?.contains("Using an array from an attribute object as a DOM spec") ?: false).isTrue()
+    }
+
+    companion object {
+        private val serializer = DOMSerializer.fromSchema(testSchema)
+        private val noEm = DOMSerializer(
+            serializer.nodes,
+            serializer.marks.minus("em")
+        )
+    }
+    //endregion
+}
 
 fun com.fleeksoft.ksoup.nodes.Attribute?.int(default: Int? = null): Int? {
     return try {
