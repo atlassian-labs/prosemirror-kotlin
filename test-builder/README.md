@@ -72,25 +72,8 @@ node or mark the builder by this name should create.
 Calls `a.eq(b)`. Can be useful to pass as comparison predicate when
 comparing ProseMirror nodes or slices.
 
-## Maven / Gradle dependency
-
-Check the latest package at Maven central on: https://packages.atlassian.com/maven-central/com/atlassian/prosemirror/test-builder.
-
-### Maven:
-```xml
-<dependency>
-    <groupId>com.atlassian.prosemirror</groupId>
-    <artifactId>test-builder</artifactId>
-    <version>1.0.2</version>
-</dependency>
-```
-
-### Gradle:
-```kotlin
-implementation("com.atlassian.prosemirror:test-builder:1.0.2")
-```
-### Versioning
-- Implemented changes to match version:
+## Versioning
+This module is a port of version:
   - [1.1.1](https://github.com/ProseMirror/prosemirror-test-builder/releases/tag/1.1.1)
     of prosemirror-test-builder
   - [1.2.3](https://github.com/ProseMirror/prosemirror-schema-basic/releases/tag/1.2.3)

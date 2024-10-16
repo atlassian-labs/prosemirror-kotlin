@@ -118,6 +118,18 @@ open class DOMSerializer(
     // document. To serialize a whole document, use
     // [`serializeFragment`](#model.DOMSerializer.serializeFragment) on
     // its [content](#model.Node.content).
+    fun serializeNode(node: Node, options: Document): DOMNode {
+        var dom = this.serializeNodeInner(node, options)
+        for (i in node.marks.indices.reversed()) {
+            val wrap = this.serializeMark(node.marks[i], node.isInline, options)
+            if (wrap != null) {
+                ((wrap.contentDOM ?: wrap.domNode) as? Element)?.appendChild(dom)
+                dom = wrap.domNode
+            }
+        }
+        return dom
+    }
+
     internal fun serializeMark(
         mark: Mark,
         inline: Boolean,
@@ -229,7 +241,7 @@ fun renderSpec(
     structure as DOMOutputSpec.ArrayDOMOutputSpec
     var tagName = structure.content.first() as? String ?: throw RangeError("Invalid array passed to renderSpec")
     val suspicious = blockArraysIn?.let { suspiciousAttributes(it) }
-    if (blockArraysIn != null && suspicious != null && suspicious.contains(structure)) {
+    if (blockArraysIn != null && suspicious != null && suspicious.contains(structure.content)) {
         throw RangeError("Using an array from an attribute object as a DOM spec. This may be an attempted cross site scripting attack.")
     }
     val space = tagName.indexOf(" ")

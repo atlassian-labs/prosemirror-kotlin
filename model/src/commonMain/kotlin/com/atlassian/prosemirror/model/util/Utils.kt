@@ -4,6 +4,7 @@ import com.atlassian.prosemirror.model.Node
 import com.atlassian.prosemirror.model.RangeError
 import com.atlassian.prosemirror.model.ResolvedPos
 import com.atlassian.prosemirror.util.safeMode
+import com.fleeksoft.ksoup.nodes.Node as DOMNode
 
 fun Node.resolveSafe(from: Int, to: Int): Pair<ResolvedPos, ResolvedPos>? {
     try {
@@ -23,4 +24,15 @@ fun Node.resolveSafe(pos: Int): ResolvedPos? {
         if (!safeMode) throw e
         return null
     }
+}
+
+fun DOMNode.contains(node: DOMNode) = isInclusiveAncestor(this, node)
+
+private fun isInclusiveAncestor(parent: DOMNode, node: DOMNode): Boolean {
+    var current: com.fleeksoft.ksoup.nodes.Node? = node
+    while (current != null) {
+        if (current == parent) return true
+        current = current.parent()
+    }
+    return false
 }
