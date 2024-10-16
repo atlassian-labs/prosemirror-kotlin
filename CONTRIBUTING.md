@@ -16,3 +16,9 @@ Prior to accepting your contributions we ask that you please follow the appropri
 
 * [CLA for corporate contributors](https://opensource.atlassian.com/corporate)
 * [CLA for individuals](https://opensource.atlassian.com/individual)
+
+## Releases
+To create a release, follow these steps:
+1. Update the version in the `build.gradle.kts` file.
+2. Create a PR with these changes, targeting the `main` branch.
+3. Once the PR is merged, create a new tag with the format `v*` e.g. `v1.1.0`. The CI/CD pipeline will create a release and publish it to Artifactory.
