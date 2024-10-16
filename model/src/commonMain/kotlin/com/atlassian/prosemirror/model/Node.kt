@@ -66,7 +66,8 @@ open class Node constructor(
     val marks: List<Mark> = Mark.none
 ) : NodeBase(type, attrs) {
 
-    private var unknownFields: Map<String, JsonElement>? = null
+    var unknownFields: Map<String, JsonElement>? = null
+        private set
 
     // A container holding the node's children.
     val content: Fragment
