@@ -32,16 +32,6 @@ jobs:
       - name: "Build xcframework"
         run: ./gradlew assembleXCFramework
 
-      - name: release
-        uses: actions/create-release@v1
-        id: create_release
-        with:
-          release_name: ${{ steps.version.outputs.version }}
-          tag_name: ${{ github.ref }}
-          body: "Release ${{ github.ref }}"
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-
       - name: "Release data:"
         run: echo id ${{steps.create_release.outputs.id}} html_url ${{steps.create_release.outputs.html_url}} upload_url ${{steps.create_release.outputs.upload_url}}
 
