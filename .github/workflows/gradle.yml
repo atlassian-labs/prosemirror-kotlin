@@ -15,8 +15,13 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+        # Disable ios simulator tests for some modules for now because they are flaky
       - name: Build with Gradle
+<<<<<<< HEAD
         run: ./gradlew build --no-configuration-cache
+=======
+        run: ./gradlew build -x :history:iosSimulatorArm64Test -x :transform:iosSimulatorArm64Test --no-configuration-cache
+>>>>>>> main
 
         # Populates ARTIFACTORY_USERNAME and ARTIFACTORY_API_KEY with
         # temporary username/password for publishing to packages.atlassian.com

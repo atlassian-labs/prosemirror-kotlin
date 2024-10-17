@@ -1,102 +1,146 @@
+import java.net.URL
+import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
+
 plugins {
-  alias(libs.plugins.kotlin.jvm)
+  alias(libs.plugins.kotlinMultiplatform)
   alias(libs.plugins.ktlint)
   alias(libs.plugins.dokka)
   id("maven-publish")
   id("signing")
 }
 
-repositories {
-  mavenCentral()
-}
+kotlin {
+  // Java
+  jvm {
+    withJava()
+    testRuns["test"].executionTask.configure {
+      useJUnitPlatform()
+    }
+  }
 
-java {
-  withSourcesJar()
-  withJavadocJar()
-}
+  // iOS
+  val xcframeworkName = "test-builder"
+  val xcf = XCFramework(xcframeworkName)
+  listOf(
+    iosX64(),
+    iosArm64(),
+    iosSimulatorArm64(),
+  ).forEach {
+    it.binaries.framework {
+      baseName = xcframeworkName
+      binaryOption("bundleId", "com.atlassian.prosemirror.$xcframeworkName")
+      xcf.add(this)
+      isStatic = true
+    }
+  }
 
-dependencies {
-  implementation(libs.kotlin.stdlib)
-  implementation(libs.kotlinx.serialization.json)
-  implementation(project(":model"))
-  implementation(project(":transform"))
-  implementation(project(":util"))
-  testImplementation(kotlin("test"))
-  testImplementation(libs.test.assertj)
+  sourceSets {
+    commonMain.dependencies {
+      implementation(libs.kotlinx.serialization.json)
+      implementation(project(":model"))
+      implementation(project(":transform"))
+      implementation(project(":util"))
+    }
+    commonTest.dependencies {
+    }
+  }
+
+  tasks.dokkaHtml {
+    dokkaSourceSets {
+      val commonMain by getting {
+        sourceLink {
+          // Unix based directory relative path to the root of the project (where you execute gradle respectively).
+          localDirectory.set(file("src/commonMain/kotlin"))
+
+          // URL showing where the source code can be accessed through the web browser
+          remoteUrl.set(URL("https://github.com/atlassian-labs/prosemirror-kotlin/test-builder/src/main/src/commonMain/kotlin"))
+
+          // Suffix which is used to append the line number to the URL. Use #L for GitHub
+          remoteLineSuffix.set("#lines-")
+        }
+      }
+
+      val jvmMain by getting {
+        sourceLink {
+          // Unix based directory relative path to the root of the project (where you execute gradle respectively).
+          localDirectory.set(file("src/jvmMain/kotlin"))
+
+          // URL showing where the source code can be accessed through the web browser
+          remoteUrl.set(URL("https://github.com/atlassian-labs/prosemirror-kotlin/test-builder/src/main/src/jvmMain/kotlin"))
+
+          // Suffix which is used to append the line number to the URL. Use #L for GitHub
+          remoteLineSuffix.set("#lines-")
+        }
+      }
+
+      val nativeMain by getting {
+        sourceLink {
+          // Unix based directory relative path to the root of the project (where you execute gradle respectively).
+          localDirectory.set(file("src/nativeMain/kotlin"))
+
+          // URL showing where the source code can be accessed through the web browser
+          remoteUrl.set(URL("https://github.com/atlassian-labs/prosemirror-kotlin/test-builder/src/main/src/nativeMain/kotlin/"))
+
+          // Suffix which is used to append the line number to the URL. Use #L for GitHub
+          remoteLineSuffix.set("#lines-")
+        }
+      }
+    }
+  }
 }
 
 description = "prosemirror-test-builder"
 
-val javaVersion = JavaVersion.VERSION_17
+publishing {
+  publications {
+    publications.withType<MavenPublication> {
+      pom {
+        name.set(project.name)
+        description.set("Document building utilities for writing tests")
+        url.set("https://github.com/atlassian-labs/prosemirror-kotlin/tree/test-builder/")
 
-tasks.withType<JavaCompile> {
-  options.encoding = "UTF-8"
-  sourceCompatibility = javaVersion.toString()
-  targetCompatibility = javaVersion.toString()
+        scm {
+          connection.set("git@github.com:atlassian-labs/prosemirror-kotlin.git")
+          url.set("https://github.com/atlassian-labs/prosemirror-kotlin.git")
+        }
+        developers {
+          developer {
+            id.set("dmarques")
+            name.set("Douglas Marques")
+            email.set("dmarques@atlassian.com")
+          }
+          developer {
+            id.set("achernykh")
+            name.set("Aleksei Chernykh")
+            email.set("achernykh@atlassian.com")
+          }
+        }
+        licenses {
+          license {
+            name.set("Apache License 2.0")
+            url.set("https://www.apache.org/licenses/LICENSE-2.0")
+            distribution.set("repo")
+          }
+        }
+      }
+    }
+  }
+
+  repositories {
+    maven {
+      url = uri("https://packages.atlassian.com/maven-central")
+      credentials {
+        username = System.getenv("ARTIFACTORY_USERNAME")
+        password = System.getenv("ARTIFACTORY_API_KEY")
+      }
+    }
+  }
 }
 
-tasks {
-
-  jar {
-    archiveBaseName.set("prosemirror-test-builder")
-  }
-
-  // This task is added by Gradle when we use java.withJavadocJar()
-  named<Jar>("javadocJar") {
-    from(dokkaJavadoc)
-  }
-
-  test {
-    useJUnitPlatform()
-  }
-
-  publishing {
-    publications {
-      create<MavenPublication>("release") {
-        from(project.components["java"])
-        pom {
-          packaging = "jar"
-          name.set(project.name)
-          description.set("Document building utilities for writing tests")
-          url.set("https://github.com/atlassian-labs/prosemirror-kotlin/tree/test-builder/")
-          scm {
-            connection.set("git@github.com:atlassian-labs/prosemirror-kotlin.git")
-            url.set("https://github.com/atlassian-labs/prosemirror-kotlin.git")
-          }
-          developers {
-            developer {
-              id.set("dmarques")
-              name.set("Douglas Marques")
-              email.set("dmarques@atlassian.com")
-            }
-          }
-          licenses {
-            license {
-              name.set("Apache License 2.0")
-              url.set("https://www.apache.org/licenses/LICENSE-2.0")
-              distribution.set("repo")
-            }
-          }
-        }
-      }
-    }
-
-    repositories {
-      maven {
-        url = uri("https://packages.atlassian.com/maven-central")
-        credentials {
-          username = System.getenv("ARTIFACTORY_USERNAME")
-          password = System.getenv("ARTIFACTORY_API_KEY")
-        }
-      }
-    }
-  }
-
-  signing {
-    useInMemoryPgpKeys(
-      System.getenv("SIGNING_KEY"),
-      System.getenv("SIGNING_PASSWORD"),
-    )
-    sign(publishing.publications["release"])
-  }
+signing {
+  useInMemoryPgpKeys(
+    System.getenv("SIGNING_KEY"),
+    System.getenv("SIGNING_PASSWORD"),
+  )
+  sign(publishing.publications)
 }
