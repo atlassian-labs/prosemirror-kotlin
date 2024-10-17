@@ -32,6 +32,9 @@ indent_size = 4
 ij_kotlin_name_count_to_use_star_import = 999
 ij_kotlin_name_count_to_use_star_import_for_members = 999
 ij_java_class_count_to_use_import_on_demand = 999
+ktlint_standard_trailing-comma-on-call-site=disabled
+ktlint_standard_trailing-comma-on-declaration-site=disabled
+ktlint_function_signature_wrapping_rule_always_with_minimum_parameters = 3
 
 [*.kts]
 ij_kotlin_imports_layout = *
@@ -40,5 +43,5 @@ ij_kotlin_name_count_to_use_star_import = 999
 ij_kotlin_name_count_to_use_star_import_for_members = 999
 ij_java_class_count_to_use_import_on_demand = 999
 
-[*.{tf, yml, yaml}]
+[*.{tf,yml,yaml}]
 indent_size = 2

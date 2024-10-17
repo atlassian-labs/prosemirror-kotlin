@@ -33,6 +33,6 @@ jobs:
         with:
           output-modes: environment
 
-      # Publishes to Artifactory only on push to the "release" branch.
+      # Publishes to Artifactory only when a tag is pushed
       - name: "Publish"
         run: ./gradlew assemble --no-configuration-cache && ./gradlew publish --no-configuration-cache --stacktrace
