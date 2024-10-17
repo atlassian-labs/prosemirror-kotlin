@@ -29,6 +29,7 @@ kotlin {
     it.binaries.framework {
       baseName = xcframeworkName
       binaryOption("bundleId", "com.atlassian.prosemirror.$xcframeworkName")
+      binaryOption("bundleVersion", "${project.version}")
       xcf.add(this)
       isStatic = true
     }
