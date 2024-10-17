@@ -21,4 +21,7 @@ Prior to accepting your contributions we ask that you please follow the appropri
 To create a release, follow these steps:
 1. Update the version in the `build.gradle.kts` file.
 2. Create a PR with these changes, targeting the `main` branch.
-3. Once the PR is merged, create a new tag with the format `v*` e.g. `v1.1.0`. The CI/CD pipeline will create a release and publish it to Artifactory.
+3. Once the PR is merged, create a PR to merge `main` into `release` branch.
+4. Once the 2nd PR is merged, the CI/CD pipeline will create a release, upload iOS assets and publish Android binaries to Artifactory.
+5. Create a new tag with the format `v*` (e.g. `v1.1.0`) on the `release` branch.
+4. Once the release is created, edit the release in the Github UI to add release notes for this release (using `Generate release notes`).
