@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
   alias(libs.plugins.kotlinMultiplatform).apply(false)
   alias(libs.plugins.kotlin.jvm)
@@ -19,9 +22,12 @@ dependencies {
   implementation(libs.kotlin.stdlib)
 }
 
+val versionProperties = Properties()
+versionProperties.load(FileInputStream("version.properties"))
+
 allprojects {
   group = "com.atlassian.prosemirror"
-  version = "1.1.1"
+  version = versionProperties.get("projectVersion") as String
 }
 
 val javaVersion = JavaVersion.VERSION_17
