@@ -370,7 +370,7 @@ class Attribute(
         get() = !this.hasDefault
 
     init {
-        this.hasDefault = options.default != null //Object.prototype.hasOwnProperty.call(options, "default")
+        this.hasDefault = options.hasDefault //Object.prototype.hasOwnProperty.call(options, "default")
         this.default = options.default
 
         this.validate = options.validateString?.let { validateType(typeName, attrName, it) }
@@ -638,6 +638,7 @@ interface AttributeSpec {
     // that have no default must be provided whenever a node or mark of a type that has them is
     // created.
     val default: Any?
+    val hasDefault: Boolean
     // A function or type name used to validate values of this
     // attribute. This will be used when deserializing the attribute
     // from JSON, and when running [`Node.check`](#model.Node.check).
