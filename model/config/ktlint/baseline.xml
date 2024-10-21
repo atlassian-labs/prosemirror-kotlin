@@ -465,7 +465,7 @@
         <error line="348" column="49" source="standard:function-signature" />
         <error line="348" column="61" source="standard:function-signature" />
         <error line="356" column="10" source="standard:enum-wrapping" />
-        <error line="373" column="51" source="standard:comment-spacing" />
+        <error line="373" column="46" source="standard:comment-spacing" />
         <error line="378" column="1" source="standard:no-blank-line-before-rbrace" />
         <error line="443" column="30" source="standard:function-signature" />
         <error line="443" column="60" source="standard:function-signature" />
@@ -475,66 +475,66 @@
         <error line="469" column="1" source="standard:no-blank-line-in-list" />
         <error line="473" column="1" source="standard:no-blank-line-in-list" />
         <error line="477" column="1" source="standard:no-blank-line-in-list" />
-        <error line="641" column="5" source="standard:spacing-between-declarations-with-comments" />
-        <error line="697" column="33" source="standard:multiline-expression-wrapping" />
-        <error line="706" column="28" source="standard:multiline-expression-wrapping" />
-        <error line="715" column="29" source="standard:multiline-expression-wrapping" />
-        <error line="740" column="14" source="standard:function-signature" />
-        <error line="740" column="30" source="standard:function-signature" />
-        <error line="740" column="52" source="standard:function-signature" />
-        <error line="740" column="72" source="standard:function-signature" />
-        <error line="740" column="90" source="standard:function-signature" />
-        <error line="748" column="14" source="standard:function-signature" />
-        <error line="748" column="30" source="standard:function-signature" />
-        <error line="748" column="52" source="standard:function-signature" />
-        <error line="748" column="68" source="standard:function-signature" />
-        <error line="748" column="86" source="standard:function-signature" />
-        <error line="756" column="14" source="standard:function-signature" />
-        <error line="756" column="30" source="standard:function-signature" />
-        <error line="756" column="52" source="standard:function-signature" />
-        <error line="756" column="74" source="standard:function-signature" />
-        <error line="756" column="92" source="standard:function-signature" />
-        <error line="764" column="29" source="standard:function-signature" />
-        <error line="767" column="14" source="standard:function-signature" />
-        <error line="767" column="28" source="standard:function-signature" />
-        <error line="767" column="48" source="standard:function-signature" />
-        <error line="767" column="51" source="standard:function-signature" />
-        <error line="770" column="14" source="standard:function-signature" />
-        <error line="770" column="28" source="standard:function-signature" />
-        <error line="770" column="50" source="standard:function-signature" />
-        <error line="770" column="70" source="standard:function-signature" />
-        <error line="770" column="95" source="standard:function-signature" />
-        <error line="770" column="98" source="standard:function-signature" />
-        <error line="773" column="14" source="standard:function-signature" />
-        <error line="773" column="28" source="standard:function-signature" />
-        <error line="773" column="50" source="standard:function-signature" />
-        <error line="773" column="66" source="standard:function-signature" />
-        <error line="773" column="91" source="standard:function-signature" />
-        <error line="773" column="94" source="standard:function-signature" />
-        <error line="776" column="14" source="standard:function-signature" />
-        <error line="776" column="28" source="standard:function-signature" />
-        <error line="776" column="50" source="standard:function-signature" />
-        <error line="776" column="72" source="standard:function-signature" />
-        <error line="776" column="97" source="standard:function-signature" />
-        <error line="776" column="100" source="standard:function-signature" />
-        <error line="780" column="14" source="standard:function-signature" />
-        <error line="780" column="28" source="standard:function-signature" />
-        <error line="780" column="53" source="standard:function-signature" />
-        <error line="786" column="14" source="standard:function-signature" />
-        <error line="786" column="28" source="standard:function-signature" />
-        <error line="786" column="48" source="standard:function-signature" />
-        <error line="791" column="14" source="standard:function-signature" />
-        <error line="791" column="30" source="standard:function-signature" />
-        <error line="791" column="50" source="standard:function-signature" />
-        <error line="796" column="22" source="standard:function-signature" />
-        <error line="796" column="41" source="standard:function-signature" />
-        <error line="796" column="64" source="standard:function-signature" />
-        <error line="801" column="22" source="standard:function-signature" />
-        <error line="801" column="41" source="standard:function-signature" />
-        <error line="801" column="64" source="standard:function-signature" />
-        <error line="811" column="17" source="standard:function-signature" />
-        <error line="811" column="33" source="standard:function-signature" />
-        <error line="811" column="52" source="standard:function-signature" />
+        <error line="642" column="5" source="standard:spacing-between-declarations-with-comments" />
+        <error line="698" column="33" source="standard:multiline-expression-wrapping" />
+        <error line="707" column="28" source="standard:multiline-expression-wrapping" />
+        <error line="716" column="29" source="standard:multiline-expression-wrapping" />
+        <error line="741" column="14" source="standard:function-signature" />
+        <error line="741" column="30" source="standard:function-signature" />
+        <error line="741" column="52" source="standard:function-signature" />
+        <error line="741" column="72" source="standard:function-signature" />
+        <error line="741" column="90" source="standard:function-signature" />
+        <error line="749" column="14" source="standard:function-signature" />
+        <error line="749" column="30" source="standard:function-signature" />
+        <error line="749" column="52" source="standard:function-signature" />
+        <error line="749" column="68" source="standard:function-signature" />
+        <error line="749" column="86" source="standard:function-signature" />
+        <error line="757" column="14" source="standard:function-signature" />
+        <error line="757" column="30" source="standard:function-signature" />
+        <error line="757" column="52" source="standard:function-signature" />
+        <error line="757" column="74" source="standard:function-signature" />
+        <error line="757" column="92" source="standard:function-signature" />
+        <error line="765" column="29" source="standard:function-signature" />
+        <error line="768" column="14" source="standard:function-signature" />
+        <error line="768" column="28" source="standard:function-signature" />
+        <error line="768" column="48" source="standard:function-signature" />
+        <error line="768" column="51" source="standard:function-signature" />
+        <error line="771" column="14" source="standard:function-signature" />
+        <error line="771" column="28" source="standard:function-signature" />
+        <error line="771" column="50" source="standard:function-signature" />
+        <error line="771" column="70" source="standard:function-signature" />
+        <error line="771" column="95" source="standard:function-signature" />
+        <error line="771" column="98" source="standard:function-signature" />
+        <error line="774" column="14" source="standard:function-signature" />
+        <error line="774" column="28" source="standard:function-signature" />
+        <error line="774" column="50" source="standard:function-signature" />
+        <error line="774" column="66" source="standard:function-signature" />
+        <error line="774" column="91" source="standard:function-signature" />
+        <error line="774" column="94" source="standard:function-signature" />
+        <error line="777" column="14" source="standard:function-signature" />
+        <error line="777" column="28" source="standard:function-signature" />
+        <error line="777" column="50" source="standard:function-signature" />
+        <error line="777" column="72" source="standard:function-signature" />
+        <error line="777" column="97" source="standard:function-signature" />
+        <error line="777" column="100" source="standard:function-signature" />
+        <error line="781" column="14" source="standard:function-signature" />
+        <error line="781" column="28" source="standard:function-signature" />
+        <error line="781" column="53" source="standard:function-signature" />
+        <error line="787" column="14" source="standard:function-signature" />
+        <error line="787" column="28" source="standard:function-signature" />
+        <error line="787" column="48" source="standard:function-signature" />
+        <error line="792" column="14" source="standard:function-signature" />
+        <error line="792" column="30" source="standard:function-signature" />
+        <error line="792" column="50" source="standard:function-signature" />
+        <error line="797" column="22" source="standard:function-signature" />
+        <error line="797" column="41" source="standard:function-signature" />
+        <error line="797" column="64" source="standard:function-signature" />
+        <error line="802" column="22" source="standard:function-signature" />
+        <error line="802" column="41" source="standard:function-signature" />
+        <error line="802" column="64" source="standard:function-signature" />
+        <error line="812" column="17" source="standard:function-signature" />
+        <error line="812" column="33" source="standard:function-signature" />
+        <error line="812" column="52" source="standard:function-signature" />
     </file>
     <file name="src/commonMain/kotlin/com/atlassian/prosemirror/model/ToDom.kt">
         <error line="3" column="1" source="standard:import-ordering" />
