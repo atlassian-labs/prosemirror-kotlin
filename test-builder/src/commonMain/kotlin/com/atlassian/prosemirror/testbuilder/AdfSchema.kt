@@ -45,8 +45,10 @@ data class MarkSpecImpl(
 
 data class AttributeSpecImpl(
     override val default: Any?,
+    override val hasDefault: Boolean,
     override val validateString: String? = null,
     override val validateFunction: ((value: Any?) -> Unit)? = null
 ) : AttributeSpec {
-    constructor() : this(null)
+    constructor(default: Any?, validateString: String? = null) : this(default, true, validateString)
+    constructor() : this(null, false)
 }
