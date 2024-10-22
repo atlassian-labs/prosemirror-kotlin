@@ -101,7 +101,7 @@ open class Mark constructor(
         val none = emptyList<Mark>()
 
         // Deserialize a mark from JSON.
-        fun fromJSON(schema: Schema, json: JsonObject?, withId: Boolean = false): Mark {
+        fun fromJSON(schema: Schema, json: JsonObject?, withId: Boolean = false, check: Boolean = false): Mark {
             if (json == null) throw RangeError("Invalid input for Mark.fromJSON")
             val jsonType = json["type"]?.jsonPrimitive?.contentOrNull
             val type = schema.marks[jsonType]
@@ -120,7 +120,9 @@ open class Mark constructor(
             } else {
                 type.create(attrs).also { (it as? UnsupportedMark)?.originalMarkName = jsonType }
             }
-            type.checkAttrs(mark.attrs)
+            if (check) {
+                type.checkAttrs(mark.attrs)
+            }
             return mark
         }
 
