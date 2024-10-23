@@ -1,4 +1,3 @@
-import java.net.URL
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
 
 plugins {
