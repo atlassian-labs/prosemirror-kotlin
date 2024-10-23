@@ -794,13 +794,13 @@ class Schema {
     }
 
     // Deserialize a node from its JSON representation. This method is bound.
-    fun nodeFromJSON(json: JsonObject?, withId: Boolean = false): Node {
-        return Node.fromJSON(this, json, withId)
+    fun nodeFromJSON(json: JsonObject?, withId: Boolean = false, check: Boolean = false): Node {
+        return Node.fromJSON(this, json, withId, check)
     }
 
     // Deserialize a mark from its JSON representation. This method is bound.
-    fun markFromJSON(json: JsonObject?, withId: Boolean = false): Mark {
-        return Mark.fromJSON(this, json, withId)
+    fun markFromJSON(json: JsonObject?, withId: Boolean = false, check: Boolean = false): Mark {
+        return Mark.fromJSON(this, json, withId, check)
     }
 
     fun nodeType(name: String): NodeType {

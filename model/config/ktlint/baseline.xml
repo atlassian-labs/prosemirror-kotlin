@@ -104,7 +104,8 @@
         <error line="308" column="22" source="standard:function-signature" />
         <error line="308" column="38" source="standard:function-signature" />
         <error line="308" column="57" source="standard:function-signature" />
-        <error line="308" column="80" source="standard:function-signature" />
+        <error line="308" column="82" source="standard:function-signature" />
+        <error line="308" column="104" source="standard:function-signature" />
         <error line="325" column="47" source="standard:multiline-expression-wrapping" />
         <error line="362" column="14" source="standard:function-signature" />
         <error line="362" column="26" source="standard:function-signature" />
@@ -227,12 +228,13 @@
         <error line="104" column="22" source="standard:function-signature" />
         <error line="104" column="38" source="standard:function-signature" />
         <error line="104" column="57" source="standard:function-signature" />
-        <error line="104" column="80" source="standard:function-signature" />
+        <error line="104" column="82" source="standard:function-signature" />
+        <error line="104" column="104" source="standard:function-signature" />
         <error line="107" column="24" source="standard:multiline-expression-wrapping" />
         <error line="115" column="24" source="standard:multiline-expression-wrapping" />
-        <error line="128" column="21" source="standard:function-signature" />
-        <error line="128" column="36" source="standard:function-signature" />
-        <error line="128" column="49" source="standard:function-signature" />
+        <error line="130" column="21" source="standard:function-signature" />
+        <error line="130" column="36" source="standard:function-signature" />
+        <error line="130" column="49" source="standard:function-signature" />
     </file>
     <file name="src/commonMain/kotlin/com/atlassian/prosemirror/model/Node.kt">
         <error line="44" column="1" source="standard:no-consecutive-blank-lines" />
@@ -302,19 +304,20 @@
         <error line="635" column="22" source="standard:function-signature" />
         <error line="635" column="38" source="standard:function-signature" />
         <error line="635" column="57" source="standard:function-signature" />
-        <error line="635" column="80" source="standard:function-signature" />
+        <error line="635" column="82" source="standard:function-signature" />
+        <error line="635" column="104" source="standard:function-signature" />
         <error line="649" column="25" source="standard:multiline-expression-wrapping" />
         <error line="653" column="24" source="standard:multiline-expression-wrapping" />
         <error line="660" column="43" source="standard:multiline-expression-wrapping" />
-        <error line="707" column="21" source="standard:function-signature" />
-        <error line="707" column="32" source="standard:function-signature" />
-        <error line="707" column="39" source="standard:function-signature" />
-        <error line="724" column="22" source="standard:function-signature" />
-        <error line="724" column="33" source="standard:function-signature" />
-        <error line="724" column="41" source="standard:function-signature" />
-        <error line="761" column="15" source="standard:function-signature" />
-        <error line="761" column="34" source="standard:function-signature" />
-        <error line="761" column="45" source="standard:function-signature" />
+        <error line="709" column="21" source="standard:function-signature" />
+        <error line="709" column="32" source="standard:function-signature" />
+        <error line="709" column="39" source="standard:function-signature" />
+        <error line="726" column="22" source="standard:function-signature" />
+        <error line="726" column="33" source="standard:function-signature" />
+        <error line="726" column="41" source="standard:function-signature" />
+        <error line="763" column="15" source="standard:function-signature" />
+        <error line="763" column="34" source="standard:function-signature" />
+        <error line="763" column="45" source="standard:function-signature" />
     </file>
     <file name="src/commonMain/kotlin/com/atlassian/prosemirror/model/Platform.kt">
         <error line="9" column="30" source="standard:function-signature" />
@@ -528,10 +531,12 @@
         <error line="792" column="50" source="standard:function-signature" />
         <error line="797" column="22" source="standard:function-signature" />
         <error line="797" column="41" source="standard:function-signature" />
-        <error line="797" column="64" source="standard:function-signature" />
+        <error line="797" column="66" source="standard:function-signature" />
+        <error line="797" column="88" source="standard:function-signature" />
         <error line="802" column="22" source="standard:function-signature" />
         <error line="802" column="41" source="standard:function-signature" />
-        <error line="802" column="64" source="standard:function-signature" />
+        <error line="802" column="66" source="standard:function-signature" />
+        <error line="802" column="88" source="standard:function-signature" />
         <error line="812" column="17" source="standard:function-signature" />
         <error line="812" column="33" source="standard:function-signature" />
         <error line="812" column="52" source="standard:function-signature" />
