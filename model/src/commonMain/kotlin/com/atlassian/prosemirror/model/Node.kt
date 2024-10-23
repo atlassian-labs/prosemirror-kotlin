@@ -632,12 +632,12 @@ open class Node constructor(
 
         // Deserialize a node from its JSON representation.
         @Suppress("ThrowsCount", "SwallowedException", "ComplexMethod")
-        fun fromJSON(schema: Schema, json: JsonObject?, withId: Boolean = false): Node {
+        fun fromJSON(schema: Schema, json: JsonObject?, withId: Boolean = false, check: Boolean = false): Node {
             if (json == null) throw RangeError("Invalid input for Node.fromJSON")
             var marks: List<Mark>? = null
             if (json.containsKey("marks")) {
                 val marksArray = json["marks"]!!.jsonArray
-                marks = marksArray.map { schema.markFromJSON(it.jsonObject, withId) }
+                marks = marksArray.map { schema.markFromJSON(it.jsonObject, withId, check) }
             }
             val type = json["type"]?.jsonPrimitive?.contentOrNull
             if (type == "text") {
@@ -645,7 +645,7 @@ open class Node constructor(
                 if (text?.isString != true) throw RangeError("Invalid text node in JSON")
                 return schema.text(text.content, marks)
             }
-            val content = Fragment.fromJSON(schema, json["content"]?.jsonArray, withId)
+            val content = Fragment.fromJSON(schema, json["content"]?.jsonArray, withId, check)
             val attrs = json["attrs"]?.jsonObject?.mapValues {
                 if (it.value is JsonNull) null else JSON.decodeFromJsonElement<Any>(it.value)
             }
@@ -674,7 +674,9 @@ open class Node constructor(
                 // for round tripping
                 node.unknownFields = json.fieldsExcept("marks", "type", "content", "attrs")
             }
-            node.type.checkAttrs(node.attrs)
+            if (check) {
+                node.type.checkAttrs(node.attrs)
+            }
             return node
         }
     }
