@@ -130,6 +130,7 @@ subprojects {
     }
 
     signing {
+      setRequired { System.getenv("SIGNING_KEY") == "" } // only sign if the key is available (usually on CI)
       useInMemoryPgpKeys(
         System.getenv("SIGNING_KEY"),
         System.getenv("SIGNING_PASSWORD"),
