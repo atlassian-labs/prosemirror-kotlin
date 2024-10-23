@@ -45,5 +45,4 @@ kotlin {
 
 description = "prosemirror-test-builder"
 ext.set("pomDescription", "Document building utilities for writing tests")
-ext.set("pomUrl", "https://github.com/atlassian-labs/prosemirror-kotlin/tree/test-builder/")
-ext.set("dokkaUrlPrefix", "https://github.com/atlassian-labs/prosemirror-kotlin/test-builder/")
+ext.set("srcUrl", "https://github.com/atlassian-labs/prosemirror-kotlin/tree/main/test-builder/")

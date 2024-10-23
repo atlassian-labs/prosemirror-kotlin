@@ -47,5 +47,4 @@ kotlin {
 
 description = "prosemirror-state"
 ext.set("pomDescription", "Collaborative editing for ProseMirror")
-ext.set("pomUrl", "https://github.com/atlassian-labs/prosemirror-kotlin/tree/collab/")
-ext.set("dokkaUrlPrefix", "https://github.com/atlassian-labs/prosemirror-kotlin/collab/")
+ext.set("srcUrl", "https://github.com/atlassian-labs/prosemirror-kotlin/tree/main/collab/")

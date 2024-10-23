@@ -49,5 +49,4 @@ kotlin {
 
 description = "prosemirror-state"
 ext.set("pomDescription", "ProseMirror editor state")
-ext.set("pomUrl", "https://github.com/atlassian-labs/prosemirror-kotlin/tree/state/")
-ext.set("dokkaUrlPrefix", "https://github.com/atlassian-labs/prosemirror-kotlin/state/")
+ext.set("srcUrl", "https://github.com/atlassian-labs/prosemirror-kotlin/tree/main/state/")

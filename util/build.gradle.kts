@@ -44,5 +44,4 @@ kotlin {
 
 description = "prosemirror-util"
 ext.set("pomDescription", "ProseMirror utilities")
-ext.set("pomUrl", "https://github.com/atlassian-labs/prosemirror-kotlin/tree/util/")
-ext.set("dokkaUrlPrefix", "https://github.com/atlassian-labs/prosemirror-kotlin/util/")
+ext.set("srcUrl", "https://github.com/atlassian-labs/prosemirror-kotlin/tree/main/util/")

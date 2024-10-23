@@ -47,5 +47,4 @@ kotlin {
 
 description = "prosemirror-transform"
 ext.set("pomDescription", "ProseMirror document transformations")
-ext.set("pomUrl", "https://github.com/atlassian-labs/prosemirror-kotlin/tree/transform/")
-ext.set("dokkaUrlPrefix", "https://github.com/atlassian-labs/prosemirror-kotlin/transform/")
+ext.set("srcUrl", "https://github.com/atlassian-labs/prosemirror-kotlin/tree/main/transform/")

@@ -49,5 +49,4 @@ kotlin {
 
 description = "prosemirror-history"
 ext.set("pomDescription", "Undo history for ProseMirror")
-ext.set("pomUrl", "https://github.com/atlassian-labs/prosemirror-kotlin/tree/history/")
-ext.set("dokkaUrlPrefix", "https://github.com/atlassian-labs/prosemirror-kotlin/history/")
+ext.set("srcUrl", "https://github.com/atlassian-labs/prosemirror-kotlin/tree/main/history/")

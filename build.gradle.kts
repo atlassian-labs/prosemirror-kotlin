@@ -41,7 +41,7 @@ subprojects {
   afterEvaluate { // afterEvaluate so that project.ext values will be available
     project.tasks.dokkaHtml {
       dokkaSourceSets {
-        val urlPrefix = project.ext.get("dokkaUrlPrefix") as String
+        val urlPrefix = project.ext.get("srcUrl") as String
         val commonMain by getting {
           sourceLink {
             // Unix based directory relative path to the root of the project (where you execute gradle respectively).
@@ -89,7 +89,7 @@ subprojects {
           pom {
             name.set(project.name)
             description.set(project.ext.get("pomDescription") as String)
-            url.set(project.ext.get("pomUrl") as String)
+            url.set(project.ext.get("srcUrl") as String)
 
             scm {
               connection.set("git@github.com:atlassian-labs/prosemirror-kotlin.git")
