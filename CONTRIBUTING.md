@@ -21,7 +21,7 @@ Prior to accepting your contributions we ask that you please follow the appropri
 To create a release, follow these steps:
 1. Update the version in the `version.properties` file.
 2. Create a PR with these changes, targeting the `main` branch.
-3. Once the PR is merged, create a PR to merge `main` into `release` branch.
+3. Once the PR is merged, create a PR to merge `main` into `release` branch. Make sure to use the `Merge pull request` button to merge the PR (do not use `Squash and merge`).
 4. Once the 2nd PR is merged, the CI/CD pipeline will:
    1. Tag the commit with the new version.
    2. Create a Github release.
