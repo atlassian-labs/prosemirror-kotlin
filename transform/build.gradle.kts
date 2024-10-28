@@ -15,7 +15,7 @@ kotlin {
   }
 
   // iOS
-  val xcframeworkName = "transform"
+  val xcframeworkName = project.name
   val xcf = XCFramework(xcframeworkName)
   listOf(
     iosX64(),
@@ -46,4 +46,3 @@ kotlin {
 
 description = "prosemirror-transform"
 ext.set("pomDescription", "ProseMirror document transformations")
-ext.set("srcUrl", "https://github.com/atlassian-labs/prosemirror-kotlin/tree/main/transform/")
