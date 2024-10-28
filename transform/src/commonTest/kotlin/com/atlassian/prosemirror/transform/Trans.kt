@@ -34,15 +34,17 @@ fun testStepJSON(tr: Transform) {
     assertThat(tr.doc).isEqualTo(newTR.doc)
 }
 
-fun testTransform(tr: Transform, expect: Node) {
-    assertThat(tr.doc).isEqualTo(expect)
+fun testTransform(tr: Transform, expect: Node, useExpectFirstChild: Boolean = false) {
+    val theExpect = if (useExpectFirstChild) expect.firstChild!! else expect
+    val expectOffset = if (useExpectFirstChild) -1 else 0
+    assertThat(tr.doc).isEqualTo(theExpect)
     assertThat(invert(tr).doc).isEqualTo(tr.before)
 
     testStepJSON(tr)
 
     tags(expect).forEach { tag ->
         val beforePos = pos(tr.before, tag)
-        val afterPos = pos(expect, tag)
-        testMapping(tr.mapping, beforePos!!, afterPos!!)
+        val afterPos = pos(expect, tag)!! + expectOffset
+        testMapping(tr.mapping, beforePos!!, afterPos)
     }
 }

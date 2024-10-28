@@ -26,7 +26,7 @@ dependencies {
 }
 
 val versionProperties = Properties()
-versionProperties.load(FileInputStream("version.properties"))
+versionProperties.load(FileInputStream("$projectDir/version.properties"))
 
 allprojects {
   group = "com.atlassian.prosemirror"

@@ -109,7 +109,7 @@ class Fragment {
                 node.type.spec.leafText != null -> node.type.spec.leafText!!.invoke(node)
                 else -> ""
             }
-            if (node.isBlock && (node.isLeaf && nodeText != null || node.isTextblock) && blockSeparator != null) {
+            if (node.isBlock && (node.isLeaf && nodeText?.isNotEmpty() == true || node.isTextblock) && blockSeparator != null) {
                 if (first) {
                     first = false
                 } else {
