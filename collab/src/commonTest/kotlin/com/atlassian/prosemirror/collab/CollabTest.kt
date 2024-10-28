@@ -2,6 +2,10 @@ package com.atlassian.prosemirror.collab
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import com.atlassian.prosemirror.history.HistoryPlugin
+import com.atlassian.prosemirror.history.closeHistory
+import com.atlassian.prosemirror.history.redo
+import com.atlassian.prosemirror.history.undo
 import com.atlassian.prosemirror.model.Node
 import com.atlassian.prosemirror.state.EmptyEditorStateConfig
 import com.atlassian.prosemirror.state.PMEditorState
@@ -12,6 +16,8 @@ import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.doc
 import com.atlassian.prosemirror.testbuilder.schema
 import com.atlassian.prosemirror.transform.Step
 import kotlin.test.Test
+
+val histPlugin = HistoryPlugin()
 
 class DummyServer {
     val states = mutableListOf<PMEditorState>()
@@ -26,7 +32,7 @@ class DummyServer {
             this.plugins.add(plugin)
             this.states.add(
                 PMEditorState.create(
-                    EmptyEditorStateConfig(doc = doc, schema = schema, plugins = listOf(plugin))
+                    EmptyEditorStateConfig(doc = doc, schema = schema, plugins = listOf(histPlugin, plugin))
                 )
             )
         }
@@ -69,6 +75,14 @@ class DummyServer {
         this.update(n) { s ->
             s.tr.insertText(text, pos ?: s.selection.head)
         }
+    }
+
+    fun undo(n: Int) {
+        undo(this.states[n]) { tr -> this.update(n) { tr } }
+    }
+
+    fun redo(n: Int) {
+        redo(this.states[n]) { tr -> this.update(n) { tr } }
     }
 
     fun conv(doc: Node) {
@@ -142,106 +156,109 @@ class CollabTest {
         s.conv("AXBCUV")
     }
 
-// TODO EASY: convert after History (Undo/Redo) plugin is implemented
+    @Test
+    fun `supports undo`() {
+        val s = DummyServer()
+        s.type(0, "A")
+        s.type(1, "B")
+        s.type(0, "C")
+        s.undo(1)
+        s.conv("AC")
+        s.type(1, "D")
+        s.type(0, "E")
+        s.conv("ACDE")
+    }
 
-//        it("supports undo", () => {
-//            let s = new DummyServer
-//            s.type(0, "A")
-//            s.type(1, "B")
-//            s.type(0, "C")
-//            s.undo(1)
-//            s.conv("AC")
-//            s.type(1, "D")
-//            s.type(0, "E")
-//            s.conv("ACDE")
-//        })
+    @Test
+    fun `supports redo`() {
+        val s = DummyServer()
+        s.type(0, "A")
+        s.type(1, "B")
+        s.type(0, "C")
+        s.undo(1)
+        s.redo(1)
+        s.type(1, "D")
+        s.type(0, "E")
+        s.conv("ABCDE")
+    }
 
-//        it("supports redo", () => {
-//            let s = new DummyServer
-//            s.type(0, "A")
-//            s.type(1, "B")
-//            s.type(0, "C")
-//            s.undo(1)
-//            s.redo(1)
-//            s.type(1, "D")
-//            s.type(0, "E")
-//            s.conv("ABCDE")
-//        })
-//
-//        it("supports deep undo", () => {
-//            let s = new DummyServer(doc(p("hello"), p("bye")))
-//            s.update(0, sel(6))
-//            s.update(1, sel(11))
-//            s.type(0, "!")
-//            s.type(1, "!")
-//            s.update(0, s => closeHistory(s.tr))
-//            s.delay(0, () => {
-//                s.type(0, " ...")
-//                s.type(1, " ,,,")
-//            })
-//            s.update(0, s => closeHistory(s.tr))
-//            s.type(0, "*")
-//            s.type(1, "*")
-//            s.undo(0)
-//            s.conv(doc(p("hello! ..."), p("bye! ,,,*")))
-//            s.undo(0)
-//            s.undo(0)
-//            s.conv(doc(p("hello"), p("bye! ,,,*")))
-//            s.redo(0)
-//            s.redo(0)
-//            s.redo(0)
-//            s.conv(doc(p("hello! ...*"), p("bye! ,,,*")))
-//            s.undo(0)
-//            s.undo(0)
-//            s.conv(doc(p("hello!"), p("bye! ,,,*")))
-//            s.undo(1)
-//            s.conv(doc(p("hello!"), p("bye")))
-//        })
-//
-//        it("support undo with clashing events", () => {
-//            let s = new DummyServer(doc(p("hello")))
-//            s.update(0, sel(6))
-//            s.type(0, "A")
-//            s.delay(0, () => {
-//                s.type(0, "B", 4)
-//                s.type(0, "C", 5)
-//                s.type(0, "D", 1)
-//                s.update(1, s => s.tr.delete(2, 5))
-//            })
-//            s.conv("DhoA")
-//            s.undo(0)
-//            s.undo(0)
-//            s.conv("ho")
-//            ist(s.states[0].selection.head, 3)
-//        })
-//
-//        it("handles conflicting steps", () => {
-//            let s = new DummyServer(doc(p("abcde")))
-//            s.delay(0, () => {
-//                s.update(0, s => s.tr.delete(3, 4))
-//                s.type(0, "x")
-//                s.update(1, s => s.tr.delete(2, 5))
-//            })
-//            s.undo(0)
-//            s.undo(0)
-//            s.conv(doc(p("ae")))
-//        })
-//
-//        it("can undo simultaneous typing", () => {
-//            let s = new DummyServer(doc(p("A"), p("B")))
-//            s.update(0, sel(2))
-//            s.update(1, sel(5))
-//            s.delay(0, () => {
-//                s.type(0, "1")
-//                s.type(0, "2")
-//                s.type(1, "x")
-//                s.type(1, "y")
-//            })
-//            s.conv(doc(p("A12"), p("Bxy")))
-//            s.undo(0)
-//            s.conv(doc(p("A"), p("Bxy")))
-//            s.undo(1)
-//            s.conv(doc(p("A"), p("B")))
-//        })
-//    })
+    @Test
+    fun `supports deep undo`() {
+        val s = DummyServer(doc { p { +"hello" } + p { +"bye" } })
+        s.update(0, sel(6))
+        s.update(1, sel(11))
+        s.type(0, "!")
+        s.type(1, "!")
+        s.update(0) { s -> closeHistory(s.tr) }
+        s.delay(0) {
+            s.type(0, " ...")
+            s.type(1, " ,,,")
+        }
+        s.update(0) { s -> closeHistory(s.tr) }
+        s.type(0, "*")
+        s.type(1, "*")
+        s.undo(0)
+        s.conv(doc { p { +"hello! ..." } + p { +"bye! ,,,*" } })
+        s.undo(0)
+        s.undo(0)
+        s.conv(doc { p { +"hello" } + p { +"bye! ,,,*" } })
+        s.redo(0)
+        s.redo(0)
+        s.redo(0)
+        s.conv(doc { p { +"hello! ...*" } + p { +"bye! ,,,*" } })
+        s.undo(0)
+        s.undo(0)
+        s.conv(doc { p { +"hello!" } + p { +"bye! ,,,*" } })
+        s.undo(1)
+        s.conv(doc { p { +"hello!" } + p { +"bye" } })
+    }
+
+    @Test
+    fun `support undo with clashing events`() {
+        val s = DummyServer(doc { p { +"hello" } })
+        s.update(0, sel(6))
+        s.type(0, "A")
+        s.delay(0) {
+            s.type(0, "B", 4)
+            s.type(0, "C", 5)
+            s.type(0, "D", 1)
+            s.update(1) { s -> s.tr.delete(2, 5) as Transaction }
+        }
+        s.conv("DhoA")
+        s.undo(0)
+        s.undo(0)
+        s.conv("ho")
+        assertThat(s.states[0].selection.head).isEqualTo(3)
+    }
+
+    @Test
+    fun `handles conflicting steps`() {
+        val s = DummyServer(doc { p { +"abcde" } })
+        s.delay(0) {
+            s.update(0) { s -> s.tr.delete(3, 4) as Transaction }
+            s.type(0, "x")
+            s.update(1) { s -> s.tr.delete(2, 5) as Transaction }
+        }
+        s.undo(0)
+        s.undo(0)
+        s.conv(doc { p { +"ae" } })
+    }
+
+    @Test
+    fun `can undo simultaneous typing`() {
+        val s = DummyServer(doc { p { +"A" } + p { +"B" } })
+        s.update(0, sel(2))
+        s.update(1, sel(5))
+        s.delay(0) {
+            s.type(0, "1")
+            s.type(0, "2")
+            s.type(1, "x")
+            s.type(1, "y")
+        }
+        s.conv(doc { p { +"A12" } + p { +"Bxy" } })
+        s.undo(0)
+        s.conv(doc { p { +"A" } + p { +"Bxy" } })
+        s.undo(1)
+        s.conv(doc { p { +"A" } + p { +"B" } })
+    }
 }

@@ -37,6 +37,7 @@ kotlin {
       implementation(project(":transform"))
     }
     commonTest.dependencies {
+      implementation(project(":history"))
       implementation(project(":test-builder"))
       implementation(libs.kotlin.test)
       implementation(libs.test.assertk)
