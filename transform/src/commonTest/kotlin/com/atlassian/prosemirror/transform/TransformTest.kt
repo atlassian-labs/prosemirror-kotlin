@@ -4,6 +4,7 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isTrue
 import com.atlassian.prosemirror.model.Attrs
+import com.atlassian.prosemirror.model.Fragment
 import com.atlassian.prosemirror.model.Mark
 import com.atlassian.prosemirror.model.Node
 import com.atlassian.prosemirror.model.NodeBase
@@ -11,8 +12,9 @@ import com.atlassian.prosemirror.model.Schema
 import com.atlassian.prosemirror.model.SchemaSpec
 import com.atlassian.prosemirror.model.Slice
 import com.atlassian.prosemirror.testbuilder.AttributeSpecImpl
+import com.atlassian.prosemirror.testbuilder.CustomNodeBuildCompanion
+import com.atlassian.prosemirror.testbuilder.CustomNodeBuilder
 import com.atlassian.prosemirror.testbuilder.MarkSpecImpl
-import com.atlassian.prosemirror.testbuilder.NodeBuildCompanion
 import com.atlassian.prosemirror.testbuilder.NodeBuilder
 import com.atlassian.prosemirror.testbuilder.NodeSpecImpl
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder
@@ -35,7 +37,7 @@ class TransformTest {
 
     // region addMark
     fun add(doc: Node, mark: Mark, expect: Node) {
-        testTransform(Transform(doc).addMark(pos("a")!!, pos("b")!!, mark), expect)
+        testTransform(Transform(doc).addMark(pos(doc, "a")!!, pos(doc, "b")!!, mark), expect)
     }
 
     @Test
@@ -201,7 +203,7 @@ class TransformTest {
     @Test
     fun `doesn't remove a non-matching link`() {
         rem(
-            doc { p { +"hello " + a { +"link" } } },
+            doc { p { +"<a>hello " + a { +"link<b>" } } },
             schema.mark("link", mapOf("href" to "bar")),
             doc { p { +"hello " + a { +"link" } } }
         )
@@ -701,12 +703,19 @@ class TransformTest {
     // endregion
 
     // region setBlockType
-    private fun type(doc: Node, expect: Node, nodeType: String, attrs: Attrs? = null) {
+    private fun type(
+        doc: Node,
+        expect: Node,
+        nodeType: String,
+        attrs: Attrs? = null,
+        pos: ((Node, String) -> Int?) = PMNodeBuilder.Companion::pos,
+        useSchema: Schema = schema
+    ) {
         testTransform(
             Transform(doc).setBlockType(
-                pos(doc, "a")!!,
-                pos(doc, "b") ?: pos(doc, "a")!!,
-                schema.nodes[nodeType]!!,
+                pos.invoke(doc, "a")!!,
+                pos.invoke(doc, "b") ?: pos.invoke(doc, "a")!!,
+                useSchema.nodes[nodeType]!!,
                 attrs
             ),
             expect
@@ -748,6 +757,22 @@ class TransformTest {
         )
 
     @Test
+    fun `removes non-allowed nodes`() =
+        type(
+            doc { p { +"<a>one" + img {} + "two" + img {} + "three" } },
+            doc { pre { +"onetwothree" } },
+            "code_block"
+        )
+
+    @Test
+    fun `removes newlines in non-code`() =
+        type(
+            doc { pre { +"<a>one\ntwo\nthree" } },
+            doc { p { +"one two three" } },
+            "paragraph"
+        )
+
+    @Test
     fun `only clears markup when needed`() =
         type(
             doc { p { +"hello<a> " + em { +"world" } } },
@@ -771,6 +796,63 @@ class TransformTest {
             doc { p { +"<a>hello" + img {} } + p { +"okay" } + ul { li { p { +"foo<b>" } } } },
             doc { pre { +"<a>hello" } + pre { +"okay" } + ul { li { p { +"foo<b>" } } } },
             "code_block"
+        )
+    }
+
+    @Test
+    fun `converts newlines to linebreak replacements when appropriate`() {
+        val builder = CustomNodeBuildCompanion(linebreakSchema)
+        type(
+            builder.doc {
+                pre { +"<a>one\ntwo\nthree" }
+            },
+            builder.doc {
+                p { +"<a>one" + br {} + "two" + br {} + "three" }
+            },
+            "paragraph",
+            pos = builder::pos,
+            useSchema = linebreakSchema
+        )
+
+        type(
+            builder.doc {
+                p { +"<a>one\ntwo" }
+            },
+            builder.doc {
+                pre { +"<a>one\ntwo" }
+            },
+            "code_block",
+            pos = builder::pos,
+            useSchema = linebreakSchema
+        )
+    }
+
+    @Test
+    fun `converts linebreak replacements to newlines when appropriate`() {
+        val builder = CustomNodeBuildCompanion(linebreakSchema)
+        type(
+            builder.doc {
+                p { +"<a>one" + br {} + "two" + br {} + "three" }
+            },
+            builder.doc {
+                pre { +"one\ntwo\nthree<a>" }
+            },
+            "code_block",
+            pos = builder::pos,
+            useSchema = linebreakSchema
+        )
+
+        type(
+            builder.doc {
+                p { +"<a>one" + br {} + "two" + br {} + "three" }
+            },
+            builder.doc {
+                h1 { +"<a>one" + br {} + "two" + br {} + "three" }
+            },
+            "heading",
+            mapOf("level" to 1),
+            pos = builder::pos,
+            useSchema = linebreakSchema
         )
     }
     // endregion
@@ -835,7 +917,13 @@ class TransformTest {
         repl(doc, slice, expect, useDocFirstChild, useExpectFirstChild)
     }
 
-    fun repl(doc: Node, source: Slice?, expect: Node, useDocFirstChild: Boolean = false, useExpectFirstChild: Boolean = false) {
+    fun repl(
+        doc: Node,
+        source: Slice?,
+        expect: Node,
+        useDocFirstChild: Boolean = false,
+        useExpectFirstChild: Boolean = false
+    ) {
         val slice = source ?: Slice.empty
         val docOffset = if (useDocFirstChild) -1 else 0
         val theDoc = if (useDocFirstChild) {
@@ -1261,133 +1349,101 @@ class TransformTest {
         assertEquals(tr.doc.lastChild!!.marks.size, 1)
     }
 
-    // A schema that enforces a heading and a body at the top level
-    companion object {
-        private val hbSchema = Schema(
-            SchemaSpec(
-                nodes = schema.spec.nodes + mapOf(
-                    "doc" to (schema.spec.nodes["doc"] as NodeSpecImpl).copy(content = "heading body"),
-                    "body" to NodeSpecImpl("block+")
-                )
-            )
-        )
-    }
-
-    private class HbNodeBuilder(
-        pos: Int = 0,
-        marks: List<Mark> = emptyList(),
-        override val schema: Schema = hbSchema
-    ) : NodeBuilder<HbNodeBuilder>(pos, marks, schema) {
-        override val checked: Boolean
-            get() = false
-
-        override fun create(pos: Int, marks: List<Mark>, schema: Schema): NodeBuilder<HbNodeBuilder> {
-            return HbNodeBuilder(pos, marks, schema)
-        }
-
-        companion object : NodeBuildCompanion<HbNodeBuilder>(hbSchema) {
-            override val checked: Boolean
-                get() = false
-
-            override fun create(): HbNodeBuilder {
-                return HbNodeBuilder(schema = this.schema)
-            }
-        }
-
-    }
-
-    private fun NodeBuilder<HbNodeBuilder>.hbP(func: NodeBuilder<HbNodeBuilder>.() -> Unit) =
-        node("paragraph", func)
-    private fun NodeBuilder<HbNodeBuilder>.b(func: NodeBuilder<HbNodeBuilder>.() -> Unit) =
+    private fun NodeBuilder<CustomNodeBuilder>.b(func: NodeBuilder<CustomNodeBuilder>.() -> Unit) =
         node("body", func)
-    private fun NodeBuilder<HbNodeBuilder>.h(func: NodeBuilder<HbNodeBuilder>.() -> Unit) =
+    private fun NodeBuilder<CustomNodeBuilder>.h(func: NodeBuilder<CustomNodeBuilder>.() -> Unit) =
         node("heading", func, mapOf("level" to 1))
 
     @Test
     fun `can unwrap a paragraph when replacing into a strict schema`() {
-        val doc = HbNodeBuilder.doc {
+        val builder = CustomNodeBuildCompanion(hbSchema)
+        val doc = builder.doc {
             h { +"Head" }
-            b { hbP { +"Content" } }
+            b { p { +"Content" } }
         }
         val tr = Transform(doc)
         tr.replace(0, tr.doc.content.size, tr.doc.slice(7, 16))
         assertEquals(
             tr.doc,
-            HbNodeBuilder.doc {
+            builder.doc {
                 h { +"Content" }
-                b { hbP {} }
+                b { p {} }
             }
         )
     }
 
     @Test
     fun `can unwrap a body after a placed node`() {
+        val builder = CustomNodeBuildCompanion(hbSchema)
         val tr = Transform(
-            HbNodeBuilder.doc {
+            builder.doc {
                 h { +"Head" }
-                b { hbP { +"Content" } }
+                b { p { +"Content" } }
             }
         )
         tr.replace(7, 7, tr.doc.slice(0, tr.doc.content.size))
         assertEquals(
             tr.doc,
-            HbNodeBuilder.doc {
+            builder.doc {
                 h { +"Head" }
-                b { h { +"Head" } + hbP { +"Content" } + hbP { +"Content" } }
+                b { h { +"Head" } + p { +"Content" } + p { +"Content" } }
             }
         )
     }
 
     @Test
     fun `can wrap a paragraph in a body even when it's not the first node`() {
+        val builder = CustomNodeBuildCompanion(hbSchema)
         val tr = Transform(
-            HbNodeBuilder.doc {
+            builder.doc {
                 h { +"Head" }
-                b { hbP { +"One" } + hbP { +"Two" } }
+                b { p { +"One" } + p { +"Two" } }
             }
         )
         tr.replace(0, tr.doc.content.size, tr.doc.slice(8, 16))
         assertEquals(
             tr.doc,
-            HbNodeBuilder.doc {
+            builder.doc {
                 h { +"One" }
-                b { hbP { +"Two" } }
+                b { p { +"Two" } }
             }
         )
     }
 
     @Test
     fun `can split a fragment and place its children in different parents`() {
+        val builder = CustomNodeBuildCompanion(hbSchema)
         val tr = Transform(
-            HbNodeBuilder.doc {
+            builder.doc {
                 h { +"Head" }
-                b { h { +"One" } + hbP { +"Two" } }
+                b { h { +"One" } + p { +"Two" } }
             }
         )
         tr.replace(0, tr.doc.content.size, tr.doc.slice(7, 17))
         assertEquals(
             tr.doc,
-            HbNodeBuilder.doc {
+            builder.doc {
                 h { +"One" }
-                b { hbP { +"Two" } }
+                b { p { +"Two" } }
             }
         )
     }
 
     @Test
     fun `will insert filler nodes before a node when necessary`() {
+        val builder = CustomNodeBuildCompanion(hbSchema)
         val tr = Transform(
-            HbNodeBuilder.doc {
+            builder.doc {
                 h { +"Head" }
-                b { hbP { +"One" } }
+                b { p { +"One" } }
             }
         )
         tr.replace(0, tr.doc.content.size, tr.doc.slice(6, tr.doc.content.size))
         assertEquals(
             tr.doc,
-            HbNodeBuilder.doc {
+            builder.doc {
                 h { }
-                b { hbP { +"One" } }
+                b { p { +"One" } }
             }
         )
     }
@@ -1498,6 +1554,39 @@ class TransformTest {
         val tr = Transform(doc).replace(from, to, doc.slice(from, to))
         assertEquals(tr.doc, doc)
     }
+
+    @Test
+    fun `keeps isolating nodes together`() {
+        val s = Schema(
+            SchemaSpec(
+                nodes = schema.spec.nodes + mapOf(
+                    "iso" to NodeSpecImpl(
+                        group = "block",
+                        content = "block+",
+                        isolating = true
+                    )
+                )
+            )
+        )
+        val doc = s.node("doc", null, listOf(s.node("paragraph", null, listOf(s.text("one")))))
+        val iso = Fragment.from(s.node("iso", null, listOf(s.node("paragraph", null, listOf(s.text("two"))))))
+        assertEquals(
+            Transform(doc).replace(2, 3, Slice(iso, 2, 0)).doc,
+            s.node(
+                "doc",
+                null,
+                listOf(
+                    s.node("paragraph", null, listOf(s.text("o"))),
+                    s.node("iso", null, listOf(s.node("paragraph", null, listOf(s.text("two"))))),
+                    s.node("paragraph", null, listOf(s.text("e")))
+                )
+            )
+        )
+        assertEquals(
+            Transform(doc).replace(2, 3, Slice(iso, 2, 2)).doc,
+            s.node("doc", null, listOf(s.node("paragraph", null, listOf(s.text("otwoe")))))
+        )
+    }
     // endregion
 
     // region replaceRange
@@ -1506,7 +1595,8 @@ class TransformTest {
         source: Node,
         expect: Node,
         useSourceFirstChild: Boolean = false,
-        ) {
+        pos: (Node, String) -> Int? = PMNodeBuilder.Companion::pos
+    ) {
         val theSource = if (useSourceFirstChild) {
             source.firstChild!!
         } else {
@@ -1578,11 +1668,103 @@ class TransformTest {
         )
 
     @Test
+    fun `keeps defining context when it doesn't matches the parent markup`() {
+        val blockquoteSchema = Schema(
+            SchemaSpec(
+                nodes = schema.spec.nodes + mapOf(
+                    "blockquote" to NodeSpecImpl(
+                        content = "block+",
+                        group = "block",
+                        definingForContent = true,
+                        definingAsContext = false,
+                        attrs = mapOf("color" to AttributeSpecImpl("color", "black"))
+                    )
+                ),
+                marks = schema.spec.marks
+            )
+        )
+
+        fun NodeBuilder<CustomNodeBuilder>.b1(func: NodeBuilder<CustomNodeBuilder>.() -> Unit) =
+            node("blockquote", func, mapOf("color" to "#100"))
+        fun NodeBuilder<CustomNodeBuilder>.b2(func: NodeBuilder<CustomNodeBuilder>.() -> Unit) =
+            node("blockquote", func, mapOf("color" to "#200"))
+        fun NodeBuilder<CustomNodeBuilder>.b3(func: NodeBuilder<CustomNodeBuilder>.() -> Unit) =
+            node("blockquote", func, mapOf("color" to "#300"))
+        fun NodeBuilder<CustomNodeBuilder>.b4(func: NodeBuilder<CustomNodeBuilder>.() -> Unit) =
+            node("blockquote", func, mapOf("color" to "#400"))
+        fun NodeBuilder<CustomNodeBuilder>.b5(func: NodeBuilder<CustomNodeBuilder>.() -> Unit) =
+            node("blockquote", func, mapOf("color" to "#500"))
+        fun NodeBuilder<CustomNodeBuilder>.b6(func: NodeBuilder<CustomNodeBuilder>.() -> Unit) =
+            node("blockquote", func, mapOf("color" to "#600"))
+
+        val builder = CustomNodeBuildCompanion(blockquoteSchema)
+        val source = builder.doc {
+            b1 { p { +"<a>b1" } }
+            b2 { p { +"b2<b>" } }
+        }
+
+        val before1 = builder.doc {
+            b3 { p { +"b3" } }
+            b4 { p { +"<a>" } }
+        }
+        val before2 = builder.doc {
+            b5 { p { +"b5" } }
+            b3 { p { +"b3" } }
+            b4 { p { +"<a>" } }
+        }
+        val before3 = builder.doc {
+            b6 { p { +"b6" } }
+            b5 { p { +"b5" } }
+            b3 { p { +"b3" } }
+            b4 { p { +"<a>" } }
+        }
+
+        val expect1 = builder.doc {
+            b3 { p { +"b3" } }
+            b1 { p { +"b1" } }
+            b2 { p { +"b2" } }
+        }
+        val expect2 = builder.doc {
+            b5 { p { +"b5" } }
+            b3 { p { +"b3" } }
+            b1 { p { +"b1" } }
+            b2 { p { +"b2" } }
+        }
+        val expect3 = builder.doc {
+            b6 { p { +"b6" } }
+            b5 { p { +"b5" } }
+            b3 { p { +"b3" } }
+            b1 { p { +"b1" } }
+            b2 { p { +"b2" } }
+        }
+
+        replRange(before1, source, expect1, pos = builder::pos)
+        replRange(before2, source, expect2, pos = builder::pos)
+        replRange(before3, source, expect3, pos = builder::pos)
+    }
+
+    @Test
     fun `drops defining context when it matches the parent structure`() =
         replRange(
             doc { blockquote { p { +"<a>" } } },
             doc { blockquote { p { +"<a>one<b>" } } },
             doc { blockquote { p { +"one" } } }
+        )
+
+    @Test
+    fun `drops defining context when it matches the parent structure in a nested context`() =
+        replRange(
+            doc { ul { li { p { +"list1" } + blockquote { p { +"<a>" } } } } },
+            doc { blockquote { p { +"<a>one<b>" } } },
+            doc { ul { li { p { +"list1" } + blockquote { p { +"one" } } } } }
+        )
+
+    @Test
+    fun `drops defining context when it matches the parent structure in a deep nested context`() =
+        replRange(
+            doc { ul { li { p { +"list1" } + ul { li { p { +"list2" } + blockquote { p { +"<a>" } } } } } } },
+            doc { blockquote { p { +"<a>one<b>" } } },
+            doc { ul { li { p { +"list1" } + ul { li { p { +"list2" } + blockquote { p { +"one" } } } } } } }
         )
 
     @Test
@@ -1756,4 +1938,128 @@ class TransformTest {
             doc { p { +"one" } + h1 {} + p { +"four" } }
         )
     // endregion
+
+    // region addNodeMark
+    private fun addNodeMark(doc: Node, mark: Mark, expect: Node) {
+        testTransform(Transform(doc).addNodeMark(pos(doc, "a")!!, mark), expect)
+    }
+
+    @Test
+    fun `adds a mark`() =
+        addNodeMark(
+            doc { p { +"<a>" + img {} } },
+            schema.mark("em"),
+            doc { p { +"<a>" + em { img {} } } }
+        )
+
+    @Test
+    fun `doesn't duplicate a mark`() =
+        addNodeMark(
+            doc { p { +"<a>" + em { img {} } } },
+            schema.mark("em"),
+            doc { p { +"<a>" + em { img {} } } }
+        )
+
+    @Test
+    fun `replaces a mark`() =
+        addNodeMark(
+            doc { p { +"<a>" + a { img {} } } },
+            schema.mark("link", mapOf("href" to "x")),
+            doc { p { +"<a>" + a("x") { img {} } } }
+        )
+    // endregion
+
+    // region removeNodeMark
+    private fun rm(doc: Node, mark: Mark, expect: Node) {
+        testTransform(Transform(doc).removeNodeMark(pos(doc, "a")!!, mark), expect)
+    }
+
+    @Test
+    fun `removes a mark`() =
+        rm(
+            doc { p { +"<a>" + em { img {} } } },
+            schema.mark("em"),
+            doc { p { +"<a>" + img {} } }
+        )
+
+    @Test
+    fun `doesn't do anything when there is no mark`() =
+        rm(
+            doc { p { +"<a>" + img {} } },
+            schema.mark("em"),
+            doc { p { +"<a>" + img {} } }
+        )
+
+    @Test
+    fun `can remove a mark from multiple marks`() =
+        rm(
+            doc { p { +"<a>" + em { a { img {} } } } },
+            schema.mark("em"),
+            doc { p { +"<a>" + a { img {} } } }
+        )
+    // endregion
+
+    // region setNodeAttribute
+    private fun setNodeAttribute(doc: Node, attr: String, value: Any, expect: Node) {
+        testTransform(Transform(doc).setNodeAttribute(pos(doc, "a")!!, attr, value), expect)
+    }
+
+    @Test
+    fun `setNodeAttribute - sets an attribute`() =
+        setNodeAttribute(
+            doc { +"<a>" + h1 { +"a" } },
+            "level",
+            2,
+            doc { +"<a>" + h2 { +"a" } }
+        )
+    // endregion
+
+    // region setDocAttribute
+    private fun setDocAttribute(doc: Node, attr: String, value: Any, expect: Node) {
+        testTransform(Transform(doc).setDocAttribute(attr, value), expect)
+    }
+
+    @Test
+    fun `setDocAttribute - sets an attribute`() {
+        val schema = Schema(
+            SchemaSpec(
+                nodes = mapOf(
+                    "doc" to NodeSpecImpl(
+                        "text*",
+                        attrs = mapOf("meta" to AttributeSpecImpl(null))
+                    ),
+                    "text" to NodeSpecImpl()
+                )
+            )
+        )
+        val builder = CustomNodeBuildCompanion(schema)
+
+        setDocAttribute(
+            builder.doc { },
+            "meta",
+            "hello",
+            builder.doc {}.copy(attrs = mapOf("meta" to "hello"))
+        )
+    }
+    // endregion
+
+    companion object {
+        // A schema that enforces a heading and a body at the top level
+        private val hbSchema = Schema(
+            SchemaSpec(
+                nodes = schema.spec.nodes + mapOf(
+                    "doc" to (schema.spec.nodes["doc"] as NodeSpecImpl).copy(content = "heading body"),
+                    "body" to NodeSpecImpl("block+")
+                )
+            )
+        )
+
+        val linebreakSchema = Schema(
+            SchemaSpec(
+                nodes = schema.spec.nodes + mapOf(
+                    "hard_break" to (schema.spec.nodes["hard_break"]!! as NodeSpecImpl).copy(linebreakReplacement = true)
+                )
+            )
+        )
+    }
 }
