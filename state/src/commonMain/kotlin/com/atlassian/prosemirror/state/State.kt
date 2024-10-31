@@ -253,7 +253,7 @@ class PMEditorState internal constructor(
     fun reconfigure(
         config: EditorStateConfig
 //        config: {
-//            /// New set of active plugins.
+//            // New set of active plugins.
 //            plugins?: readonly Plugin[]
 //        }
     ): PMEditorState {
@@ -298,6 +298,7 @@ class PMEditorState internal constructor(
         const val TAG = "PMEditorState"
 
         // Create a new state.
+        @Suppress("ktlint:standard:property-naming")
         fun create(config: EditorStateConfig): PMEditorState {
             val _config = Configuration(
                 if (config.doc != null) config.doc!!.type.schema else config.schema!!,
@@ -314,6 +315,7 @@ class PMEditorState internal constructor(
         // field, and should contain array of plugins to initialize the state with. `pluginFields`
         // can be used to deserialize the state of plugins, by associating plugin instances with the
         // property names they use in the JSON object.
+        @Suppress("ktlint:standard:property-naming")
         fun fromJSON(
             config: EditorStateConfig,
             json: JsonObject?

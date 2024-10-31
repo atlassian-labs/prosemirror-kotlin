@@ -17,13 +17,13 @@ import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.p
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.pos
 import com.atlassian.prosemirror.testbuilder.schema
 import com.atlassian.prosemirror.util.verbose
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertFails
 import kotlin.test.assertFailsWith
 import kotlin.test.fail
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 val customSchemaSpec = SchemaSpec(
     nodes = mapOf(
@@ -36,7 +36,8 @@ val customSchemaSpec = SchemaSpec(
             inline = true,
             attrs = mapOf(
                 "name" to AttributeSpecImpl("default"),
-                "email" to AttributeSpecImpl() // no default value intentional
+                // no default value intentional
+                "email" to AttributeSpecImpl()
             ),
             leafText = { node -> "${node.attr<String>("name")} <${node.attr<String>("email")}>" }
         ),
@@ -89,51 +90,45 @@ class NodeTest {
     }
 
     @Test
-    fun `extracts a full block`() =
-        cut(
-            doc { p { +"foo" } + "<a>" + p { +"bar" } + "<b>" + p { +"baz" } },
-            doc { p { +"bar" } }
-        )
+    fun `extracts a full block`() = cut(
+        doc { p { +"foo" } + "<a>" + p { +"bar" } + "<b>" + p { +"baz" } },
+        doc { p { +"bar" } }
+    )
 
     @Test
-    fun `cuts text`() =
-        cut(
-            doc { p { +"0" } + p { +"foo<a>bar<b>baz" } + p { +"2" } },
-            doc { p { +"bar" } }
-        )
+    fun `cuts text`() = cut(
+        doc { p { +"0" } + p { +"foo<a>bar<b>baz" } + p { +"2" } },
+        doc { p { +"bar" } }
+    )
 
     @Test
     @Suppress("ktlint:standard:max-line-length")
-    fun `cuts deeply`() =
-        cut(
-            doc {
-                blockquote {
-                    ul { li { p { +"a" } + p { +"b<a>c" } } + li { p { +"d" } } + "<b>" + li { p { +"e" } } } + p { +"3" }
-                }
-            },
-            doc { blockquote { ul { li { p { +"c" } } + li { p { +"d" } } } } }
-        )
+    fun `cuts deeply`() = cut(
+        doc {
+            blockquote {
+                ul { li { p { +"a" } + p { +"b<a>c" } } + li { p { +"d" } } + "<b>" + li { p { +"e" } } } + p { +"3" }
+            }
+        },
+        doc { blockquote { ul { li { p { +"c" } } + li { p { +"d" } } } } }
+    )
 
     @Test
-    fun `works from the left`() =
-        cut(
-            doc { blockquote { p { +"foo<b>bar" } } },
-            doc { blockquote { p { +"foo" } } }
-        )
+    fun `works from the left`() = cut(
+        doc { blockquote { p { +"foo<b>bar" } } },
+        doc { blockquote { p { +"foo" } } }
+    )
 
     @Test
-    fun `works to the right`() =
-        cut(
-            doc { blockquote { p { +"foo<a>bar" } } },
-            doc { blockquote { p { +"bar" } } }
-        )
+    fun `works to the right`() = cut(
+        doc { blockquote { p { +"foo<a>bar" } } },
+        doc { blockquote { p { +"bar" } } }
+    )
 
     @Test
-    fun `preserves marks`() =
-        cut(
-            doc { p { +"foo" + em { +"ba<a>r" + img {} + strong { +"baz" } + br {} } + "qu<b>ux" + code { +"xyz" } } },
-            doc { p { em { +"r" + img {} + strong { +"baz" } + br {} } + "qu" } }
-        )
+    fun `preserves marks`() = cut(
+        doc { p { +"foo" + em { +"ba<a>r" + img {} + strong { +"baz" } + br {} } + "qu<b>ux" + code { +"xyz" } } },
+        doc { p { em { +"r" + img {} + strong { +"baz" } + br {} } + "qu" } }
+    )
     // endregion
 
     // region Node - between
@@ -192,13 +187,15 @@ class NodeTest {
     @Test
     fun `works when passing a custom function as leafText`() {
         val d = doc { p { +"foo" + img {} + br {} } }
-        assertThat(d.textBetween(0, d.content.size, "") { node ->
-            when (node.type.name) {
-                "image" -> "<image>"
-                "hard_break" -> "<break>"
-                else -> ""
+        assertThat(
+            d.textBetween(0, d.content.size, "") { node ->
+                when (node.type.name) {
+                    "image" -> "<image>"
+                    "hard_break" -> "<break>"
+                    else -> ""
+                }
             }
-        }).isEqualTo("foo<image><break>")
+        ).isEqualTo("foo<image><break>")
     }
 
     @Test
@@ -315,7 +312,9 @@ class NodeTest {
             schema.nodes["image"]!!.create(mapOf("src" to true)).check()
         }
         assertThat(ex.message).isNotNull()
-        assertThat(ex.message!!.contains("Expected value of type [String] for attribute src on type image, got Boolean")).isTrue()
+        assertThat(
+            ex.message!!.contains("Expected value of type [String] for attribute src on type image, got Boolean")
+        ).isTrue()
     }
     // endregion
 
@@ -367,14 +366,13 @@ class NodeTest {
     fun `can serialize block leaf nodes`() = roundTrip(doc { p { +"a" } + hr {} + p { +"b" } + p {} })
 
     @Test
-    fun `can serialize nested nodes`() =
-        roundTrip(
-            doc {
-                blockquote {
-                    ul { li { p { +"a" } + p { +"b" } } + li { p { img {} } } + p { +"c" } } + p { +"d" }
-                }
+    fun `can serialize nested nodes`() = roundTrip(
+        doc {
+            blockquote {
+                ul { li { p { +"a" } + p { +"b" } } + li { p { img {} } } + p { +"c" } } + p { +"d" }
             }
-        )
+        }
+    )
     // endregion
 
     // region Node - toString
@@ -423,9 +421,11 @@ class NodeTest {
 
     @Test
     fun `should use default if attr does not exist`() {
-        val d = createContactTestDoc(mapOf(
-            "email" to "alice@example.com"
-        ))
+        val d = createContactTestDoc(
+            mapOf(
+                "email" to "alice@example.com"
+            )
+        )
         val contactNode = d.child(0).child(0)
         // Use default regardless of <T> being nullable
         assertThat(contactNode.attr<String>("name")).isEqualTo("default")
@@ -434,10 +434,12 @@ class NodeTest {
 
     @Test
     fun `maybe use default if attr is null`() {
-        val d = createContactTestDoc(mapOf(
-            "name" to null,
-            "email" to "alice@example.com"
-        ))
+        val d = createContactTestDoc(
+            mapOf(
+                "name" to null,
+                "email" to "alice@example.com"
+            )
+        )
         val contactNode = d.child(0).child(0)
         // If attr is null and default null, then only return null if we're asked for nullable - otherwise use
         // nodeSpec's default
@@ -449,10 +451,12 @@ class NodeTest {
 
     @Test
     fun `should use default if attr is wrong type`() {
-        val d = createContactTestDoc(mapOf(
-            "name" to 123,
-            "email" to 123
-        ))
+        val d = createContactTestDoc(
+            mapOf(
+                "name" to 123,
+                "email" to 123
+            )
+        )
         val contactNode = d.child(0).child(0)
         // Use default due to wrong type, or null if no default and <T> is nullable
         assertThat(contactNode.attr<String>("name")).isEqualTo("default")
@@ -463,9 +467,11 @@ class NodeTest {
     @Suppress("UnusedPrivateMember")
     @Test
     fun `throw IllegalArgumentException if default cannot be resolved`() {
-        val d = createContactTestDoc(mapOf(
-            "email" to null
-        ))
+        val d = createContactTestDoc(
+            mapOf(
+                "email" to null
+            )
+        )
         val contactNode = d.child(0).child(0)
         // If attr is null, default null, and nodeSpec default null, then we cannot return if <T> is not nullable
         val caughtException = assertFails("Expected a IllegalArgumentException") {

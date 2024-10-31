@@ -377,57 +377,51 @@ class TransformTest {
     }
 
     @Test
-    fun `can join blocks`() =
-        join(
-            doc { blockquote { p { +"<before>a" } } + "<a>" + blockquote { p { +"b" } } + p { +"after<after>" } },
-            doc { blockquote { p { +"<before>a" } + "<a>" + p { +"b" } } + p { +"after<after>" } }
-        )
+    fun `can join blocks`() = join(
+        doc { blockquote { p { +"<before>a" } } + "<a>" + blockquote { p { +"b" } } + p { +"after<after>" } },
+        doc { blockquote { p { +"<before>a" } + "<a>" + p { +"b" } } + p { +"after<after>" } }
+    )
 
     @Test
-    fun `can join compatible blocks`() =
-        join(
-            doc { h1 { +"foo" } + "<a>" + p { +"bar" } },
-            doc { h1 { +"foobar" } }
-        )
+    fun `can join compatible blocks`() = join(
+        doc { h1 { +"foo" } + "<a>" + p { +"bar" } },
+        doc { h1 { +"foobar" } }
+    )
 
     @Test
-    fun `can join nested blocks`() =
-        join(
-            doc {
+    fun `can join nested blocks`() = join(
+        doc {
+            blockquote {
                 blockquote {
-                    blockquote {
-                        p { +"a" } +
-                            p { +"b<before>" }
-                    } +
-                        "<a>" +
-                        blockquote { p { +"c" } + p { +"d<after>" } }
-                }
-            },
-            doc {
-                blockquote { blockquote { p { +"a" } + p { +"b<before>" } + "<a>" + p { +"c" } + p { +"d<after>" } } }
+                    p { +"a" } +
+                        p { +"b<before>" }
+                } +
+                    "<a>" +
+                    blockquote { p { +"c" } + p { +"d<after>" } }
             }
-        )
+        },
+        doc {
+            blockquote { blockquote { p { +"a" } + p { +"b<before>" } + "<a>" + p { +"c" } + p { +"d<after>" } } }
+        }
+    )
 
     @Test
-    fun `can join lists`() =
-        join(
-            doc { ol { li { p { +"one" } } + li { p { +"two" } } } + "<a>" + ol { li { p { +"three" } } } },
-            doc { ol { li { p { +"one" } } + li { p { +"two" } } + "<a>" + li { p { +"three" } } } }
-        )
+    fun `can join lists`() = join(
+        doc { ol { li { p { +"one" } } + li { p { +"two" } } } + "<a>" + ol { li { p { +"three" } } } },
+        doc { ol { li { p { +"one" } } + li { p { +"two" } } + "<a>" + li { p { +"three" } } } }
+    )
 
     @Test
-    fun `can join list items`() =
-        join(
-            doc { ol { li { p { +"one" } } + li { p { +"two" } } + "<a>" + li { p { +"three" } } } },
-            doc { ol { li { p { +"one" } } + li { p { +"two" } + "<a>" + p { +"three" } } } }
-        )
+    fun `can join list items`() = join(
+        doc { ol { li { p { +"one" } } + li { p { +"two" } } + "<a>" + li { p { +"three" } } } },
+        doc { ol { li { p { +"one" } } + li { p { +"two" } + "<a>" + p { +"three" } } } }
+    )
 
     @Test
-    fun `can join textblocks`() =
-        join(
-            doc { p { +"foo" } + "<a>" + p { +"bar" } },
-            doc { p { +"foo<a>bar" } }
-        )
+    fun `can join textblocks`() = join(
+        doc { p { +"foo" } + "<a>" + p { +"bar" } },
+        doc { p { +"foo<a>bar" } }
+    )
 // endregion
 
     // region split
@@ -443,82 +437,73 @@ class TransformTest {
     }
 
     @Test
-    fun `can split a textblock`() =
-        split(
-            doc { p { +"foo<a>bar" } },
-            doc { p { +"foo" } + p { +"<a>bar" } }
-        )
+    fun `can split a textblock`() = split(
+        doc { p { +"foo<a>bar" } },
+        doc { p { +"foo" } + p { +"<a>bar" } }
+    )
 
     @Test
-    fun `correctly maps positions`() =
-        split(
-            doc { p { +"<1>a" } + p { +"<2>foo<a>bar<3>" } + p { +"<4>b" } },
-            doc { p { +"<1>a" } + p { +"<2>foo" } + p { +"<a>bar<3>" } + p { +"<4>b" } }
-        )
+    fun `correctly maps positions`() = split(
+        doc { p { +"<1>a" } + p { +"<2>foo<a>bar<3>" } + p { +"<4>b" } },
+        doc { p { +"<1>a" } + p { +"<2>foo" } + p { +"<a>bar<3>" } + p { +"<4>b" } }
+    )
 
     @Test
-    fun `can split two deep`() =
-        split(
-            doc { blockquote { blockquote { p { +"foo<a>bar" } } } + p { +"after<1>" } },
-            doc { blockquote { blockquote { p { +"foo" } } + blockquote { p { +"<a>bar" } } } + p { +"after<1>" } },
-            2
-        )
+    fun `can split two deep`() = split(
+        doc { blockquote { blockquote { p { +"foo<a>bar" } } } + p { +"after<1>" } },
+        doc { blockquote { blockquote { p { +"foo" } } + blockquote { p { +"<a>bar" } } } + p { +"after<1>" } },
+        2
+    )
 
     @Test
-    fun `can split three deep`() =
-        split(
-            doc { blockquote { blockquote { p { +"foo<a>bar" } } } + p { +"after<1>" } },
-            doc {
-                blockquote { blockquote { p { +"foo" } } } +
-                    blockquote { blockquote { p { +"<a>bar" } } } +
-                    p { +"after<1>" }
-            },
-            3
-        )
+    fun `can split three deep`() = split(
+        doc { blockquote { blockquote { p { +"foo<a>bar" } } } + p { +"after<1>" } },
+        doc {
+            blockquote { blockquote { p { +"foo" } } } +
+                blockquote { blockquote { p { +"<a>bar" } } } +
+                p { +"after<1>" }
+        },
+        3
+    )
 
     @Test
-    fun `can split at end`() =
-        split(
-            doc { blockquote { p { +"hi<a>" } } },
-            doc { blockquote { p { +"hi" } + p { +"<a>" } } }
-        )
+    fun `can split at end`() = split(
+        doc { blockquote { p { +"hi<a>" } } },
+        doc { blockquote { p { +"hi" } + p { +"<a>" } } }
+    )
 
     @Test
-    fun `can split at start`() =
-        split(
-            doc { blockquote { p { +"<a>hi" } } },
-            doc { blockquote { p {} + p { +"<a>hi" } } }
-        )
+    fun `can split at start`() = split(
+        doc { blockquote { p { +"<a>hi" } } },
+        doc { blockquote { p {} + p { +"<a>hi" } } }
+    )
 
     @Test
-    fun `can split inside a list item`() =
-        split(
-            doc { ol { li { p { +"one<1>" } } + li { p { +"two<a>three" } } + li { p { +"four<2>" } } } },
-            doc { ol { li { p { +"one<1>" } } + li { p { +"two" } + p { +"<a>three" } } + li { p { +"four<2>" } } } }
-        )
+    fun `can split inside a list item`() = split(
+        doc { ol { li { p { +"one<1>" } } + li { p { +"two<a>three" } } + li { p { +"four<2>" } } } },
+        doc { ol { li { p { +"one<1>" } } + li { p { +"two" } + p { +"<a>three" } } + li { p { +"four<2>" } } } }
+    )
 
     @Test
-    fun `can split a list item`() =
-        split(
-            doc { ol { li { p { +"one<1>" } } + li { p { +"two<a>three" } } + li { p { +"four<2>" } } } },
-            doc {
-                ol {
-                    li { p { +"one<1>" } } +
-                        li { p { +"two" } } +
-                        li { p { +"<a>three" } } +
-                        li { p { +"four<2>" } }
-                }
-            },
-            2
-        )
+    fun `can split a list item`() = split(
+        doc { ol { li { p { +"one<1>" } } + li { p { +"two<a>three" } } + li { p { +"four<2>" } } } },
+        doc {
+            ol {
+                li { p { +"one<1>" } } +
+                    li { p { +"two" } } +
+                    li { p { +"<a>three" } } +
+                    li { p { +"four<2>" } }
+            }
+        },
+        2
+    )
 
     @Test
-    fun `respects the type param`() =
-        split(
-            doc { h1 { +"hell<a>o!" } },
-            doc { h1 { +"hell" } + p { +"<a>o!" } },
-            typesAfter = listOf(NodeBase(type = schema.nodes["paragraph"]!!))
-        )
+    fun `respects the type param`() = split(
+        doc { h1 { +"hell<a>o!" } },
+        doc { h1 { +"hell" } + p { +"<a>o!" } },
+        typesAfter = listOf(NodeBase(type = schema.nodes["paragraph"]!!))
+    )
 
     @Test
     fun `preserves content constraints before`() {
@@ -541,105 +526,95 @@ class TransformTest {
     }
 
     @Test
-    fun `can lift a block out of the middle of its parent`() =
-        lift(
-            doc { blockquote { p { +"<before>one" } + p { +"<a>two" } + p { +"<after>three" } } },
-            doc { blockquote { p { +"<before>one" } } + p { +"<a>two" } + blockquote { p { +"<after>three" } } }
-        )
+    fun `can lift a block out of the middle of its parent`() = lift(
+        doc { blockquote { p { +"<before>one" } + p { +"<a>two" } + p { +"<after>three" } } },
+        doc { blockquote { p { +"<before>one" } } + p { +"<a>two" } + blockquote { p { +"<after>three" } } }
+    )
 
     @Test
-    fun `can lift a block from the start of its parent`() =
-        lift(
-            doc { blockquote { p { +"<a>two" } + p { +"<after>three" } } },
-            doc { p { +"<a>two" } + blockquote { p { +"<after>three" } } }
-        )
+    fun `can lift a block from the start of its parent`() = lift(
+        doc { blockquote { p { +"<a>two" } + p { +"<after>three" } } },
+        doc { p { +"<a>two" } + blockquote { p { +"<after>three" } } }
+    )
 
     @Test
-    fun `can lift a block from the end of its parent`() =
-        lift(
-            doc { blockquote { p { +"<before>one" } + p { +"<a>two" } } },
-            doc { blockquote { p { +"<before>one" } } + p { +"<a>two" } }
-        )
+    fun `can lift a block from the end of its parent`() = lift(
+        doc { blockquote { p { +"<before>one" } + p { +"<a>two" } } },
+        doc { blockquote { p { +"<before>one" } } + p { +"<a>two" } }
+    )
 
     @Test
-    fun `can lift a single child`() =
-        lift(
-            doc { blockquote { p { +"<a>t<in>wo" } } },
-            doc { p { +"<a>t<in>wo" } }
-        )
+    fun `can lift a single child`() = lift(
+        doc { blockquote { p { +"<a>t<in>wo" } } },
+        doc { p { +"<a>t<in>wo" } }
+    )
 
     @Test
-    fun `can lift multiple blocks`() =
-        lift(
-            doc { blockquote { blockquote { p { +"on<a>e" } + p { +"tw<b>o" } } + p { +"three" } } },
-            doc { blockquote { p { +"on<a>e" } + p { +"tw<b>o" } + p { +"three" } } }
-        )
+    fun `can lift multiple blocks`() = lift(
+        doc { blockquote { blockquote { p { +"on<a>e" } + p { +"tw<b>o" } } + p { +"three" } } },
+        doc { blockquote { p { +"on<a>e" } + p { +"tw<b>o" } + p { +"three" } } }
+    )
 
     @Test
-    fun `finds a valid range from a lopsided selection`() =
-        lift(
-            doc { p { +"start" } + blockquote { blockquote { p { +"a" } + p { +"<a>b" } } + p { +"<b>c" } } },
-            doc { p { +"start" } + blockquote { p { +"a" } + p { +"<a>b" } } + p { +"<b>c" } }
-        )
+    fun `finds a valid range from a lopsided selection`() = lift(
+        doc { p { +"start" } + blockquote { blockquote { p { +"a" } + p { +"<a>b" } } + p { +"<b>c" } } },
+        doc { p { +"start" } + blockquote { p { +"a" } + p { +"<a>b" } } + p { +"<b>c" } }
+    )
 
     @Test
-    fun `can lift from a nested node`() =
-        lift(
-            doc {
+    fun `can lift from a nested node`() = lift(
+        doc {
+            blockquote {
                 blockquote {
-                    blockquote {
-                        p { +"<1>one" } +
-                            p { +"<a>two" } +
-                            p { +"<3>three" } +
-                            p { +"<b>four" } +
-                            p { +"<5>five" }
-                    }
-                }
-            },
-            doc {
-                blockquote {
-                    blockquote { p { +"<1>one" } } +
+                    p { +"<1>one" } +
                         p { +"<a>two" } +
                         p { +"<3>three" } +
                         p { +"<b>four" } +
-                        blockquote { p { +"<5>five" } }
+                        p { +"<5>five" }
                 }
             }
-        )
-
-    @Test
-    fun `can lift from a list`() =
-        lift(
-            doc { ul { li { p { +"one" } } + li { p { +"two<a>" } } + li { p { +"three" } } } },
-            doc { ul { li { p { +"one" } } } + p { +"two<a>" } + ul { li { p { +"three" } } } }
-        )
-
-    @Test
-    fun `can lift from a mixed list`() =
-        lift(
-            doc {
-                ul {
-                    li { p { +"l1" } + ol { li { p { +"l2" } } } } +
-                        li { p { +"<a>" } + p { } + ol { li { p { +"l12" } } } }
-                }
-            },
-            doc {
-                ul {
-                    li { p { +"l1" } + ol { li { p { +"l2" } } } }
-                } +
-                    p { } +
-                    ul {
-                        li { p { } + ol { li { p { +"l12" } } } }
-                    }
+        },
+        doc {
+            blockquote {
+                blockquote { p { +"<1>one" } } +
+                    p { +"<a>two" } +
+                    p { +"<3>three" } +
+                    p { +"<b>four" } +
+                    blockquote { p { +"<5>five" } }
             }
-        )
+        }
+    )
 
     @Test
-    fun `can lift from the end of a list`() =
-        lift(
-            doc { ul { li { p { +"a" } } + li { p { +"b<a>" } } + "<1>" } },
-            doc { ul { li { p { +"a" } } } + p { +"b<a>" } + "<1>" }
-        )
+    fun `can lift from a list`() = lift(
+        doc { ul { li { p { +"one" } } + li { p { +"two<a>" } } + li { p { +"three" } } } },
+        doc { ul { li { p { +"one" } } } + p { +"two<a>" } + ul { li { p { +"three" } } } }
+    )
+
+    @Test
+    fun `can lift from a mixed list`() = lift(
+        doc {
+            ul {
+                li { p { +"l1" } + ol { li { p { +"l2" } } } } +
+                    li { p { +"<a>" } + p { } + ol { li { p { +"l12" } } } }
+            }
+        },
+        doc {
+            ul {
+                li { p { +"l1" } + ol { li { p { +"l2" } } } }
+            } +
+                p { } +
+                ul {
+                    li { p { } + ol { li { p { +"l12" } } } }
+                }
+        }
+    )
+
+    @Test
+    fun `can lift from the end of a list`() = lift(
+        doc { ul { li { p { +"a" } } + li { p { +"b<a>" } } + "<1>" } },
+        doc { ul { li { p { +"a" } } } + p { +"b<a>" } + "<1>" }
+    )
 // endregion
 
     // region wrap
@@ -650,56 +625,51 @@ class TransformTest {
     }
 
     @Test
-    fun `can wrap in a blockquote`() =
-        wrap(
-            doc { p { +"one" } + p { +"<a>two" } + p { +"three" } },
-            doc { p { +"one" } + blockquote { p { +"<a>two" } } + p { +"three" } },
-            "blockquote"
-        )
+    fun `can wrap in a blockquote`() = wrap(
+        doc { p { +"one" } + p { +"<a>two" } + p { +"three" } },
+        doc { p { +"one" } + blockquote { p { +"<a>two" } } + p { +"three" } },
+        "blockquote"
+    )
 
     @Test
-    fun `can wrap two paragraphs`() =
-        wrap(
-            doc { p { +"one<1>" } + p { +"<a>two" } + p { +"<b>three" } + p { +"four<4>" } },
-            doc { p { +"one<1>" } + blockquote { p { +"<a>two" } + p { +"three" } } + p { +"four<4>" } },
-            "blockquote"
-        )
+    fun `can wrap two paragraphs`() = wrap(
+        doc { p { +"one<1>" } + p { +"<a>two" } + p { +"<b>three" } + p { +"four<4>" } },
+        doc { p { +"one<1>" } + blockquote { p { +"<a>two" } + p { +"three" } } + p { +"four<4>" } },
+        "blockquote"
+    )
 
     @Test
-    fun `can wrap in a list`() =
-        wrap(
-            doc { p { +"<a>one" } + p { +"<b>two" } },
-            doc { ol { li { p { +"<a>one" } + p { +"<b>two" } } } },
-            "ordered_list"
-        )
+    fun `can wrap in a list`() = wrap(
+        doc { p { +"<a>one" } + p { +"<b>two" } },
+        doc { ol { li { p { +"<a>one" } + p { +"<b>two" } } } },
+        "ordered_list"
+    )
 
     @Test
-    fun `can wrap in a nested list`() =
-        wrap(
-            doc {
-                ol {
-                    li { p { +"<1>one" } } +
-                        li { p { +"..." } + p { +"<a>two" } + p { +"<b>three" } } +
-                        li { p { +"<4>four" } }
-                }
-            },
-            doc {
-                ol {
-                    li { p { +"<1>one" } } +
-                        li { p { +"..." } + ol { li { p { +"<a>two" } + p { +"<b>three" } } } } +
-                        li { p { +"<4>four" } }
-                }
-            },
-            "ordered_list"
-        )
+    fun `can wrap in a nested list`() = wrap(
+        doc {
+            ol {
+                li { p { +"<1>one" } } +
+                    li { p { +"..." } + p { +"<a>two" } + p { +"<b>three" } } +
+                    li { p { +"<4>four" } }
+            }
+        },
+        doc {
+            ol {
+                li { p { +"<1>one" } } +
+                    li { p { +"..." } + ol { li { p { +"<a>two" } + p { +"<b>three" } } } } +
+                    li { p { +"<4>four" } }
+            }
+        },
+        "ordered_list"
+    )
 
     @Test
-    fun `includes half-covered parent nodes`() =
-        wrap(
-            doc { blockquote { p { +"<1>one" } + p { +"two<a>" } } + p { +"three<b>"} },
-            doc { blockquote { blockquote { p { +"<1>one" } + p { +"two<a>" } } + p { +"three<b>"} } },
-            "blockquote"
-        )
+    fun `includes half-covered parent nodes`() = wrap(
+        doc { blockquote { p { +"<1>one" } + p { +"two<a>" } } + p { +"three<b>" } },
+        doc { blockquote { blockquote { p { +"<1>one" } + p { +"two<a>" } } + p { +"three<b>" } } },
+        "blockquote"
+    )
     // endregion
 
     // region setBlockType
@@ -723,63 +693,56 @@ class TransformTest {
     }
 
     @Test
-    fun `can change a single textblock`() =
-        type(
-            doc { p { +"am<a> i" } },
-            doc { h2 { +"am i" } },
-            "heading",
-            mapOf("level" to 2)
-        )
+    fun `can change a single textblock`() = type(
+        doc { p { +"am<a> i" } },
+        doc { h2 { +"am i" } },
+        "heading",
+        mapOf("level" to 2)
+    )
 
     @Test
-    fun `can change multiple blocks`() =
-        type(
-            doc { h1 { +"<a>hello" } + p { +"there" } + p { +"<b>you" } + p { +"end" } },
-            doc { pre { +"hello" } + pre { +"there" } + pre { +"you" } + p { +"end" } },
-            "code_block"
-        )
+    fun `can change multiple blocks`() = type(
+        doc { h1 { +"<a>hello" } + p { +"there" } + p { +"<b>you" } + p { +"end" } },
+        doc { pre { +"hello" } + pre { +"there" } + pre { +"you" } + p { +"end" } },
+        "code_block"
+    )
 
     @Test
-    fun `can change a wrapped block`() =
-        type(
-            doc { blockquote { p { +"one<a>" } + p { +"two<b>" } } },
-            doc { blockquote { h1 { +"one<a>" } + h1 { +"two<b>" } } },
-            "heading",
-            mapOf("level" to 1)
-        )
+    fun `can change a wrapped block`() = type(
+        doc { blockquote { p { +"one<a>" } + p { +"two<b>" } } },
+        doc { blockquote { h1 { +"one<a>" } + h1 { +"two<b>" } } },
+        "heading",
+        mapOf("level" to 1)
+    )
 
     @Test
-    fun `clears markup when necessary`() =
-        type(
-            doc { p { +"hello<a> " + em { +"world" } } },
-            doc { pre { +"hello world" } },
-            "code_block"
-        )
+    fun `clears markup when necessary`() = type(
+        doc { p { +"hello<a> " + em { +"world" } } },
+        doc { pre { +"hello world" } },
+        "code_block"
+    )
 
     @Test
-    fun `removes non-allowed nodes`() =
-        type(
-            doc { p { +"<a>one" + img {} + "two" + img {} + "three" } },
-            doc { pre { +"onetwothree" } },
-            "code_block"
-        )
+    fun `removes non-allowed nodes`() = type(
+        doc { p { +"<a>one" + img {} + "two" + img {} + "three" } },
+        doc { pre { +"onetwothree" } },
+        "code_block"
+    )
 
     @Test
-    fun `removes newlines in non-code`() =
-        type(
-            doc { pre { +"<a>one\ntwo\nthree" } },
-            doc { p { +"one two three" } },
-            "paragraph"
-        )
+    fun `removes newlines in non-code`() = type(
+        doc { pre { +"<a>one\ntwo\nthree" } },
+        doc { p { +"one two three" } },
+        "paragraph"
+    )
 
     @Test
-    fun `only clears markup when needed`() =
-        type(
-            doc { p { +"hello<a> " + em { +"world" } } },
-            doc { h1 { +"hello<a> " + em { +"world" } } },
-            "heading",
-            mapOf("level" to 1)
-        )
+    fun `only clears markup when needed`() = type(
+        doc { p { +"hello<a> " + em { +"world" } } },
+        doc { h1 { +"hello<a> " + em { +"world" } } },
+        "heading",
+        mapOf("level" to 1)
+    )
 
     @Test
     fun `works after another step`() {
@@ -870,36 +833,34 @@ class TransformTest {
     }
 
     @Test
-    fun `can change a textblock`() =
-        markup(
-            doc { +"<a>" + p { +"foo" } },
-            doc { h1 { +"foo" } },
-            "heading",
-            mapOf("level" to 1)
-        )
+    fun `can change a textblock`() = markup(
+        doc { +"<a>" + p { +"foo" } },
+        doc { h1 { +"foo" } },
+        "heading",
+        mapOf("level" to 1)
+    )
 
     @Test
-    fun `can change an inline node`() =
-        markup(
-            doc { p { +"foo<a>" + img {} + "bar" } },
-            doc { p { +"foo" + img(mapOf("src" to "bar", "alt" to "y")) {} + "bar" } },
-            "image",
-            mapOf("src" to "bar", "alt" to "y")
-        )
+    fun `can change an inline node`() = markup(
+        doc { p { +"foo<a>" + img {} + "bar" } },
+        doc { p { +"foo" + img(mapOf("src" to "bar", "alt" to "y")) {} + "bar" } },
+        "image",
+        mapOf("src" to "bar", "alt" to "y")
+    )
 
     // endregion
 
     // region replace
-    /// repl
-    /// @param doc
-    /// @param source
-    /// @param expect
-    /// @param useDocFirstChild if true, use the first child of the doc as the target.
-    /// Useful because NodeBuilder only adds tags are added to the root doc.
-    /// @param useSourceFirstChild if true, use the first child of the source as the target.
-    /// Useful because NodeBuilder only adds tags are added to the root doc.
-    /// @param useExpectFirstChild if true, use the first child of the expect as the target.
-    /// Useful because NodeBuilder only adds tags are added to the root doc.
+    // repl
+    // @param doc
+    // @param source
+    // @param expect
+    // @param useDocFirstChild if true, use the first child of the doc as the target.
+    // Useful because NodeBuilder only adds tags are added to the root doc.
+    // @param useSourceFirstChild if true, use the first child of the source as the target.
+    // Useful because NodeBuilder only adds tags are added to the root doc.
+    // @param useExpectFirstChild if true, use the first child of the expect as the target.
+    // Useful because NodeBuilder only adds tags are added to the root doc.
     fun repl(
         doc: Node,
         source: Node,
@@ -943,315 +904,289 @@ class TransformTest {
     }
 
     @Test
-    fun `can delete text`() =
-        repl(
-            doc { p { +"hell<a>o y<b>ou" } },
-            null,
-            doc { p { +"hell<a><b>ou" } }
-        )
+    fun `can delete text`() = repl(
+        doc { p { +"hell<a>o y<b>ou" } },
+        null,
+        doc { p { +"hell<a><b>ou" } }
+    )
 
     @Test
-    fun `can append two blockquotes`() =
-        repl(
-            doc { blockquote { p { +"hell<a>" } } + p { +"<b>o" } },
-            null,
-            doc { blockquote { p { +"hell<a><b>o" } } }
-        )
+    fun `can append two blockquotes`() = repl(
+        doc { blockquote { p { +"hell<a>" } } + p { +"<b>o" } },
+        null,
+        doc { blockquote { p { +"hell<a><b>o" } } }
+    )
 
     @Test
-    fun `can append two paragraphs`() =
-        repl(
-            doc { p { +"hell<a>" } + p { +"<b>o" } },
-            null,
-            doc { p { +"hell<a><b>o" } }
-        )
+    fun `can append two paragraphs`() = repl(
+        doc { p { +"hell<a>" } + p { +"<b>o" } },
+        null,
+        doc { p { +"hell<a><b>o" } }
+    )
 
     @Test
-    fun `replace can join blocks`() =
-        repl(
-            doc { p { +"hell<a>o" } + p { +"y<b>ou" } },
-            null,
-            doc { p { +"hell<a><b>ou" } }
-        )
+    fun `replace can join blocks`() = repl(
+        doc { p { +"hell<a>o" } + p { +"y<b>ou" } },
+        null,
+        doc { p { +"hell<a><b>ou" } }
+    )
 
     @Test
-    fun `can delete right-leaning lopsided regions`() =
-        repl(
-            doc { blockquote { p { +"ab<a>c" } } + "<b>" + p { +"def" } },
-            null,
-            doc { blockquote { p { +"ab<a>" } } + "<b>" + p { +"def" } }
-        )
+    fun `can delete right-leaning lopsided regions`() = repl(
+        doc { blockquote { p { +"ab<a>c" } } + "<b>" + p { +"def" } },
+        null,
+        doc { blockquote { p { +"ab<a>" } } + "<b>" + p { +"def" } }
+    )
 
     @Test
-    fun `can delete left-leaning lopsided regions`() =
-        repl(
-            doc { p { +"abc" } + "<a>" + blockquote { p { +"d<b>ef" } } },
-            null,
-            doc { p { +"abc" } + "<a>" + blockquote { p { +"<b>ef" } } }
-        )
+    fun `can delete left-leaning lopsided regions`() = repl(
+        doc { p { +"abc" } + "<a>" + blockquote { p { +"d<b>ef" } } },
+        null,
+        doc { p { +"abc" } + "<a>" + blockquote { p { +"<b>ef" } } }
+    )
 
     @Test
-    fun `can overwrite text`() =
-        repl(
-            doc { p { +"hell<a>o y<b>ou" } },
-            doc { p { +"<a>i k<b>" } },
-            doc { p { +"hell<a>i k<b>ou" } }
-        )
+    fun `can overwrite text`() = repl(
+        doc { p { +"hell<a>o y<b>ou" } },
+        doc { p { +"<a>i k<b>" } },
+        doc { p { +"hell<a>i k<b>ou" } }
+    )
 
     @Test
-    fun `can insert text`() =
-        repl(
-            doc { p { +"hell<a><b>o" } },
-            doc { p { +"<a>i k<b>" } },
-            doc { p { +"helli k<a><b>o" } }
-        )
+    fun `can insert text`() = repl(
+        doc { p { +"hell<a><b>o" } },
+        doc { p { +"<a>i k<b>" } },
+        doc { p { +"helli k<a><b>o" } }
+    )
 
     @Test
-    fun `can add a textblock`() =
-        repl(
-            doc { p { +"hello<a>you" } },
-            doc { +"<a>" + p { +"there" } + "<b>" },
-            doc { p { +"hello" } + p { +"there" } + p { +"<a>you" } }
-        )
+    fun `can add a textblock`() = repl(
+        doc { p { +"hello<a>you" } },
+        doc { +"<a>" + p { +"there" } + "<b>" },
+        doc { p { +"hello" } + p { +"there" } + p { +"<a>you" } }
+    )
 
     @Test
-    fun `can insert while joining textblocks`() =
-        repl(
-            doc { h1 { +"he<a>llo" } + p { +"arg<b>!" } },
-            doc { p { +"1<a>2<b>3" } },
-            doc { h1 { +"he2!" } }
-        )
+    fun `can insert while joining textblocks`() = repl(
+        doc { h1 { +"he<a>llo" } + p { +"arg<b>!" } },
+        doc { p { +"1<a>2<b>3" } },
+        doc { h1 { +"he2!" } }
+    )
 
     @Test
-    fun `will match open list items`() =
-        repl(
-            doc { ol { li { p { +"one<a>" } } + li { p { +"three" } } } },
-            doc { ol { li { p { +"<a>half" } } + li { p { +"two" } } + "<b>" } },
-            doc { ol { li { p { +"onehalf" } } + li { p { +"two" } } + li { p { +"three" } } } }
-        )
+    fun `will match open list items`() = repl(
+        doc { ol { li { p { +"one<a>" } } + li { p { +"three" } } } },
+        doc { ol { li { p { +"<a>half" } } + li { p { +"two" } } + "<b>" } },
+        doc { ol { li { p { +"onehalf" } } + li { p { +"two" } } + li { p { +"three" } } } }
+    )
 
     @Test
-    fun `merges blocks across deleted content`() =
-        repl(
-            doc { p { +"a<a>" } + p { +"b" } + p { +"<b>c" } },
-            null,
-            doc { p { +"a<a><b>c" } }
-        )
+    fun `merges blocks across deleted content`() = repl(
+        doc { p { +"a<a>" } + p { +"b" } + p { +"<b>c" } },
+        null,
+        doc { p { +"a<a><b>c" } }
+    )
 
     @Test
-    fun `can merge text down from nested nodes`() =
-        repl(
-            doc { h1 { +"wo<a>ah" } + blockquote { p { +"ah<b>ha" } } },
-            null,
-            doc { h1 { +"wo<a><b>ha" } }
-        )
+    fun `can merge text down from nested nodes`() = repl(
+        doc { h1 { +"wo<a>ah" } + blockquote { p { +"ah<b>ha" } } },
+        null,
+        doc { h1 { +"wo<a><b>ha" } }
+    )
 
     @Test
-    fun `can merge text up into nested nodes`() =
-        repl(
-            doc { blockquote { p { +"foo<a>bar" } } + p { +"middle" } + h1 { +"quux<b>baz" } },
-            null,
-            doc { blockquote { p { +"foo<a><b>baz" } } }
-        )
+    fun `can merge text up into nested nodes`() = repl(
+        doc { blockquote { p { +"foo<a>bar" } } + p { +"middle" } + h1 { +"quux<b>baz" } },
+        null,
+        doc { blockquote { p { +"foo<a><b>baz" } } }
+    )
 
     @Test
-    fun `will join multiple levels when possible`() =
-        repl(
-            doc {
-                blockquote {
-                    ul {
-                        li { p { +"a" } } +
-                            li { p { +"b<a>" } } +
-                            li { p { +"c" } } +
-                            li { p { +"<b>d" } } +
-                            li { p { +"e" } }
-                    }
-                }
-            },
-            null,
-            doc { blockquote { ul { li { p { +"a" } } + li { p { +"b<a><b>d" } } + li { p { +"e" } } } } }
-        )
-
-    @Test
-    fun `will join list and paragraph`() =
-        repl(
-            doc {
+    fun `will join multiple levels when possible`() = repl(
+        doc {
+            blockquote {
                 ul {
-                    li { p { +"b<a>" } }
+                    li { p { +"a" } } +
+                        li { p { +"b<a>" } } +
+                        li { p { +"c" } } +
+                        li { p { +"<b>d" } } +
+                        li { p { +"e" } }
                 }
-                p { +"<b>d" }
-            },
-            null,
-            doc { ul { li { p { +"bd" } } } }
-        )
+            }
+        },
+        null,
+        doc { blockquote { ul { li { p { +"a" } } + li { p { +"b<a><b>d" } } + li { p { +"e" } } } } }
+    )
 
     @Test
-    fun `will join paragraph and codeblock`() =
-        repl(
-            doc {
-                p { +"b<a>" }
-                pre { +"<b>d" }
-            },
-            null,
-            doc { p { +"bd" } }
-        )
+    fun `will join list and paragraph`() = repl(
+        doc {
+            ul {
+                li { p { +"b<a>" } }
+            }
+            p { +"<b>d" }
+        },
+        null,
+        doc { ul { li { p { +"bd" } } } }
+    )
 
     @Test
-    fun `can replace a piece of text`() =
-        repl(
-            doc { p { +"he<before>llo<a> w<after>orld" } },
-            doc { p { +"<a> big<b>" } },
-            doc { p { +"he<before>llo big w<after>orld" } }
-        )
+    fun `will join paragraph and codeblock`() = repl(
+        doc {
+            p { +"b<a>" }
+            pre { +"<b>d" }
+        },
+        null,
+        doc { p { +"bd" } }
+    )
 
     @Test
-    fun `respects open empty nodes at the edges`() =
-        repl(
-            doc { p { +"one<a>two" } },
-            doc { p { +"<a>" } + p { +"hello" } + p { +"<b>b" } },
-            doc { p { +"one" } + p { +"hello" } + p { +"<a>two" } }
-        )
+    fun `can replace a piece of text`() = repl(
+        doc { p { +"he<before>llo<a> w<after>orld" } },
+        doc { p { +"<a> big<b>" } },
+        doc { p { +"he<before>llo big w<after>orld" } }
+    )
 
     @Test
-    fun `can completely overwrite a paragraph`() =
-        repl(
-            doc { p { +"one<a>" } + p { +"t<inside>wo" } + p { +"<b>three<end>" } },
-            doc { p { +"a<a>" } + p { +"TWO" } + p { +"<b>b" } },
-            doc { p { +"one<a>" } + p { +"TWO" } + p { +"<inside>three<end>" } }
-        )
+    fun `respects open empty nodes at the edges`() = repl(
+        doc { p { +"one<a>two" } },
+        doc { p { +"<a>" } + p { +"hello" } + p { +"<b>b" } },
+        doc { p { +"one" } + p { +"hello" } + p { +"<a>two" } }
+    )
 
     @Test
-    fun `joins marks`() =
-        repl(
-            doc { p { +"foo " + em { +"bar<a>baz" } + "<b> quux" } },
-            doc { p { +"foo " + em { +"xy<a>zzy" } + " foo<b>" } },
-            doc { p { +"foo " + em { +"barzzy" } + " foo quux" } }
-        )
+    fun `can completely overwrite a paragraph`() = repl(
+        doc { p { +"one<a>" } + p { +"t<inside>wo" } + p { +"<b>three<end>" } },
+        doc { p { +"a<a>" } + p { +"TWO" } + p { +"<b>b" } },
+        doc { p { +"one<a>" } + p { +"TWO" } + p { +"<inside>three<end>" } }
+    )
 
     @Test
-    fun `can replace a text with a break`() =
-        repl(
-            doc { p { +"foo<a>b<inside>b<b>bar" } },
-            doc { p { +"<a>" + br {} + "<b>" } },
-            doc { p { +"foo" + br {} + "<inside>bar" } }
-        )
+    fun `joins marks`() = repl(
+        doc { p { +"foo " + em { +"bar<a>baz" } + "<b> quux" } },
+        doc { p { +"foo " + em { +"xy<a>zzy" } + " foo<b>" } },
+        doc { p { +"foo " + em { +"barzzy" } + " foo quux" } }
+    )
 
     @Test
-    fun `can join different blocks`() =
-        repl(
-            doc { h1 { +"hell<a>o" } + p { +"by<b>e" } },
-            null,
-            doc { h1 { +"helle" } }
-        )
+    fun `can replace a text with a break`() = repl(
+        doc { p { +"foo<a>b<inside>b<b>bar" } },
+        doc { p { +"<a>" + br {} + "<b>" } },
+        doc { p { +"foo" + br {} + "<inside>bar" } }
+    )
 
     @Test
-    fun `can restore a list parent`() =
-        repl(
-            doc { h1 { +"hell<a>o" } + p { +"<b>" } },
-            doc { ol { li { p { +"on<a>e" } } + li { p { +"tw<b>o" } } } },
-            doc { h1 { +"helle" } + ol { li { p { +"tw" } } } }
-        )
+    fun `can join different blocks`() = repl(
+        doc { h1 { +"hell<a>o" } + p { +"by<b>e" } },
+        null,
+        doc { h1 { +"helle" } }
+    )
 
     @Test
-    fun `can restore a list parent and join text after it`() =
-        repl(
-            doc { h1 { +"hell<a>o" } + p { +"yo<b>u" } },
-            doc { ol { li { p { +"on<a>e" } } + li { p { +"tw<b>o" } } } },
-            doc { h1 { +"helle" } + ol { li { p { +"twu" } } } }
-        )
+    fun `can restore a list parent`() = repl(
+        doc { h1 { +"hell<a>o" } + p { +"<b>" } },
+        doc { ol { li { p { +"on<a>e" } } + li { p { +"tw<b>o" } } } },
+        doc { h1 { +"helle" } + ol { li { p { +"tw" } } } }
+    )
 
     @Test
-    fun `can insert a block into an empty block`() =
-        repl(
-            doc { p { +"a" } + p { +"<a>" } + p { +"b" } },
-            doc { p { +"x<a>y<b>z" } },
-            doc { p { +"a" } + p { +"y<a>" } + p { +"b" } }
-        )
+    fun `can restore a list parent and join text after it`() = repl(
+        doc { h1 { +"hell<a>o" } + p { +"yo<b>u" } },
+        doc { ol { li { p { +"on<a>e" } } + li { p { +"tw<b>o" } } } },
+        doc { h1 { +"helle" } + ol { li { p { +"twu" } } } }
+    )
 
     @Test
-    fun `doesn't change the nesting of blocks after the selection`() =
-        repl(
-            doc { p { +"one<a>" } + p { +"two" } + p { +"three" } },
-            doc { p { +"outside<a>" } + blockquote { p { +"inside<b>" } } },
-            doc { p { +"one" } + blockquote { p { +"inside" } } + p { +"two" } + p { +"three" } }
-        )
+    fun `can insert a block into an empty block`() = repl(
+        doc { p { +"a" } + p { +"<a>" } + p { +"b" } },
+        doc { p { +"x<a>y<b>z" } },
+        doc { p { +"a" } + p { +"y<a>" } + p { +"b" } }
+    )
 
     @Test
-    fun `can close a parent node`() =
-        repl(
-            doc { blockquote { p { +"b<a>c" } + p { +"d<b>e" } + p { +"f" } } },
-            doc { blockquote { p { +"x<a>y" } } + p { +"after" } + "<b>" },
-            doc { blockquote { p { +"b<a>y" } } + p { +"after" } + blockquote { p { +"<b>e" } + p { +"f" } } }
-        )
+    fun `doesn't change the nesting of blocks after the selection`() = repl(
+        doc { p { +"one<a>" } + p { +"two" } + p { +"three" } },
+        doc { p { +"outside<a>" } + blockquote { p { +"inside<b>" } } },
+        doc { p { +"one" } + blockquote { p { +"inside" } } + p { +"two" } + p { +"three" } }
+    )
 
     @Test
-    fun `accepts lopsided regions`() =
-        repl(
-            doc { blockquote { p { +"b<a>c" } + p { +"d<b>e" } + p { +"f" } } },
-            doc { blockquote { p { +"x<a>y" } } + p { +"z<b>" } },
-            doc { blockquote { p { +"b<a>y" } } + p { +"z<b>e" } + blockquote { p { +"f" } } }
-        )
+    fun `can close a parent node`() = repl(
+        doc { blockquote { p { +"b<a>c" } + p { +"d<b>e" } + p { +"f" } } },
+        doc { blockquote { p { +"x<a>y" } } + p { +"after" } + "<b>" },
+        doc { blockquote { p { +"b<a>y" } } + p { +"after" } + blockquote { p { +"<b>e" } + p { +"f" } } }
+    )
 
     @Test
-    fun `can close nested parent nodes`() =
-        repl(
-            doc { blockquote { blockquote { p { +"one" } + p { +"tw<a>o" } + p { +"t<b>hree<3>" } + p { +"four<4>" } } } },
-            doc { ol { li { p { +"hello<a>world" } } + li { p { +"bye" } } } + p { +"ne<b>xt" } },
-            doc { blockquote { blockquote { p { +"one" } + p { +"tw<a>world" } + ol { li { p { +"bye" } } } + p { +"ne<b>hree<3>" } + p { +"four<4>" } } } }
-        )
+    fun `accepts lopsided regions`() = repl(
+        doc { blockquote { p { +"b<a>c" } + p { +"d<b>e" } + p { +"f" } } },
+        doc { blockquote { p { +"x<a>y" } } + p { +"z<b>" } },
+        doc { blockquote { p { +"b<a>y" } } + p { +"z<b>e" } + blockquote { p { +"f" } } }
+    )
 
     @Test
-    fun `will close open nodes to the right`() =
-        repl(
-            doc { p { +"x" } + "<a>" },
-            doc { +"<a>" + ul { li { p { +"a" } } + li { +"<b>" + p { +"b" } } } },
-            doc { p { +"x" } + ul { li { p { +"a" } } + li { p { } } } + "<a>" }
-        )
+    fun `can close nested parent nodes`() = repl(
+        doc { blockquote { blockquote { p { +"one" } + p { +"tw<a>o" } + p { +"t<b>hree<3>" } + p { +"four<4>" } } } },
+        doc { ol { li { p { +"hello<a>world" } } + li { p { +"bye" } } } + p { +"ne<b>xt" } },
+        doc {
+            blockquote {
+                blockquote {
+                    p { +"one" } +
+                        p { +"tw<a>world" } +
+                        ol { li { p { +"bye" } } } +
+                        p { +"ne<b>hree<3>" } +
+                        p { +"four<4>" }
+                }
+            }
+        }
+    )
 
     @Test
-    fun `can delete the whole document`() =
-        repl(
-            doc { p { +"<a>" } + h1 { +"hi" } + p { +"you" } + p { +"<b>" } },
-            null,
-            doc { p {} }
-        )
+    fun `will close open nodes to the right`() = repl(
+        doc { p { +"x" } + "<a>" },
+        doc { +"<a>" + ul { li { p { +"a" } } + li { +"<b>" + p { +"b" } } } },
+        doc { p { +"x" } + ul { li { p { +"a" } } + li { p { } } } + "<a>" }
+    )
 
     @Test
-    fun `preserves an empty parent to the left`() =
-        repl(
-            doc { blockquote { +"<a>" + p { +"hi" } } + p { +"b<b>x" } },
-            doc { p { +"<a>hi<b>" } },
-            doc { blockquote { p { +"hix" } } }
-        )
+    fun `can delete the whole document`() = repl(
+        doc { p { +"<a>" } + h1 { +"hi" } + p { +"you" } + p { +"<b>" } },
+        null,
+        doc { p {} }
+    )
 
     @Test
-    fun `drops an empty parent to the right`() =
-        repl(
-            doc { p { +"x<a>hi" } + blockquote { p { +"yy" } + "<b>" } + p { +"c" } },
-            doc { p { +"<a>hi<b>" } },
-            doc { p { +"xhi" } + p { +"c" } }
-        )
+    fun `preserves an empty parent to the left`() = repl(
+        doc { blockquote { +"<a>" + p { +"hi" } } + p { +"b<b>x" } },
+        doc { p { +"<a>hi<b>" } },
+        doc { blockquote { p { +"hix" } } }
+    )
 
     @Test
-    fun `drops an empty node at the start of the slice`() =
-        repl(
-            doc { p { +"<a>x" } },
-            doc { blockquote { p { +"hi" } + "<a>" } + p { +"b<b>" } },
-            doc { p {} + p { +"bx" } }
-        )
+    fun `drops an empty parent to the right`() = repl(
+        doc { p { +"x<a>hi" } + blockquote { p { +"yy" } + "<b>" } + p { +"c" } },
+        doc { p { +"<a>hi<b>" } },
+        doc { p { +"xhi" } + p { +"c" } }
+    )
 
     @Test
-    fun `drops an empty node at the end of the slice`() =
-        repl(
-            doc { p { +"<a>x" } },
-            doc { p { +"b<a>" } + blockquote { +"<b>" + p { +"hi" } } },
-            doc { p { } + blockquote { p { } }  + p { +"x" } }
-        )
+    fun `drops an empty node at the start of the slice`() = repl(
+        doc { p { +"<a>x" } },
+        doc { blockquote { p { +"hi" } + "<a>" } + p { +"b<b>" } },
+        doc { p {} + p { +"bx" } }
+    )
+
+    @Test
+    fun `drops an empty node at the end of the slice`() = repl(
+        doc { p { +"<a>x" } },
+        doc { p { +"b<a>" } + blockquote { +"<b>" + p { +"hi" } } },
+        doc { p { } + blockquote { p { } } + p { +"x" } }
+    )
 
     @Test
     fun `does nothing when given an unfittable slice`() {
         val doc = doc { p { +"<a>x" } }
-        val source = doc { blockquote { } + hr { }}
+        val source = doc { blockquote { } + hr { } }
         val expectedDoc = doc { p { +"x" } }
         PMNodeBuilder.Companion.tags()
         repl(
@@ -1264,38 +1199,34 @@ class TransformTest {
     }
 
     @Test
-    fun `doesn't drop content when things only fit at the top level`() =
-        repl(
-            doc { p { +"foo" } + "<a>" + p { +"bar<b>" } },
-            doc { ol { li { p { +"<a>a" } } + li { p { +"b<b>" } } } },
-            doc { p { +"foo" } + p { +"a" } + ol { li { p { +"b" } } } },
-            useSourceFirstChild = true
-        )
+    fun `doesn't drop content when things only fit at the top level`() = repl(
+        doc { p { +"foo" } + "<a>" + p { +"bar<b>" } },
+        doc { ol { li { p { +"<a>a" } } + li { p { +"b<b>" } } } },
+        doc { p { +"foo" } + p { +"a" } + ol { li { p { +"b" } } } },
+        useSourceFirstChild = true
+    )
 
     @Test
-    fun `preserves openEnd when top isn't placed`() =
-        repl(
-            doc { ul { li { p { +"ab<a>cd" } } + li { p { +"ef<b>gh" } } } },
-            doc { ul { li { p { +"ABCD" } } + li { p { +"EFGH" } } } }.slice(5, 13, true),
-            doc { ul { li { p { +"abCD" } } + li { p { +"EFgh" } } } }
-        )
+    fun `preserves openEnd when top isn't placed`() = repl(
+        doc { ul { li { p { +"ab<a>cd" } } + li { p { +"ef<b>gh" } } } },
+        doc { ul { li { p { +"ABCD" } } + li { p { +"EFGH" } } } }.slice(5, 13, true),
+        doc { ul { li { p { +"abCD" } } + li { p { +"EFgh" } } } }
+    )
 
     @Test
-    fun `will auto-close a list item when it fits in a list`() =
-        repl(
-            doc { ul { li { p { +"foo" } } + "<a>" + li { p { +"bar" } } } },
-            doc { ul { li { p { +"a<a>bc" } } + li { p { +"de<b>f" } } } },
-            doc { ul { li { p { +"foo" } } + li { p { +"bc" } } + li { p { +"de" } } + li { p { +"bar" } } } },
-            useSourceFirstChild = true
-        )
+    fun `will auto-close a list item when it fits in a list`() = repl(
+        doc { ul { li { p { +"foo" } } + "<a>" + li { p { +"bar" } } } },
+        doc { ul { li { p { +"a<a>bc" } } + li { p { +"de<b>f" } } } },
+        doc { ul { li { p { +"foo" } } + li { p { +"bc" } } + li { p { +"de" } } + li { p { +"bar" } } } },
+        useSourceFirstChild = true
+    )
 
     @Test
-    fun `finds the proper openEnd value when unwrapping a deep slice`() =
-        repl(
-            doc { +"<a>" + p {} + "<b>" },
-            doc { blockquote { blockquote { blockquote { p { +"hi" } } } } }.slice(3, 6, true),
-            doc { p { +"hi" } }
-        )
+    fun `finds the proper openEnd value when unwrapping a deep slice`() = repl(
+        doc { +"<a>" + p {} + "<b>" },
+        doc { blockquote { blockquote { blockquote { p { +"hi" } } } } }.slice(3, 6, true),
+        doc { p { +"hi" } }
+    )
 
     // A schema that allows marks on top-level block nodes
     private val ms = Schema(
@@ -1349,8 +1280,7 @@ class TransformTest {
         assertEquals(tr.doc.lastChild!!.marks.size, 1)
     }
 
-    private fun NodeBuilder<CustomNodeBuilder>.b(func: NodeBuilder<CustomNodeBuilder>.() -> Unit) =
-        node("body", func)
+    private fun NodeBuilder<CustomNodeBuilder>.b(func: NodeBuilder<CustomNodeBuilder>.() -> Unit) = node("body", func)
     private fun NodeBuilder<CustomNodeBuilder>.h(func: NodeBuilder<CustomNodeBuilder>.() -> Unit) =
         node("heading", func, mapOf("level" to 1))
 
@@ -1463,7 +1393,9 @@ class TransformTest {
             1,
             1,
             s.node(
-                "bullet_list", null, listOf(
+                "bullet_list",
+                null,
+                listOf(
                     s.node("list_item", null, s.node("paragraph", null, s.text("one"))),
                     s.node("list_item", null, s.node("paragraph", null, s.text("two"))),
                 )
@@ -1487,7 +1419,9 @@ class TransformTest {
             1,
             1,
             s.node(
-                "doc", null, listOf(
+                "doc",
+                null,
+                listOf(
                     s.node("title", null, s.text("title")),
                     s.node("code_block", null, s.text("two"))
                 )
@@ -1511,7 +1445,9 @@ class TransformTest {
             1,
             1,
             s.node(
-                "doc", null, listOf(
+                "doc",
+                null,
+                listOf(
                     s.node("heading", mapOf("level" to 1), s.text("heading")),
                     s.node("code_block", null, s.text("code"))
                 )
@@ -1543,8 +1479,7 @@ class TransformTest {
                     null,
                     listOf(
                         s.node("a", null, listOf(s.text("aa"))),
-                        s.node("b", null, listOf(s.text("bb"))
-                        )
+                        s.node("b", null, listOf(s.text("bb")))
                     )
                 )
             )
@@ -1611,61 +1546,58 @@ class TransformTest {
     }
 
     @Test
-    fun `replaces inline content`() =
-        replRange(
-            doc { p { +"foo<a>b<b>ar" } },
-            doc { p { +"<a>xx<b>" } },
-            doc { p { +"foo<a>xx<b>ar" } },
-            useSourceFirstChild = true
-        )
+    fun `replaces inline content`() = replRange(
+        doc { p { +"foo<a>b<b>ar" } },
+        doc { p { +"<a>xx<b>" } },
+        doc { p { +"foo<a>xx<b>ar" } },
+        useSourceFirstChild = true
+    )
 
     @Test
-    fun `replaces an empty paragraph with a heading`() =
-        replRange(
-            doc { p { +"<a>" } },
-            doc { h1 { +"<a>text<b>" } },
-            doc { h1 { +"text" } }
-        )
+    fun `replaces an empty paragraph with a heading`() = replRange(
+        doc { p { +"<a>" } },
+        doc { h1 { +"<a>text<b>" } },
+        doc { h1 { +"text" } }
+    )
 
     @Test
-    fun `replaces a fully selected paragraph with a heading`() =
-        replRange(
-            doc { p { +"<a>abc<b>" } },
-            doc { h1 { +"<a>text<b>" } },
-            doc { h1 { +"text" } }
-        )
+    fun `replaces a fully selected paragraph with a heading`() = replRange(
+        doc { p { +"<a>abc<b>" } },
+        doc { h1 { +"<a>text<b>" } },
+        doc { h1 { +"text" } }
+    )
 
     @Test
-    fun `recreates a list when overwriting a paragraph`() =
-        replRange(
-            doc { p { +"<a>" } },
-            doc { ul { li { p { +"<a>foobar<b>" } } } },
-            doc { ul { li { p { +"foobar" } } } }
-        )
+    fun `recreates a list when overwriting a paragraph`() = replRange(
+        doc { p { +"<a>" } },
+        doc { ul { li { p { +"<a>foobar<b>" } } } },
+        doc { ul { li { p { +"foobar" } } } }
+    )
 
     @Test
-    fun `drops context when it doesn't fit`() =
-        replRange(
-            doc { ul { li { p { +"<a>" } } + li { p { +"b" } } } },
-            doc { h1 { +"<a>h<b>" } },
-            doc { ul { li { p { +"h<a>" } } + li { p { +"b" } } } }
-        )
+    fun `drops context when it doesn't fit`() = replRange(
+        doc { ul { li { p { +"<a>" } } + li { p { +"b" } } } },
+        doc { h1 { +"<a>h<b>" } },
+        doc { ul { li { p { +"h<a>" } } + li { p { +"b" } } } }
+    )
 
     @Test
-    fun `can replace a node when endpoints are in different children`() =
-        replRange(
-            doc { p { +"a" } + ul { li { p { +"<a>b" } } + li { p { +"c" } + blockquote { p { +"d<b>"} } } } + p { +"e" } },
-            doc { h1 { +"<a>x<b>" } },
-            doc { p { +"a" } + h1 { +"x" } + p { +"e" } }
-        )
+    fun `can replace a node when endpoints are in different children`() = replRange(
+        doc {
+            p { +"a" } +
+                ul { li { p { +"<a>b" } } + li { p { +"c" } + blockquote { p { +"d<b>" } } } } +
+                p { +"e" }
+        },
+        doc { h1 { +"<a>x<b>" } },
+        doc { p { +"a" } + h1 { +"x" } + p { +"e" } }
+    )
 
     @Test
-    fun `keeps defining context when inserting at the start of a textblock`() =
-        replRange(
-            doc { p { +"<a>foo" } },
-            doc { ul { li { p { +"<a>one" } } + li { p { +"two<b>" } } } },
-            doc { ul { li { p { +"one" } } + li { p { +"twofoo" } } } }
-        )
+    fun `keeps defining context when inserting at the start of a textblock`() = replRange(
+        doc { p { +"<a>foo" } },
+        doc { ul { li { p { +"<a>one" } } + li { p { +"two<b>" } } } },
+        doc { ul { li { p { +"one" } } + li { p { +"twofoo" } } } }
+    )
 
     @Test
     fun `keeps defining context when it doesn't matches the parent markup`() {
@@ -1744,44 +1676,36 @@ class TransformTest {
     }
 
     @Test
-    fun `drops defining context when it matches the parent structure`() =
-        replRange(
-            doc { blockquote { p { +"<a>" } } },
-            doc { blockquote { p { +"<a>one<b>" } } },
-            doc { blockquote { p { +"one" } } }
-        )
+    fun `drops defining context when it matches the parent structure`() = replRange(
+        doc { blockquote { p { +"<a>" } } },
+        doc { blockquote { p { +"<a>one<b>" } } },
+        doc { blockquote { p { +"one" } } }
+    )
 
     @Test
-    fun `drops defining context when it matches the parent structure in a nested context`() =
-        replRange(
-            doc { ul { li { p { +"list1" } + blockquote { p { +"<a>" } } } } },
-            doc { blockquote { p { +"<a>one<b>" } } },
-            doc { ul { li { p { +"list1" } + blockquote { p { +"one" } } } } }
-        )
+    fun `drops defining context when it matches the parent structure in a nested context`() = replRange(
+        doc { ul { li { p { +"list1" } + blockquote { p { +"<a>" } } } } },
+        doc { blockquote { p { +"<a>one<b>" } } },
+        doc { ul { li { p { +"list1" } + blockquote { p { +"one" } } } } }
+    )
 
     @Test
-    fun `drops defining context when it matches the parent structure in a deep nested context`() =
-        replRange(
-            doc { ul { li { p { +"list1" } + ul { li { p { +"list2" } + blockquote { p { +"<a>" } } } } } } },
-            doc { blockquote { p { +"<a>one<b>" } } },
-            doc { ul { li { p { +"list1" } + ul { li { p { +"list2" } + blockquote { p { +"one" } } } } } } }
-        )
+    fun `drops defining context when it matches the parent structure in a deep nested context`() = replRange(
+        doc { ul { li { p { +"list1" } + ul { li { p { +"list2" } + blockquote { p { +"<a>" } } } } } } },
+        doc { blockquote { p { +"<a>one<b>" } } },
+        doc { ul { li { p { +"list1" } + ul { li { p { +"list2" } + blockquote { p { +"one" } } } } } } }
+    )
 
     @Test
-    fun `closes open nodes at the start`() =
-        replRange(
-            doc { +"<a>" + p { +"abc" } + "<b>" },
-            doc { ul { li { +"<a>" } } + p { +"def" } + "<b>" },
-            doc { ul { li { p {} } } + p { +"def" } }
-        )
+    fun `closes open nodes at the start`() = replRange(
+        doc { +"<a>" + p { +"abc" } + "<b>" },
+        doc { ul { li { +"<a>" } } + p { +"def" } + "<b>" },
+        doc { ul { li { p {} } } + p { +"def" } }
+    )
     // endregion
 
     // region replaceRangeWith
-    private fun replRangeWith(
-        doc: Node,
-        node: Node,
-        expect: Node
-    ) {
+    private fun replRangeWith(doc: Node, node: Node, expect: Node) {
         testTransform(
             Transform(doc).replaceRangeWith(pos(doc, "a")!!, pos(doc, "b") ?: pos(doc, "a")!!, node),
             expect
@@ -1789,68 +1713,60 @@ class TransformTest {
     }
 
     @Test
-    fun `can insert an inline node`() =
-        replRangeWith(
-            doc { p { +"fo<a>o" } },
-            doc { img {} }.firstChild!!,
-            doc { p { +"fo" + img {} + "<a>o" } }
-        )
+    fun `can insert an inline node`() = replRangeWith(
+        doc { p { +"fo<a>o" } },
+        doc { img {} }.firstChild!!,
+        doc { p { +"fo" + img {} + "<a>o" } }
+    )
 
     @Test
-    fun `can replace content with an inline node`() =
-        replRangeWith(
-            doc { p { +"<a>fo<b>o" } },
-            doc { img {} }.firstChild!!,
-            doc { p { +"<a>" + img {} + "o" } }
-        )
+    fun `can replace content with an inline node`() = replRangeWith(
+        doc { p { +"<a>fo<b>o" } },
+        doc { img {} }.firstChild!!,
+        doc { p { +"<a>" + img {} + "o" } }
+    )
 
     @Test
-    fun `can replace a block node with an inline node`() =
-        replRangeWith(
-            doc { +"<a>" + blockquote { p { +"a" } } + "<b>" },
-            doc { img {} }.firstChild!!,
-            doc { p { img {} } }
-        )
+    fun `can replace a block node with an inline node`() = replRangeWith(
+        doc { +"<a>" + blockquote { p { +"a" } } + "<b>" },
+        doc { img {} }.firstChild!!,
+        doc { p { img {} } }
+    )
 
     @Test
-    fun `can replace a block node with a block node`() =
-        replRangeWith(
-            doc { +"<a>" + blockquote { p { +"a" } } + "<b>" },
-            doc { hr {} }.firstChild!!,
-            doc { hr {} }
-        )
+    fun `can replace a block node with a block node`() = replRangeWith(
+        doc { +"<a>" + blockquote { p { +"a" } } + "<b>" },
+        doc { hr {} }.firstChild!!,
+        doc { hr {} }
+    )
 
     @Test
-    fun `can insert a block quote in the middle of text`() =
-        replRangeWith(
-            doc { p { +"foo<a>bar" } },
-            doc { hr {} }.firstChild!!,
-            doc { p { +"foo" } + hr {} + p { +"bar" } }
-        )
+    fun `can insert a block quote in the middle of text`() = replRangeWith(
+        doc { p { +"foo<a>bar" } },
+        doc { hr {} }.firstChild!!,
+        doc { p { +"foo" } + hr {} + p { +"bar" } }
+    )
 
     @Test
-    fun `can replace empty parents with a block node`() =
-        replRangeWith(
-            doc { blockquote { p { +"<a>" } } },
-            doc { hr {} }.firstChild!!,
-            doc { blockquote { hr {} } }
-        )
+    fun `can replace empty parents with a block node`() = replRangeWith(
+        doc { blockquote { p { +"<a>" } } },
+        doc { hr {} }.firstChild!!,
+        doc { blockquote { hr {} } }
+    )
 
     @Test
-    fun `can move an inserted block forward out of parent nodes`() =
-        replRangeWith(
-            doc { h1 { +"foo<a>" } },
-            doc { hr {} }.firstChild!!,
-            doc { h1 { +"foo" } + hr {} }
-        )
+    fun `can move an inserted block forward out of parent nodes`() = replRangeWith(
+        doc { h1 { +"foo<a>" } },
+        doc { hr {} }.firstChild!!,
+        doc { h1 { +"foo" } + hr {} }
+    )
 
     @Test
-    fun `can move an inserted block backward out of parent nodes`() =
-        replRangeWith(
-            doc { p { +"a" } + blockquote { p { +"<a>b" } } },
-            doc { hr {} }.firstChild!!,
-            doc { p { +"a" } + blockquote { hr {} + p { +"b"} } }
-        )
+    fun `can move an inserted block backward out of parent nodes`() = replRangeWith(
+        doc { p { +"a" } + blockquote { p { +"<a>b" } } },
+        doc { hr {} }.firstChild!!,
+        doc { p { +"a" } + blockquote { hr {} + p { +"b" } } }
+    )
     // endregion
 
     // region deleteRange
@@ -1862,81 +1778,70 @@ class TransformTest {
     }
 
     @Test
-    fun `deletes the given range`() =
-        delRange(
-            doc { p { +"fo<a>o" } + p { +"b<b>ar" } },
-            doc { p { +"fo<a><b>ar" } }
-        )
+    fun `deletes the given range`() = delRange(
+        doc { p { +"fo<a>o" } + p { +"b<b>ar" } },
+        doc { p { +"fo<a><b>ar" } }
+    )
 
     @Test
-    fun `deletes empty parent nodes`() =
-        delRange(
-            doc { blockquote { ul { li { +"<a>" + p { +"foo" } +"<b>" } } + p { +"x" } } },
-            doc { blockquote { +"<a><b>" + p { +"x" } } }
-        )
+    fun `deletes empty parent nodes`() = delRange(
+        doc { blockquote { ul { li { +"<a>" + p { +"foo" } + "<b>" } } + p { +"x" } } },
+        doc { blockquote { +"<a><b>" + p { +"x" } } }
+    )
 
     @Test
-    fun `doesn't delete parent nodes that can be empty`() =
-        delRange(
-            doc { p { +"<a>foo<b>" } },
-            doc { p { +"<a><b>" } }
-        )
+    fun `doesn't delete parent nodes that can be empty`() = delRange(
+        doc { p { +"<a>foo<b>" } },
+        doc { p { +"<a><b>" } }
+    )
 
     @Test
-    fun `is okay with deleting empty ranges`() =
-        delRange(
-            doc { p { +"<a><b>" } },
-            doc { p { +"<a><b>" } }
-        )
+    fun `is okay with deleting empty ranges`() = delRange(
+        doc { p { +"<a><b>" } },
+        doc { p { +"<a><b>" } }
+    )
 
     @Test
-    fun `will delete a whole covered node even if selection ends are in different nodes`() =
-        delRange(
-            doc { ul { li { p { +"<a>foo" } } + li { p { +"bar<b>" } } } + p { +"hi" } },
-            doc { p { +"hi" } }
-        )
+    fun `will delete a whole covered node even if selection ends are in different nodes`() = delRange(
+        doc { ul { li { p { +"<a>foo" } } + li { p { +"bar<b>" } } } + p { +"hi" } },
+        doc { p { +"hi" } }
+    )
 
     @Test
-    fun `leaves wrapping textblock when deleting all text in it`() =
-        delRange(
-            doc { p { +"a" } + p { +"<a>b<b>" } },
-            doc { p { +"a" } + p {} }
-        )
+    fun `leaves wrapping textblock when deleting all text in it`() = delRange(
+        doc { p { +"a" } + p { +"<a>b<b>" } },
+        doc { p { +"a" } + p {} }
+    )
 
     @Test
-    fun `expands to cover the whole parent node`() =
-        delRange(
-            doc { p { +"a" } + blockquote { blockquote { p { +"<a>foo" } } + p { +"bar<b>" } } + p { +"b" } },
-            doc { p { +"a" } + p { +"b" } }
-        )
+    fun `expands to cover the whole parent node`() = delRange(
+        doc { p { +"a" } + blockquote { blockquote { p { +"<a>foo" } } + p { +"bar<b>" } } + p { +"b" } },
+        doc { p { +"a" } + p { +"b" } }
+    )
 
     @Test
-    fun `expands to cover the whole document`() =
-        delRange(
-            doc { h1 { +"<a>foo" } + p { +"bar" } + blockquote { p { +"baz<b>" } } },
-            doc { p {} }
-        )
+    fun `expands to cover the whole document`() = delRange(
+        doc { h1 { +"<a>foo" } + p { +"bar" } + blockquote { p { +"baz<b>" } } },
+        doc { p {} }
+    )
 
     @Test
-    fun `doesn't expand beyond same-depth textblocks`() =
-        delRange(
-            doc { h1 { +"<a>foo" } + p { +"bar" } + p { +"baz<b>" } },
-            doc { h1 {} }
-        )
+    fun `doesn't expand beyond same-depth textblocks`() = delRange(
+        doc { h1 { +"<a>foo" } + p { +"bar" } + p { +"baz<b>" } },
+        doc { h1 {} }
+    )
 
     @Test
-    fun `deletes the open token when deleting from start to past end of block`() =
-        delRange(
-            doc { h1 { +"<a>foo" } + p { +"b<b>ar" } },
-            doc { p { +"ar" } }
-        )
+    fun `deletes the open token when deleting from start to past end of block`() = delRange(
+        doc { h1 { +"<a>foo" } + p { +"b<b>ar" } },
+        doc { p { +"ar" } }
+    )
 
     @Test
-    fun `doesn't delete the open token when the range end is at end of its own block`() =
-        delRange(
-            doc { p { +"one" } + h1 { +"<a>two" } + blockquote { p { +"three<b>"} } + p { +"four" } },
-            doc { p { +"one" } + h1 {} + p { +"four" } }
-        )
+    fun `doesn't delete the open token when the range end is at end of its own block`() = delRange(
+        doc { p { +"one" } + h1 { +"<a>two" } + blockquote { p { +"three<b>" } } + p { +"four" } },
+        doc { p { +"one" } + h1 {} + p { +"four" } }
+    )
     // endregion
 
     // region addNodeMark
@@ -1945,28 +1850,25 @@ class TransformTest {
     }
 
     @Test
-    fun `adds a mark`() =
-        addNodeMark(
-            doc { p { +"<a>" + img {} } },
-            schema.mark("em"),
-            doc { p { +"<a>" + em { img {} } } }
-        )
+    fun `adds a mark`() = addNodeMark(
+        doc { p { +"<a>" + img {} } },
+        schema.mark("em"),
+        doc { p { +"<a>" + em { img {} } } }
+    )
 
     @Test
-    fun `doesn't duplicate a mark`() =
-        addNodeMark(
-            doc { p { +"<a>" + em { img {} } } },
-            schema.mark("em"),
-            doc { p { +"<a>" + em { img {} } } }
-        )
+    fun `doesn't duplicate a mark`() = addNodeMark(
+        doc { p { +"<a>" + em { img {} } } },
+        schema.mark("em"),
+        doc { p { +"<a>" + em { img {} } } }
+    )
 
     @Test
-    fun `replaces a mark`() =
-        addNodeMark(
-            doc { p { +"<a>" + a { img {} } } },
-            schema.mark("link", mapOf("href" to "x")),
-            doc { p { +"<a>" + a("x") { img {} } } }
-        )
+    fun `replaces a mark`() = addNodeMark(
+        doc { p { +"<a>" + a { img {} } } },
+        schema.mark("link", mapOf("href" to "x")),
+        doc { p { +"<a>" + a("x") { img {} } } }
+    )
     // endregion
 
     // region removeNodeMark
@@ -1975,28 +1877,25 @@ class TransformTest {
     }
 
     @Test
-    fun `removes a mark`() =
-        rm(
-            doc { p { +"<a>" + em { img {} } } },
-            schema.mark("em"),
-            doc { p { +"<a>" + img {} } }
-        )
+    fun `removes a mark`() = rm(
+        doc { p { +"<a>" + em { img {} } } },
+        schema.mark("em"),
+        doc { p { +"<a>" + img {} } }
+    )
 
     @Test
-    fun `doesn't do anything when there is no mark`() =
-        rm(
-            doc { p { +"<a>" + img {} } },
-            schema.mark("em"),
-            doc { p { +"<a>" + img {} } }
-        )
+    fun `doesn't do anything when there is no mark`() = rm(
+        doc { p { +"<a>" + img {} } },
+        schema.mark("em"),
+        doc { p { +"<a>" + img {} } }
+    )
 
     @Test
-    fun `can remove a mark from multiple marks`() =
-        rm(
-            doc { p { +"<a>" + em { a { img {} } } } },
-            schema.mark("em"),
-            doc { p { +"<a>" + a { img {} } } }
-        )
+    fun `can remove a mark from multiple marks`() = rm(
+        doc { p { +"<a>" + em { a { img {} } } } },
+        schema.mark("em"),
+        doc { p { +"<a>" + a { img {} } } }
+    )
     // endregion
 
     // region setNodeAttribute
@@ -2005,13 +1904,12 @@ class TransformTest {
     }
 
     @Test
-    fun `setNodeAttribute - sets an attribute`() =
-        setNodeAttribute(
-            doc { +"<a>" + h1 { +"a" } },
-            "level",
-            2,
-            doc { +"<a>" + h2 { +"a" } }
-        )
+    fun `setNodeAttribute - sets an attribute`() = setNodeAttribute(
+        doc { +"<a>" + h1 { +"a" } },
+        "level",
+        2,
+        doc { +"<a>" + h2 { +"a" } }
+    )
     // endregion
 
     // region setDocAttribute
@@ -2057,7 +1955,8 @@ class TransformTest {
         val linebreakSchema = Schema(
             SchemaSpec(
                 nodes = schema.spec.nodes + mapOf(
-                    "hard_break" to (schema.spec.nodes["hard_break"]!! as NodeSpecImpl).copy(linebreakReplacement = true)
+                    "hard_break" to (schema.spec.nodes["hard_break"]!! as NodeSpecImpl)
+                        .copy(linebreakReplacement = true)
                 )
             )
         )

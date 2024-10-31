@@ -1,9 +1,9 @@
 package com.atlassian.prosemirror.transform
 
-import com.atlassian.prosemirror.testbuilder.schema as testSchema
 import com.atlassian.prosemirror.model.Node
 import com.atlassian.prosemirror.model.NodeBase
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.doc
+import com.atlassian.prosemirror.testbuilder.schema as testSchema
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

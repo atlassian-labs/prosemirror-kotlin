@@ -15,7 +15,6 @@ import com.atlassian.prosemirror.transform.Step
 import com.atlassian.prosemirror.transform.StepMap
 import com.atlassian.prosemirror.transform.Transform
 import com.atlassian.prosemirror.util.safeMode
-
 import kotlin.math.max
 import kotlin.math.min
 

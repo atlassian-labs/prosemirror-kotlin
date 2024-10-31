@@ -159,8 +159,11 @@ fun setBlockType(tr: Transform, from: Int, to: Int, type: NodeType, attrs: Attrs
             if (type.schema.linebreakReplacement != null) {
                 val pre = type.whitespace == Whitespace.PRE
                 val supportLinebreak = type.schema.linebreakReplacement?.let { type.contentMatch.matchType(it) } != null
-                if (pre && !supportLinebreak) convertNewlines = false
-                else if (!pre && supportLinebreak) convertNewlines = true
+                if (pre && !supportLinebreak) {
+                    convertNewlines = false
+                } else if (!pre && supportLinebreak) {
+                    convertNewlines = true
+                }
             }
 
             // Ensure all markup that isn't allowed in the new node type is cleared
@@ -270,8 +273,9 @@ fun canSplit(doc: Node, pos: Int, depth: Int = 1, typesAfter: List<NodeBase?>? =
         if (node.type.spec.isolating == true) return false
         var rest = node.content.cutByIndex(index, node.childCount)
         val overrideChild = typesAfter?.get(i + 1)
-        if (overrideChild != null)
+        if (overrideChild != null) {
             rest = rest.replaceChild(0, overrideChild.type.create(overrideChild.attrs))
+        }
         val after = typesAfter?.get(i) ?: node
         if (after != node) rest = rest.replaceChild(0, after.type.create(after.attrs))
         if (!node.canReplace(index + 1, node.childCount) || !after.type.validContent(rest)) {

@@ -41,7 +41,6 @@ interface UnsupportedNode {
 @kotlinx.serialization.Serializable
 value class NodeId(val id: String)
 
-
 /**
  * This class represents a node in the tree that makes up a ProseMirror document. So a document is
  * an instance of `Node`, with children that are also instances of `Node`.
@@ -177,11 +176,13 @@ open class Node constructor(
             default as T // safely nullable as (null is T) means T is nullable
         } else {
             default ?: defaultAttr(name) as? T ?: throw IllegalArgumentException(
-                "Cannot resolve attribute $name for node ${this.type.name} - attribute doesn't exist or is null, and <T> is not nullable " +
+                "Cannot resolve attribute $name for node ${this.type.name} - " +
+                    "attribute doesn't exist or is null, and <T> is not nullable " +
                     "but there is no non-null default to return"
             )
         }
     }
+
     // Get the child node at the given index. Raises an error when the index is out of range.
     fun child(index: Int): Node {
         return this.content.child(index)
@@ -217,9 +218,7 @@ open class Node constructor(
 
     // Call the given callback for every descendant node. Doesn't descend into a node when the
     // callback returns `false`.
-    fun descendants(
-        f: (node: Node, pos: Int, parent: Node?, index: Int) -> Boolean
-    ) {
+    fun descendants(f: (node: Node, pos: Int, parent: Node?, index: Int) -> Boolean) {
         this.nodesBetween(0, this.content.size, f)
     }
 
@@ -320,21 +319,11 @@ open class Node constructor(
     // inserted to separate text from different block nodes. If `leafText` is given, it'll be
     // inserted for every non-text leaf node encountered, otherwise
     // [`leafText`](#model.NodeSpec^leafText) will be used.
-    fun textBetween(
-        from: Int,
-        to: Int,
-        blockSeparator: String? = null,
-        leafText: (leafNode: Node) -> String
-    ): String {
+    fun textBetween(from: Int, to: Int, blockSeparator: String? = null, leafText: (leafNode: Node) -> String): String {
         return this.content.textBetween(from, to, blockSeparator, leafText)
     }
 
-    fun textBetween(
-        from: Int,
-        to: Int,
-        blockSeparator: String? = null,
-        leafText: String? = null
-    ): String {
+    fun textBetween(from: Int, to: Int, blockSeparator: String? = null, leafText: String? = null): String {
         return this.content.textBetween(from, to, blockSeparator, leafText)
     }
 
@@ -626,7 +615,6 @@ open class Node constructor(
     open fun hasToolbarItems(): Boolean {
         return type.spec.selectable && (isBlock || isText) // text can have LinkMark
     }
-
 
     companion object {
 

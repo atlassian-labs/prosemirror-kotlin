@@ -163,25 +163,24 @@ open class Transform(
         setNodeMarkup(this, pos, type, attrs, marks)
     }
 
-
-    /// Set a single attribute on a given node to a new value.
-    /// The `pos` addresses the document content. Use `setDocAttribute`
-    /// to set attributes on the document itself.
+    // Set a single attribute on a given node to a new value.
+    // The `pos` addresses the document content. Use `setDocAttribute`
+    // to set attributes on the document itself.
     fun setNodeAttribute(pos: Int, attr: String, value: Any) = this.apply {
         step(AttrStep(pos, attr, value))
     }
 
-    /// Set a single attribute on the document to a new value.
+    // Set a single attribute on the document to a new value.
     fun setDocAttribute(attr: String, value: Any) = this.apply {
         step(DocAttrStep(attr, value))
     }
 
-    /// Add a mark to the node at position `pos`.
+    // Add a mark to the node at position `pos`.
     fun addNodeMark(pos: Int, mark: Mark) = this.apply {
         step(AddNodeMarkStep(pos, mark))
     }
 
-    /// Remove a mark (or a mark of the given type) from the node at
+    // Remove a mark (or a mark of the given type) from the node at
     // position `pos`.
     fun removeNodeMark(pos: Int, mark: Mark) = this.apply {
         step(RemoveNodeMarkStep(pos, mark))

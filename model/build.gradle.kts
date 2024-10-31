@@ -7,6 +7,10 @@ plugins {
   id("kotlinx-serialization")
 }
 
+ktlint {
+  android.set(true)
+}
+
 kotlin {
   // Java
   jvm {

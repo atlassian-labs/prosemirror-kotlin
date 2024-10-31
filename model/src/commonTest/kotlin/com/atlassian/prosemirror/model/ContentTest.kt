@@ -57,44 +57,34 @@ fun fill3(expr: String, before: Node, mid: Node, after: Node, left: Node?, right
 
 class ContentTest {
     @Test
-    fun `accepts empty content for the empty expr`() =
-        valid("", "")
+    fun `accepts empty content for the empty expr`() = valid("", "")
 
     @Test
-    fun `doesn't accept content in the empty expr`() =
-        invalid("", "image")
+    fun `doesn't accept content in the empty expr`() = invalid("", "image")
 
     @Test
-    fun `matches nothing to an asterisk`() =
-        valid("image*", "")
+    fun `matches nothing to an asterisk`() = valid("image*", "")
 
     @Test
-    fun `matches one element to an asterisk`() =
-        valid("image*", "image")
+    fun `matches one element to an asterisk`() = valid("image*", "image")
 
     @Test
-    fun `matches multiple elements to an asterisk`() =
-        valid("image*", "image image image image")
+    fun `matches multiple elements to an asterisk`() = valid("image*", "image image image image")
 
     @Test
-    fun `only matches appropriate elements to an asterisk`() =
-        invalid("image*", "image text")
+    fun `only matches appropriate elements to an asterisk`() = invalid("image*", "image text")
 
     @Test
-    fun `matches group members to a group`() =
-        valid("inline*", "image text")
+    fun `matches group members to a group`() = valid("inline*", "image text")
 
     @Test
-    fun `doesn't match non-members to a group`() =
-        invalid("inline*", "paragraph")
+    fun `doesn't match non-members to a group`() = invalid("inline*", "paragraph")
 
     @Test
-    fun `matches an element to a choice expression`() =
-        valid("(paragraph | heading)", "paragraph")
+    fun `matches an element to a choice expression`() = valid("(paragraph | heading)", "paragraph")
 
     @Test
-    fun `doesn't match unmentioned elements to a choice expr`() =
-        invalid("(paragraph | heading)", "image")
+    fun `doesn't match unmentioned elements to a choice expr`() = invalid("(paragraph | heading)", "image")
 
     @Test
     fun `matches a simple sequence`() =
@@ -113,76 +103,78 @@ class ContentTest {
         invalid("paragraph horizontal_rule", "horizontal_rule paragraph horizontal_rule")
 
     @Test
-    fun `accepts a sequence asterisk matching zero elements`() =
-        valid("heading paragraph*", "heading")
+    fun `accepts a sequence asterisk matching zero elements`() = valid("heading paragraph*", "heading")
 
     @Test
     fun `accepts a sequence asterisk matching multiple elts`() =
         valid("heading paragraph*", "heading paragraph paragraph")
 
     @Test
-    fun `accepts a sequence plus matching one element`() =
-        valid("heading paragraph+", "heading paragraph")
+    fun `accepts a sequence plus matching one element`() = valid("heading paragraph+", "heading paragraph")
 
     @Test
-    fun `accepts a sequence plus matching multiple elts`() =
-        valid("heading paragraph+", "heading paragraph paragraph")
+    fun `accepts a sequence plus matching multiple elts`() = valid(
+        "heading paragraph+",
+        "heading paragraph paragraph"
+    )
 
     @Test
-    fun `fails when a sequence plus has no elements`() =
-        invalid("heading paragraph+", "heading")
+    fun `fails when a sequence plus has no elements`() = invalid("heading paragraph+", "heading")
 
     @Test
-    fun `fails when a sequence plus misses its start`() =
-        invalid("heading paragraph+", "paragraph paragraph")
+    fun `fails when a sequence plus misses its start`() = invalid(
+        "heading paragraph+",
+        "paragraph paragraph"
+    )
 
     @Test
-    fun `accepts an optional element being present`() =
-        valid("image?", "image")
+    fun `accepts an optional element being present`() = valid("image?", "image")
 
     @Test
-    fun `accepts an optional element being missing`() =
-        valid("image?", "")
+    fun `accepts an optional element being missing`() = valid("image?", "")
 
     @Test
-    fun `fails when an optional element is present twice`() =
-        invalid("image?", "image image")
+    fun `fails when an optional element is present twice`() = invalid("image?", "image image")
 
     @Test
-    fun `accepts a nested repeat`() =
-        valid("(heading paragraph+)+", "heading paragraph heading paragraph paragraph")
+    fun `accepts a nested repeat`() = valid(
+        "(heading paragraph+)+",
+        "heading paragraph heading paragraph paragraph"
+    )
 
     @Test
     fun `fails on extra input after a nested repeat`() =
         invalid("(heading paragraph+)+", "heading paragraph heading paragraph paragraph horizontal_rule")
 
     @Test
-    fun `accepts a matching count`() =
-        valid("hard_break{2}", "hard_break hard_break")
+    fun `accepts a matching count`() = valid("hard_break{2}", "hard_break hard_break")
 
     @Test
-    fun `rejects a count that comes up short`() =
-        invalid("hard_break{2}", "hard_break")
+    fun `rejects a count that comes up short`() = invalid("hard_break{2}", "hard_break")
 
     @Test
-    fun `rejects a count that has too many elements`() =
-        invalid("hard_break{2}", "hard_break hard_break hard_break")
+    fun `rejects a count that has too many elements`() = invalid(
+        "hard_break{2}",
+        "hard_break hard_break hard_break"
+    )
 
     @Test
-    fun `accepts a count on the lower bound`() =
-        valid("hard_break{2, 4}", "hard_break hard_break")
+    fun `accepts a count on the lower bound`() = valid("hard_break{2, 4}", "hard_break hard_break")
 
     @Test
-    fun `accepts a count on the upper bound`() =
-        valid("hard_break{2, 4}", "hard_break hard_break hard_break hard_break")
+    fun `accepts a count on the upper bound`() = valid(
+        "hard_break{2, 4}",
+        "hard_break hard_break hard_break hard_break"
+    )
 
     @Test
-    fun `accepts a count between the bounds`() =
-        valid("hard_break{2, 4}", "hard_break hard_break hard_break")
+    fun `accepts a count between the bounds`() = valid(
+        "hard_break{2, 4}",
+        "hard_break hard_break hard_break"
+    )
 
     @Test
-    fun `rejects a sequence with too few elements`() =
-        invalid("hard_break{2, 4}", "hard_break")
+    fun `rejects a sequence with too few elements`() = invalid("hard_break{2, 4}", "hard_break")
 
     @Test
     fun `rejects a sequence with too many elements`() =
@@ -197,16 +189,16 @@ class ContentTest {
         valid("hard_break{2, 4} image?", "hard_break hard_break image")
 
     @Test
-    fun `accepts an open range`() =
-        valid("hard_break{2,}", "hard_break hard_break")
+    fun `accepts an open range`() = valid("hard_break{2,}", "hard_break hard_break")
 
     @Test
-    fun `accepts an open range matching many`() =
-        valid("hard_break{2,}", "hard_break hard_break hard_break hard_break")
+    fun `accepts an open range matching many`() = valid(
+        "hard_break{2,}",
+        "hard_break hard_break hard_break hard_break"
+    )
 
     @Test
-    fun `rejects an open range with too few elements`() =
-        invalid("hard_break{2,}", "hard_break")
+    fun `rejects an open range with too few elements`() = invalid("hard_break{2,}", "hard_break")
 
     @Test
     fun `returns the empty fragment when things match`() =
@@ -217,52 +209,41 @@ class ContentTest {
         fill("paragraph horizontal_rule paragraph", doc { p {} }, doc { p {} }, doc { hr {} })
 
     @Test
-    fun `accepts an asterisk across the bound`() =
-        fill("hard_break*", p { br {} }, p { br {} }, p {})
+    fun `accepts an asterisk across the bound`() = fill("hard_break*", p { br {} }, p { br {} }, p {})
 
     @Test
-    fun `accepts an asterisk only on the left`() =
-        fill("hard_break*", p { br {} }, p {}, p {})
+    fun `accepts an asterisk only on the left`() = fill("hard_break*", p { br {} }, p {}, p {})
 
     @Test
-    fun `accepts an asterisk only on the right`() =
-        fill("hard_break*", p {}, p { br {} }, p {})
+    fun `accepts an asterisk only on the right`() = fill("hard_break*", p {}, p { br {} }, p {})
 
     @Test
-    fun `accepts an asterisk with no elements`() =
-        fill("hard_break*", p {}, p {}, p {})
+    fun `accepts an asterisk with no elements`() = fill("hard_break*", p {}, p {}, p {})
 
     @Test
-    fun `accepts a plus across the bound`() =
-        fill("hard_break+", p { br {} }, p { br {} }, p {})
+    fun `accepts a plus across the bound`() = fill("hard_break+", p { br {} }, p { br {} }, p {})
 
     @Test
-    fun `adds an element for a content-less plus`() =
-        fill("hard_break+", p {}, p {}, p { br {} })
+    fun `adds an element for a content-less plus`() = fill("hard_break+", p {}, p {}, p { br {} })
 
     @Test
-    fun `fails for a mismatched plus`() =
-        fill("hard_break+", p {}, p { img {} }, null)
+    fun `fails for a mismatched plus`() = fill("hard_break+", p {}, p { img {} }, null)
 
     @Test
     fun `accepts asterisk with content on both sides`() =
         fill("heading* paragraph*", doc { h1 {} }, doc { p {} }, doc {})
 
     @Test
-    fun `accepts asterisk with no content after`() =
-        fill("heading* paragraph*", doc { h1 {} }, doc {}, doc {})
+    fun `accepts asterisk with no content after`() = fill("heading* paragraph*", doc { h1 {} }, doc {}, doc {})
 
     @Test
-    fun `accepts plus with content on both sides`() =
-        fill("heading+ paragraph+", doc { h1 {} }, doc { p {} }, doc {})
+    fun `accepts plus with content on both sides`() = fill("heading+ paragraph+", doc { h1 {} }, doc { p {} }, doc {})
 
     @Test
-    fun `accepts plus with no content after`() =
-        fill("heading+ paragraph+", doc { h1 {} }, doc {}, doc { p {} })
+    fun `accepts plus with no content after`() = fill("heading+ paragraph+", doc { h1 {} }, doc {}, doc { p {} })
 
     @Test
-    fun `adds elements to match a count`() =
-        fill("hard_break{3}", p { br {} }, p { br {} }, p { br {} })
+    fun `adds elements to match a count`() = fill("hard_break{3}", p { br {} }, p { br {} }, p { br {} })
 
     @Test
     fun `fails when there are too many elements`() =

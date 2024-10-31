@@ -95,7 +95,7 @@ class StepMap(
         return _map(pos, assoc, true) as Int
     }
 
-    @Suppress("NestedBlockDepth", "ComplexMethod", "FunctionNaming")
+    @Suppress("ktlint:standard:function-naming")
     internal fun _map(pos: Int, assoc: Int, simple: Boolean): Any {
         var diff = 0
         val oldIndex = if (this.inverted) 2 else 1
@@ -176,8 +176,7 @@ class StepMap(
 
         // Create a map that moves all positions by offset `n` (which may be negative). This can be
         // useful when applying steps meant for a sub-document to a larger document, or vice-versa.
-        fun offset(n: Int) =
-            if (n == 0) empty else StepMap(if (n < 0) listOf(0, -n, 0) else listOf(0, 0, n))
+        fun offset(n: Int) = if (n == 0) empty else StepMap(if (n < 0) listOf(0, -n, 0) else listOf(0, 0, n))
     }
 }
 
@@ -271,7 +270,7 @@ class Mapping(
         return this._map(pos, assoc, false) as MapResult
     }
 
-    @Suppress("FunctionNaming")
+    @Suppress("ktlint:standard:function-naming")
     internal fun _map(pos: Int, assoc: Int, simple: Boolean): Any {
         var delInfo = 0
         var pos = pos

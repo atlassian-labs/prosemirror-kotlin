@@ -156,8 +156,11 @@ fun clearIncompatible(
                 val text = child.text ?: ""
                 newline.findAll(text).forEach {
                     if (slice == null) {
-                        slice = Slice(Fragment.from(parentType.schema.text(" ", parentType.allowedMarks(child.marks))),
-                            0, 0)
+                        slice = Slice(
+                            Fragment.from(parentType.schema.text(" ", parentType.allowedMarks(child.marks))),
+                            0,
+                            0
+                        )
                     }
                     replSteps.add(ReplaceStep(cur + it.range.first, cur + it.range.last + 1, slice!!))
                 }

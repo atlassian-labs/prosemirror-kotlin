@@ -16,7 +16,7 @@ class CustomNodeBuilder(
     }
 }
 
-class CustomNodeBuildCompanion(schema: Schema): NodeBuildCompanion<CustomNodeBuilder>(schema) {
+class CustomNodeBuildCompanion(schema: Schema) : NodeBuildCompanion<CustomNodeBuilder>(schema) {
     override val checked: Boolean
         get() = false
 

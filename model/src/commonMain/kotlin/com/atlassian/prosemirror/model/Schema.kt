@@ -5,7 +5,6 @@ package com.atlassian.prosemirror.model
 import co.touchlab.stately.collections.ConcurrentMutableMap
 import com.atlassian.prosemirror.util.slice
 import com.atlassian.prosemirror.util.verbose
-import kotlinx.atomicfu.atomic
 import kotlinx.serialization.json.JsonObject
 
 // An object holding the attributes of a node.
@@ -321,12 +320,7 @@ fun validateType(typeName: String, attrName: String, type: String): (Any?) -> Un
 // To be type safe every NodeType should be created through create method. Otherwise it would be
 // of generic type Node
 interface NodeCreator<T : Node> {
-    fun create(
-        type: NodeType,
-        attrs: Attrs,
-        content: Fragment? = null,
-        marks: List<Mark> = Mark.none
-    ): T
+    fun create(type: NodeType, attrs: Attrs, content: Fragment? = null, marks: List<Mark> = Mark.none): T
 
     companion object {
         internal val DEFAULT = object : NodeCreator<Node> {
@@ -338,10 +332,7 @@ interface NodeCreator<T : Node> {
 }
 
 interface MarkCreator<T : Mark> {
-    fun create(
-        type: MarkType,
-        attrs: Attrs
-    ): T
+    fun create(type: MarkType, attrs: Attrs): T
 
     companion object {
         internal val DEFAULT = object : MarkCreator<Mark> {
@@ -353,7 +344,8 @@ interface MarkCreator<T : Mark> {
 }
 
 enum class Whitespace {
-    PRE, NORMAL
+    PRE,
+    NORMAL
 }
 
 // Attribute descriptors
@@ -370,12 +362,11 @@ class Attribute(
         get() = !this.hasDefault
 
     init {
-        this.hasDefault = options.hasDefault //Object.prototype.hasOwnProperty.call(options, "default")
+        this.hasDefault = options.hasDefault // Object.prototype.hasOwnProperty.call(options, "default")
         this.default = options.default
 
         this.validate = options.validateString?.let { validateType(typeName, attrName, it) }
             ?: options.validateFunction
-
     }
 }
 
@@ -639,6 +630,7 @@ interface AttributeSpec {
     // created.
     val default: Any?
     val hasDefault: Boolean
+
     // A function or type name used to validate values of this
     // attribute. This will be used when deserializing the attribute
     // from JSON, and when running [`Node.check`](#model.Node.check).
@@ -701,7 +693,9 @@ class Schema {
             type.inlineContent = type.contentMatch.inlineContent
             if (type.spec.linebreakReplacement == true) {
                 if (linebreakReplacement != null) throw RangeError("Multiple linebreak nodes defined")
-                if (!type.isInline || !type.isLeaf) throw RangeError("Linebreak replacement nodes must be inline leaf nodes")
+                if (!type.isInline || !type.isLeaf) {
+                    throw RangeError("Linebreak replacement nodes must be inline leaf nodes")
+                }
                 linebreakReplacement = type
             }
             type.markSet = when {
@@ -762,11 +756,9 @@ class Schema {
         return type.create(attrs, content, marks)
     }
 
-    fun node(type: String) =
-        node(nodeType(type), null, null as Fragment?, null)
+    fun node(type: String) = node(nodeType(type), null, null as Fragment?, null)
 
-    fun node(type: String, attrs: Attrs? = null) =
-        node(nodeType(type), attrs, null as Fragment?, null)
+    fun node(type: String, attrs: Attrs? = null) = node(nodeType(type), attrs, null as Fragment?, null)
 
     fun node(type: String, attrs: Attrs? = null, content: Fragment?, marks: List<Mark>? = null) =
         node(nodeType(type), attrs, content, marks)
