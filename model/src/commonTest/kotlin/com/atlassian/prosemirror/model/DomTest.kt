@@ -15,30 +15,10 @@ import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.pos
 import com.fleeksoft.ksoup.nodes.Element
 import com.fleeksoft.ksoup.nodes.Node as DOMNode
 import assertk.assertions.isTrue
+import com.atlassian.prosemirror.testbuilder.CustomNodeBuildCompanion
+import com.atlassian.prosemirror.testbuilder.CustomNodeBuilder
 import com.fleeksoft.ksoup.nodes.TextNode
 import kotlin.test.assertFailsWith
-
-class CommentNodeBuilder(
-    pos: Int = 0,
-    marks: List<Mark> = emptyList(),
-    override val schema: Schema = testSchema
-) : NodeBuilder<CommentNodeBuilder>(pos, marks, schema) {
-    override val checked: Boolean
-        get() = false
-
-    override fun create(pos: Int, marks: List<Mark>, schema: Schema): NodeBuilder<CommentNodeBuilder> {
-        return CommentNodeBuilder(pos, marks, schema)
-    }
-}
-
-class CustomNodeBuildCompanion(schema: Schema): NodeBuildCompanion<CommentNodeBuilder>(schema) {
-    override val checked: Boolean
-        get() = false
-
-    override fun create(): CommentNodeBuilder {
-        return CommentNodeBuilder(schema = schema)
-    }
-}
 
 class DomTest {
     //region DOMParser
@@ -201,7 +181,7 @@ class DomTest {
             )
         )
 
-        fun NodeBuilder<CommentNodeBuilder>.comment(func: NodeBuilder<CommentNodeBuilder>.() -> Unit) =
+        fun NodeBuilder<CustomNodeBuilder>.comment(func: NodeBuilder<CustomNodeBuilder>.() -> Unit) =
             mark("comment", func)
 
         val doc = CustomNodeBuildCompanion(schemaWithComment).doc {
@@ -285,7 +265,7 @@ class DomTest {
         )
         val b = CustomNodeBuildCompanion(markSchema)
 
-        fun NodeBuilder<CommentNodeBuilder>.test(func: NodeBuilder<CommentNodeBuilder>.() -> Unit) =
+        fun NodeBuilder<CustomNodeBuilder>.test(func: NodeBuilder<CustomNodeBuilder>.() -> Unit) =
             mark("test", func)
 
         test(

@@ -167,8 +167,8 @@ class ReplaceAroundStep(
     override fun map(mapping: Mappable): ReplaceAroundStep? {
         val from = mapping.mapResult(this.from, 1)
         val to = mapping.mapResult(this.to, -1)
-        val gapFrom = mapping.map(this.gapFrom, -1)
-        val gapTo = mapping.map(this.gapTo, 1)
+        val gapFrom = if (this.from == this.gapFrom) from.pos else mapping.map(this.gapFrom, -1)
+        val gapTo = if (this.to == this.gapTo) to.pos else mapping.map(this.gapTo, 1)
         if ((from.deletedAcross && to.deletedAcross) || gapFrom < from.pos || gapTo > to.pos) return null
         return ReplaceAroundStep(from.pos, to.pos, gapFrom, gapTo, this.slice, this.insert, this.structure)
     }

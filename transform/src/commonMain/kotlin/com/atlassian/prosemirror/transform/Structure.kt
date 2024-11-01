@@ -10,6 +10,7 @@ import com.atlassian.prosemirror.model.NodeRange
 import com.atlassian.prosemirror.model.NodeType
 import com.atlassian.prosemirror.model.RangeError
 import com.atlassian.prosemirror.model.Slice
+import com.atlassian.prosemirror.model.Whitespace
 import com.atlassian.prosemirror.model.util.resolveSafe
 import com.atlassian.prosemirror.util.verbose
 
@@ -154,8 +155,17 @@ fun setBlockType(tr: Transform, from: Int, to: Int, type: NodeType, attrs: Attrs
             !node.hasMarkup(type, attrs) &&
             canChangeType(tr.doc, tr.mapping.slice(mapFrom).map(pos), type)
         ) {
+            var convertNewlines: Boolean? = null
+            if (type.schema.linebreakReplacement != null) {
+                val pre = type.whitespace == Whitespace.PRE
+                val supportLinebreak = type.schema.linebreakReplacement?.let { type.contentMatch.matchType(it) } != null
+                if (pre && !supportLinebreak) convertNewlines = false
+                else if (!pre && supportLinebreak) convertNewlines = true
+            }
+
             // Ensure all markup that isn't allowed in the new node type is cleared
-            tr.clearIncompatible(tr.mapping.slice(mapFrom).map(pos, 1), type)
+            if (convertNewlines != null && !convertNewlines) replaceLineBreaks(tr, node, pos, mapFrom)
+            clearIncompatible(tr, tr.mapping.slice(mapFrom).map(pos, 1), type, null, convertNewlines === null)
             val mapping = tr.mapping.slice(mapFrom)
             val startM = mapping.map(pos, 1)
             val endM = mapping.map(pos + node.nodeSize, 1)
@@ -170,11 +180,34 @@ fun setBlockType(tr: Transform, from: Int, to: Int, type: NodeType, attrs: Attrs
                     structure = true
                 )
             )
+            if (convertNewlines == true) replaceNewlines(tr, node, pos, mapFrom)
             false
         } else {
             true
         }
     })
+}
+
+fun replaceNewlines(tr: Transform, node: Node, pos: Int, mapFrom: Int) {
+    node.forEach { child, offset, _ ->
+        if (child.isText) {
+            val newline = Regex("\r?\n|\r")
+            val text = child.text ?: ""
+            newline.findAll(text).forEach {
+                val start = tr.mapping.slice(mapFrom).map(pos + 1 + offset + it.range.first)
+                tr.replaceWith(start, start + 1, node.type.schema.linebreakReplacement!!.create())
+            }
+        }
+    }
+}
+
+fun replaceLineBreaks(tr: Transform, node: Node, pos: Int, mapFrom: Int) {
+    node.forEach { child, offset, _ ->
+        if (child.type == child.type.schema.linebreakReplacement) {
+            val start = tr.mapping.slice(mapFrom).map(pos + 1 + offset)
+            tr.replaceWith(start, start + 1, node.type.schema.text("\n"))
+        }
+    }
 }
 
 fun canChangeType(doc: Node, pos: Int, type: NodeType): Boolean {
@@ -236,6 +269,9 @@ fun canSplit(doc: Node, pos: Int, depth: Int = 1, typesAfter: List<NodeBase?>? =
         val index = resolvedPos.index(d)
         if (node.type.spec.isolating == true) return false
         var rest = node.content.cutByIndex(index, node.childCount)
+        val overrideChild = typesAfter?.get(i + 1)
+        if (overrideChild != null)
+            rest = rest.replaceChild(0, overrideChild.type.create(overrideChild.attrs))
         val after = typesAfter?.get(i) ?: node
         if (after != node) rest = rest.replaceChild(0, after.type.create(after.attrs))
         if (!node.canReplace(index + 1, node.childCount) || !after.type.validContent(rest)) {
