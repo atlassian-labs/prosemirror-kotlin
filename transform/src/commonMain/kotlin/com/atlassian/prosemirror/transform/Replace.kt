@@ -93,6 +93,7 @@ class Fitter(
     val depth: Int
         get() = this.frontier.size - 1
 
+    @Suppress("ktlint:standard:property-naming")
     fun fit(): Step? {
         // As long as there's unplaced content, try to place some of it.
         // If that fails, either increase the open score of the unplaced
@@ -182,10 +183,11 @@ class Fitter(
                             )
                     ) {
                         return FittableImpl(sliceDepth, frontierDepth, parent, inject)
-                    }
-                    // In pass 2, look for a set of wrapping nodes that make
-                    // `first` fit here.
-                    else if (pass == 2 && first != null && match?.findWrapping(first.type).also { wrap = it } != null) {
+                    } else if (
+                        pass == 2 && first != null && match?.findWrapping(first.type).also { wrap = it } != null
+                    ) {
+                        // In pass 2, look for a set of wrapping nodes that make
+                        // `first` fit here.
                         return FittableImpl(sliceDepth, frontierDepth, parent, wrap = wrap)
                     }
                     // Don't continue looking further up if the parent node
@@ -360,6 +362,7 @@ class Fitter(
 
     data class CloseLevelResult(val depth: Int, val fit: Fragment, val move: ResolvedPos)
 
+    @Suppress("ktlint:standard:property-naming")
     fun close(_to: ResolvedPos): ResolvedPos? {
         val close = this.findCloseLevel(_to) ?: return null
 

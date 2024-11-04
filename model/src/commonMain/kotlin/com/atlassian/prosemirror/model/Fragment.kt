@@ -80,12 +80,7 @@ class Fragment {
     }
 
     // Extract the text between `from` and `to`. See the same method on [`Node`](#model.Node.textBetween).
-    fun textBetween(
-        from: Int,
-        to: Int,
-        blockSeparator: String?,
-        leafText: String?
-    ): String {
+    fun textBetween(from: Int, to: Int, blockSeparator: String?, leafText: String?): String {
         return if (leafText != null) {
             textBetween(from, to, blockSeparator) { leafText }
         } else {
@@ -93,12 +88,7 @@ class Fragment {
         }
     }
 
-    fun textBetween(
-        from: Int,
-        to: Int,
-        blockSeparator: String?,
-        leafText: ((leafNode: Node) -> String?)?
-    ): String {
+    fun textBetween(from: Int, to: Int, blockSeparator: String?, leafText: ((leafNode: Node) -> String?)?): String {
         var text = ""
         var first = true
         val func: (node: Node, start: Int, parent: Node?, index: Int) -> Boolean = { node, pos, parent, index ->
@@ -109,7 +99,11 @@ class Fragment {
                 node.type.spec.leafText != null -> node.type.spec.leafText!!.invoke(node)
                 else -> ""
             }
-            if (node.isBlock && (node.isLeaf && nodeText?.isNotEmpty() == true || node.isTextblock) && blockSeparator != null) {
+            if (
+                node.isBlock &&
+                (node.isLeaf && nodeText?.isNotEmpty() == true || node.isTextblock) &&
+                blockSeparator != null
+            ) {
                 if (first) {
                     first = false
                 } else {

@@ -276,7 +276,7 @@ class ResolvedPos(
             val resolveCache = doc.type.schema.resolveCache
             var cache = resolveCache[doc.nodeId]
             if (cache != null) {
-                cache.elts.firstOrNull() { it.pos == pos }?.let { return it }
+                cache.elts.firstOrNull { it.pos == pos }?.let { return it }
             } else {
                 cache = ResolveCache()
                 resolveCache[doc.nodeId] = cache

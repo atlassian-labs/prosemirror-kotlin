@@ -4,6 +4,7 @@ import com.atlassian.prosemirror.model.Node
 import com.atlassian.prosemirror.model.RangeError
 import com.atlassian.prosemirror.model.Schema
 import com.atlassian.prosemirror.model.Slice
+import kotlin.math.max
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.buildJsonObject
@@ -11,7 +12,6 @@ import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
-import kotlin.math.max
 
 // Replace a part of the document with a slice of new content.
 data class ReplaceStep(

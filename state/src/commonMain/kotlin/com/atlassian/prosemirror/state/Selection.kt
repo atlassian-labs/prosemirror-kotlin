@@ -81,7 +81,7 @@ abstract class Selection(
         return TextSelection.between(this._anchor, this._head).getBookmark()
     }
 
-//    /// Test whether the selection is the same as another selection.
+//    // Test whether the selection is the same as another selection.
 //    abstract eq(selection: Selection): boolean
 
     // Map this selection through a [mappable](#transform.Mappable)
@@ -287,6 +287,7 @@ class TextSelection(
         return containedNodes.contains(node.nodeId)
     }
 
+    @Suppress("ktlint:standard:property-naming")
     override fun map(doc: Node, mapping: Mappable): Selection {
         val _head = doc.resolve(mapping.map(this.head))
         if (!_head.parent.inlineContent) return near(_head)
@@ -339,6 +340,7 @@ class TextSelection(
         }
 
         // Create a text selection from non-resolved positions.
+        @Suppress("ktlint:standard:property-naming")
         fun create(doc: Node, anchor: Int, head: Int? = anchor, allowActions: Boolean = false): TextSelection {
             val head = head ?: anchor
             val _anchor = doc.resolve(anchor)
@@ -350,6 +352,7 @@ class TextSelection(
         // (default) or backwards (negative number) first. Will fall back to calling
         // [`Selection.near`](#state.Selection^near) when the document doesn't contain a valid text
         // position.
+        @Suppress("ktlint:standard:property-naming")
         fun between(_anchor: ResolvedPos, _head: ResolvedPos, bias: Int? = null): Selection {
             var bias = bias
             var _head = _head
@@ -416,6 +419,7 @@ class NodeSelection private constructor(
 
     constructor(_pos: ResolvedPos, allowActions: Boolean = false) : this(_pos, _pos.nodeAfter!!, allowActions)
 
+    @Suppress("ktlint:standard:property-naming")
     override fun map(doc: Node, mapping: Mappable): Selection {
         val (deleted, pos) = mapping.mapResult(this.anchor).run { deleted to pos }
         val _pos = doc.resolve(pos)
@@ -468,6 +472,7 @@ class NodeBookmark(val anchor: Int) : SelectionBookmark {
         return if (deleted) TextBookmark(pos, pos) else NodeBookmark(pos)
     }
 
+    @Suppress("ktlint:standard:property-naming")
     override fun resolve(doc: Node): Selection {
         val _pos = doc.resolve(this.anchor)
         val node = _pos.nodeAfter
@@ -522,14 +527,7 @@ object AllBookmark : SelectionBookmark {
 
 // Try to find a selection inside the given node. `pos` points at the position where the search
 // starts. When `text` is true, only return text selections.
-fun findSelectionIn(
-    doc: Node,
-    node: Node,
-    pos: Int,
-    index: Int,
-    dir: Int,
-    text: Boolean = false
-): Selection? {
+fun findSelectionIn(doc: Node, node: Node, pos: Int, index: Int, dir: Int, text: Boolean = false): Selection? {
     var pos = pos
     if (node.inlineContent) return TextSelection.create(doc, pos)
     var i = index - (if (dir > 0) 0 else 1)

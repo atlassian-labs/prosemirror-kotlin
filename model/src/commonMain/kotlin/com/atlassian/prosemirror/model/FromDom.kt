@@ -1,9 +1,9 @@
 package com.atlassian.prosemirror.model
 
-import com.fleeksoft.ksoup.nodes.Node as DOMNode
 import com.atlassian.prosemirror.model.util.contains
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Element
+import com.fleeksoft.ksoup.nodes.Node as DOMNode
 import kotlin.jvm.JvmInline
 import kotlin.math.max
 
@@ -15,7 +15,9 @@ object RegexPatterns {
 
 data class ParseOptionPosition(val node: DOMNode, val offset: Int, var pos: Int?)
 enum class PreserveWhitespace {
-    YES, NO, FULL
+    YES,
+    NO,
+    FULL
 }
 
 // These are the options recognized by the
@@ -118,7 +120,7 @@ interface BaseParseRule {
     fun hasSkip(): Boolean
 }
 
-interface ParseRule: BaseParseRule {
+interface ParseRule : BaseParseRule {
     // When true, ignore the node that matches this rule, but do parse
     // its content.
     val skip: Boolean?
@@ -129,7 +131,7 @@ interface ParseRule: BaseParseRule {
 }
 
 // Parse rule targeting a DOM element.
-interface TagParseRule: ParseRule {
+interface TagParseRule : ParseRule {
     // A CSS selector describing the kind of DOM elements to match.
     val tag: String
 
@@ -150,7 +152,6 @@ interface TagParseRule: ParseRule {
     // `false`, the rule won't match. When it returns null or undefined,
     // that is interpreted as an empty/default set of attributes.
     val getNodeAttrs: ((node: Element) -> ParseRuleMatch)?
-
 
     // For rules that produce non-leaf nodes, by default the content of
     // the DOM element is parsed as content of the node. If the child
@@ -173,7 +174,7 @@ interface TagParseRule: ParseRule {
     val preserveWhitespace: PreserveWhitespace?
 }
 
-interface ParseOptionsRule: BaseParseRule {
+interface ParseOptionsRule : BaseParseRule {
     val skip: DOMNode?
 
     // The namespace to match. Nodes are only matched when the
@@ -218,7 +219,7 @@ interface ParseOptionsRule: BaseParseRule {
 }
 
 // A parse rule targeting a style property.
-interface StyleParseRule: ParseRule {
+interface StyleParseRule : ParseRule {
     // A CSS property name to match. This rule will match inline styles
     // that list that property. May also have the form
     // `"property=value"`, in which case the rule only matches if the
@@ -404,7 +405,12 @@ class DOMParser(
     }
 
     @Suppress("ComplexCondition", "LoopWithTooManyJumpStatements")
-    internal fun matchStyle(prop: String, value: String, context: ParseContext, after: StyleParseRule?): StyleParseRule? {
+    internal fun matchStyle(
+        prop: String,
+        value: String,
+        context: ParseContext,
+        after: StyleParseRule?
+    ): StyleParseRule? {
         val start = if (after != null) {
             this.styles.indexOf(after) + 1
         } else {
@@ -723,7 +729,12 @@ class ParseContext(
         } else {
             val innerMarks = this.readStyles(current, marks)
             if (innerMarks != null) {
-                this.addElementByRule(current, rule as TagParseRule, innerMarks, ruleID?.takeIf { rule.consuming == false })
+                this.addElementByRule(
+                    current,
+                    rule as TagParseRule,
+                    innerMarks,
+                    ruleID?.takeIf { rule.consuming == false }
+                )
             }
         }
     }
@@ -815,7 +826,9 @@ class ParseContext(
             this.addElement(dom, updatedMarks, continueAfter)
         } else if (rule.getContent != null) {
             this.findInside(dom)
-            rule.getContent!!.invoke(dom, this.parser.schema)?.forEach { node, _, _ -> this.insertNode(node, updatedMarks) }
+            rule.getContent!!.invoke(dom, this.parser.schema)?.forEach { node, _, _ ->
+                this.insertNode(node, updatedMarks)
+            }
         } else {
             var contentDOM = dom
             val contentElement = rule.contentElement

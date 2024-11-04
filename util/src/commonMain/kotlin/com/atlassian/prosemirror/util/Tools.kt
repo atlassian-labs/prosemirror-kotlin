@@ -13,10 +13,7 @@ var safeMode = true
  */
 var verbose = false
 
-fun String.slice(
-    from: Int,
-    to: Int,
-): String {
+fun String.slice(from: Int, to: Int): String {
     val start = max(0, from)
     return substring(start, max(start, min(to, length)))
 }

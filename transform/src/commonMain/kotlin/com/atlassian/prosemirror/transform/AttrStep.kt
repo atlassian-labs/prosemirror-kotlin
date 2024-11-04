@@ -10,17 +10,17 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
-import kotlinx.serialization.json.put
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 
-/// Update an attribute in a specific node.
+// Update an attribute in a specific node.
 class AttrStep(
-    /// The position of the target node.
+    // The position of the target node.
     val pos: Int,
-    /// The attribute to set.
+    // The attribute to set.
     val attr: String,
     // The attribute's new value.
     val value: Any?
@@ -49,13 +49,12 @@ class AttrStep(
         return if (pos.deletedAfter) null else AttrStep(pos.pos, attr, value)
     }
 
-    override fun toJSON() =
-        buildJsonObject {
-            put("stepType", "attr")
-            put("pos", pos)
-            put("attr", attr)
-            put("value", value)
-        }
+    override fun toJSON() = buildJsonObject {
+        put("stepType", "attr")
+        put("pos", pos)
+        put("attr", attr)
+        put("value", value)
+    }
 
     companion object : StepJsonParser<AttrStep> {
         init {
@@ -63,16 +62,17 @@ class AttrStep(
         }
         override fun fromJSON(schema: Schema, json: JsonObject): AttrStep {
             val pos = json["pos"]?.jsonPrimitive?.intOrNull ?: throw RangeError("Invalid input for AttrStep.fromJSON")
-            val attr = json["attr"]?.jsonPrimitive?.contentOrNull ?: throw RangeError("Invalid input for AttrStep.fromJSON")
+            val attr = json["attr"]?.jsonPrimitive?.contentOrNull
+                ?: throw RangeError("Invalid input for AttrStep.fromJSON")
             val value = json["value"]?.jsonPrimitive?.anyOrNull()
             return AttrStep(pos, attr, value)
         }
     }
 }
 
-/// Update an attribute in the doc node.
+// Update an attribute in the doc node.
 class DocAttrStep(
-    /// The attribute to set.
+    // The attribute to set.
     val attr: String,
     // The attribute's new value.
     val value: Any?
@@ -99,12 +99,11 @@ class DocAttrStep(
         return this
     }
 
-    override fun toJSON() =
-        buildJsonObject {
-            put("stepType", "docAttr")
-            put("attr", attr)
-            put("value", value)
-        }
+    override fun toJSON() = buildJsonObject {
+        put("stepType", "docAttr")
+        put("attr", attr)
+        put("value", value)
+    }
 
     companion object : StepJsonParser<DocAttrStep> {
         init {
@@ -112,7 +111,8 @@ class DocAttrStep(
         }
 
         override fun fromJSON(schema: Schema, json: JsonObject): DocAttrStep {
-            val attr = json["attr"]?.jsonPrimitive?.contentOrNull ?: throw RangeError("Invalid input for DocAttrStep.fromJSON")
+            val attr = json["attr"]?.jsonPrimitive?.contentOrNull
+                ?: throw RangeError("Invalid input for DocAttrStep.fromJSON")
             val value = json["value"]?.jsonPrimitive?.anyOrNull()
             return DocAttrStep(attr, value)
         }

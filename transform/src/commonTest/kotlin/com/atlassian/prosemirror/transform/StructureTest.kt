@@ -40,6 +40,7 @@ fun n(name: String, vararg content: Node) = schema.nodes[name]!!.create(null, co
 
 fun t(str: String, em: Boolean = false) = schema.text(str, if (em) listOf(schema.mark("em")) else null)
 
+@Suppress("ktlint:standard:discouraged-comment-location")
 val doc = n(
     "doc", // 0
     n("head", t("Head")), // 6
