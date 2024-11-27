@@ -7,7 +7,7 @@ kotlin = "2.0.20"
 kotlinDatetime = "0.6.1"
 kotlinxJson = "1.6.3"
 ktlintPlugin = "12.1.1"
-ksoup="0.1.6-alpha1"
+ksoup="0.2.0"
 statelyConcurrency = "2.0.0"
 
 [libraries]
