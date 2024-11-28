@@ -2,43 +2,22 @@ package com.atlassian.prosemirror.model
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import assertk.assertions.isTrue
+import com.atlassian.prosemirror.testbuilder.AttributeSpecImpl
+import com.atlassian.prosemirror.testbuilder.CustomNodeBuildCompanion
+import com.atlassian.prosemirror.testbuilder.CustomNodeBuilder
 import com.atlassian.prosemirror.testbuilder.MarkSpecImpl
-import com.atlassian.prosemirror.testbuilder.NodeBuildCompanion
 import com.atlassian.prosemirror.testbuilder.NodeBuilder
 import com.atlassian.prosemirror.testbuilder.NodeSpecImpl
-import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.doc
-import kotlin.test.Test
-import com.atlassian.prosemirror.testbuilder.schema as testSchema
-import com.atlassian.prosemirror.testbuilder.AttributeSpecImpl
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder
+import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.doc
 import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.pos
+import com.atlassian.prosemirror.testbuilder.schema as testSchema
 import com.fleeksoft.ksoup.nodes.Element
 import com.fleeksoft.ksoup.nodes.Node as DOMNode
-import assertk.assertions.isTrue
 import com.fleeksoft.ksoup.nodes.TextNode
+import kotlin.test.Test
 import kotlin.test.assertFailsWith
-
-class CommentNodeBuilder(
-    pos: Int = 0,
-    marks: List<Mark> = emptyList(),
-    override val schema: Schema = testSchema
-) : NodeBuilder<CommentNodeBuilder>(pos, marks, schema) {
-    override val checked: Boolean
-        get() = false
-
-    override fun create(pos: Int, marks: List<Mark>, schema: Schema): NodeBuilder<CommentNodeBuilder> {
-        return CommentNodeBuilder(pos, marks, schema)
-    }
-}
-
-class CustomNodeBuildCompanion(schema: Schema): NodeBuildCompanion<CommentNodeBuilder>(schema) {
-    override val checked: Boolean
-        get() = false
-
-    override fun create(): CommentNodeBuilder {
-        return CommentNodeBuilder(schema = schema)
-    }
-}
 
 class DomTest {
     //region DOMParser
@@ -88,7 +67,7 @@ class DomTest {
             doc {
                 p {
                     +"a " +
-                        aWithTitle(href = "foo") { +"big "} +
+                        aWithTitle(href = "foo") { +"big " } +
                         aWithTitle(href = "bar") { +"nested" } +
                         aWithTitle(href = "foo") { +" link" }
                 }
@@ -136,6 +115,7 @@ class DomTest {
     }
 
     @Test
+    @Suppress("ktlint:standard:max-line-length")
     fun `can represent a nested blockquote`() {
         test(
             doc { blockquote { blockquote { blockquote { p { +"he said" } } } + p { +"i said" } } },
@@ -201,7 +181,7 @@ class DomTest {
             )
         )
 
-        fun NodeBuilder<CommentNodeBuilder>.comment(func: NodeBuilder<CommentNodeBuilder>.() -> Unit) =
+        fun NodeBuilder<CustomNodeBuilder>.comment(func: NodeBuilder<CustomNodeBuilder>.() -> Unit) =
             mark("comment", func)
 
         val doc = CustomNodeBuildCompanion(schemaWithComment).doc {
@@ -214,6 +194,7 @@ class DomTest {
     }
 
     @Test
+    @Suppress("ktlint:standard:max-line-length")
     fun `parses unique non-exclusive same-typed marks`() {
         val commentSchema = Schema(
             SchemaSpec(
@@ -227,11 +208,11 @@ class DomTest {
                                 getNodeAttrs = { dom ->
                                     val id = dom.attribute("data-id")?.int() ?: 10
                                     ParseRuleMatch(mapOf("id" to id))
-                                               },
+                                },
                             )
                         ),
                         excludes = "",
-                            toDOM = { mark, _ ->
+                        toDOM = { mark, _ ->
                             DOMOutputSpec.ArrayDOMOutputSpec(
                                 listOf(
                                     "span",
@@ -253,9 +234,9 @@ class DomTest {
                         commentSchema.text(
                             text = "double comment",
                             marks = listOf(
-                            commentSchema.marks["comment"]!!.create(mapOf("id" to 1)),
-                            commentSchema.marks["comment"]!!.create(mapOf("id" to 2))
-                        )
+                                commentSchema.marks["comment"]!!.create(mapOf("id" to 1)),
+                                commentSchema.marks["comment"]!!.create(mapOf("id" to 2))
+                            )
                         )
                     ),
                     marks = null
@@ -285,8 +266,7 @@ class DomTest {
         )
         val b = CustomNodeBuildCompanion(markSchema)
 
-        fun NodeBuilder<CommentNodeBuilder>.test(func: NodeBuilder<CommentNodeBuilder>.() -> Unit) =
-            mark("test", func)
+        fun NodeBuilder<CustomNodeBuilder>.test(func: NodeBuilder<CustomNodeBuilder>.() -> Unit) = mark("test", func)
 
         test(
             b.doc { p { test { +"a" + img(mapOf("src" to "x")) {} + "b" } } },
@@ -596,7 +576,13 @@ class DomTest {
         )
     }
 
-    private fun open(html: String, nodes: List<Node>, openStart: Int, openEnd: Int, options: ParseOptions = ParseOptionsImpl()) {
+    private fun open(
+        html: String,
+        nodes: List<Node>,
+        openStart: Int,
+        openEnd: Int,
+        options: ParseOptions = ParseOptionsImpl()
+    ) {
         val schema = testSchema
         val dom = doc().createElement("div")
         dom.html(html)
@@ -697,6 +683,7 @@ class DomTest {
     }
 
     @Test
+    @Suppress("ktlint:standard:max-line-length")
     fun `can parse nested mark with same type but different attrs`() {
         val markSchema = Schema(
             SchemaSpec(
@@ -737,7 +724,9 @@ class DomTest {
                                         b.schema.marks["s"]!!.create(mapOf("data-s" to "tag"))
                                     )
                                 ),
-                                b.schema.text("o", listOf(b.schema.marks["s"]!!.create(mapOf("data-s" to "style")))
+                                b.schema.text(
+                                    "o",
+                                    listOf(b.schema.marks["s"]!!.create(mapOf("data-s" to "style")))
                                 )
                             )
                         )
@@ -748,7 +737,9 @@ class DomTest {
             )
         )
 
-        dom.html("<p><span style='text-decoration: line-through;'><s style='text-decoration: line-through;'>o</s>o</span>o</p>")
+        dom.html(
+            "<p><span style='text-decoration: line-through;'><s style='text-decoration: line-through;'>o</s>o</span>o</p>"
+        )
         result = DOMParser.fromSchema(markSchema).parseSlice(dom)
         assertThat(result).isEqualTo(
             Slice(
@@ -808,8 +799,7 @@ class DomTest {
                         listOf(
                             b.schema.text("abc", listOf(b.schema.marks["color"]!!.create(mapOf("color" to "red")))),
                             b.schema.text("def", listOf(b.schema.marks["color"]!!.create(mapOf("color" to "blue")))),
-                            b.schema.text("ghi", listOf(b.schema.marks["color"]!!.create(mapOf("color" to "red")))
-                            )
+                            b.schema.text("ghi", listOf(b.schema.marks["color"]!!.create(mapOf("color" to "red"))))
                         )
                     )
                 )
@@ -855,17 +845,20 @@ class DomTest {
 
     @Test
     fun `can find a position inside an ignored node`() {
-        find("<p>hi</p><object><var></var>foo</object><p>ok</p>", doc { p { +"hi" } +"<a>" + p { +"ok" } })
+        find("<p>hi</p><object><var></var>foo</object><p>ok</p>", doc { p { +"hi" } + "<a>" + p { +"ok" } })
     }
 
     @Test
     fun `can find a position between nodes`() {
-        find("<ul><li>foo</li><var></var><li>bar</li></ul>", doc { ul { li { p { +"foo" } } + "<a>" + li { p { +"bar" } } } })
+        find(
+            "<ul><li>foo</li><var></var><li>bar</li></ul>",
+            doc { ul { li { p { +"foo" } } + "<a>" + li { p { +"bar" } } } }
+        )
     }
 
     @Test
     fun `can find a position at the start of the document`() {
-        find("<var></var><p>hi</p>", doc { + "<a>" + p { +"hi" }})
+        find("<var></var><p>hi</p>", doc { +"<a>" + p { +"hi" } })
     }
 
     @Test
@@ -896,7 +889,8 @@ class DomTest {
 
     private fun contextParser(context: String) = DOMParser(
         testSchema,
-        listOf(TagParseRuleImpl(tag = "foo", node = "horizontal_rule", context = context)) + DOMParser.schemaRules(testSchema)
+        listOf(TagParseRuleImpl(tag = "foo", node = "horizontal_rule", context = context)) +
+            DOMParser.schemaRules(testSchema)
     )
 
     private fun domFrom(html: String) = doc().createElement("div").html(html)
@@ -933,7 +927,7 @@ class DomTest {
         val result = contextParser("blockquote//list_item/").parse(
             domFrom("<foo></foo><blockquote><foo></foo><ol><foo></foo><li><p>a</p><foo></foo></li></ol></blockquote>")
         )
-        val expected = doc { blockquote { ol { li { p { +"a"} + hr {} } } }}
+        val expected = doc { blockquote { ol { li { p { +"a" } + hr {} } } } }
         assertThat(result).isEqualTo(expected)
     }
 
@@ -992,7 +986,8 @@ class DomTest {
     fun `supports non-consuming node rules`() {
         val parser = DOMParser(
             testSchema,
-            listOf(TagParseRuleImpl(tag = "ol", consuming = false, node = "blockquote")) + DOMParser.schemaRules(testSchema)
+            listOf(TagParseRuleImpl(tag = "ol", consuming = false, node = "blockquote")) +
+                DOMParser.schemaRules(testSchema)
         )
         val result = parser.parse(domFrom("<ol><p>one</p></ol>"))
         val expected = doc { blockquote { ol { li { p { +"one" } } } } }
@@ -1077,7 +1072,10 @@ class DomTest {
             SchemaSpec(
                 marks = mapOf(
                     "em" to MarkSpecImpl(
-                        parseDOM = listOf(TagParseRuleImpl(tag = "i", priority = 40), TagParseRuleImpl(tag = "em", priority = 70))
+                        parseDOM = listOf(
+                            TagParseRuleImpl(tag = "i", priority = 40),
+                            TagParseRuleImpl(tag = "em", priority = 70)
+                        )
                     )
                 ),
                 nodes = mapOf(
@@ -1186,6 +1184,7 @@ class DomTest {
     }
 
     @Test
+    @Suppress("ktlint:standard:max-line-length")
     fun `can render marks with complex structure`() {
         val deepEm = DOMSerializer(
             serializer.nodes,
@@ -1207,7 +1206,9 @@ class DomTest {
             )
         )
         val node = deepEm.serializeNode(
-            doc { p { strong { +"foo" + code { +"bar" } + em { code { +"baz" } } } + em { +"quux" } + "xyz" } }.firstChild!!,
+            doc {
+                p { strong { +"foo" + code { +"bar" } + em { code { +"baz" } } } + em { +"quux" } + "xyz" }
+            }.firstChild!!,
             doc()
         ) as Element
         val expected = "<strong>foo<code>bar</code></strong><em><i data-emphasis=\"true\"><strong><code>baz</code></strong>quux</i></em>xyz"

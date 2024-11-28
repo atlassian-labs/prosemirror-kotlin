@@ -15,7 +15,7 @@ kotlin {
   }
 
   // iOS
-  val xcframeworkName = "test-builder"
+  val xcframeworkName = project.name
   val xcf = XCFramework(xcframeworkName)
   listOf(
     iosX64(),
@@ -44,4 +44,3 @@ kotlin {
 
 description = "prosemirror-test-builder"
 ext.set("pomDescription", "Document building utilities for writing tests")
-ext.set("srcUrl", "https://github.com/atlassian-labs/prosemirror-kotlin/tree/main/test-builder/")

@@ -1,9 +1,9 @@
 package com.atlassian.prosemirror.model
 
+import com.atlassian.prosemirror.model.util.mutableWeakMapOf
 import com.fleeksoft.ksoup.nodes.Document
 import com.fleeksoft.ksoup.nodes.Element
 import com.fleeksoft.ksoup.nodes.Node as DOMNode
-import com.atlassian.prosemirror.model.util.mutableWeakMapOf
 import com.fleeksoft.ksoup.nodes.TextNode
 import com.fleeksoft.ksoup.parser.ParseSettings
 import com.fleeksoft.ksoup.parser.Tag
@@ -239,10 +239,14 @@ fun renderSpec(
         return structure
     }
     structure as DOMOutputSpec.ArrayDOMOutputSpec
-    var tagName = structure.content.first() as? String ?: throw RangeError("Invalid array passed to renderSpec")
+    var tagName = structure.content.first() as? String
+        ?: throw RangeError("Invalid array passed to renderSpec")
     val suspicious = blockArraysIn?.let { suspiciousAttributes(it) }
     if (blockArraysIn != null && suspicious != null && suspicious.contains(structure.content)) {
-        throw RangeError("Using an array from an attribute object as a DOM spec. This may be an attempted cross site scripting attack.")
+        throw RangeError(
+            "Using an array from an attribute object as a DOM spec. " +
+                "This may be an attempted cross site scripting attack."
+        )
     }
     val space = tagName.indexOf(" ")
     if (space > 0) {

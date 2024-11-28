@@ -16,8 +16,7 @@ import kotlin.test.Test
 
 val em_ = schema.mark("em")
 val strong = schema.mark("strong")
-fun link(href: String, title: String? = null) =
-    schema.mark("link", mapOf("href" to href, "title" to title))
+fun link(href: String, title: String? = null) = schema.mark("link", mapOf("href" to href, "title" to title))
 
 val code = schema.mark("code")
 
@@ -193,12 +192,16 @@ class MarkTest {
 
     @Test
     fun `doesn't add anything when another mark excludes the added mark`() {
-        assertThat(Mark.sameSet(customEm.addToSet(listOf(remark1, customStrong)), listOf(remark1, customStrong))).isTrue()
+        assertThat(
+            Mark.sameSet(customEm.addToSet(listOf(remark1, customStrong)), listOf(remark1, customStrong))
+        ).isTrue()
     }
 
     @Test
     fun `remove excluded marks when adding a mark`() {
-        assertThat(Mark.sameSet(customStrong.addToSet(listOf(remark1, customEm)), listOf(remark1, customStrong))).isTrue()
+        assertThat(
+            Mark.sameSet(customStrong.addToSet(listOf(remark1, customEm)), listOf(remark1, customStrong))
+        ).isTrue()
     }
 
     @Test

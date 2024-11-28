@@ -1,6 +1,5 @@
 package com.atlassian.prosemirror.model
 
-import com.atlassian.prosemirror.util.verbose
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.int

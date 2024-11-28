@@ -15,7 +15,7 @@ kotlin {
   }
 
   // iOS
-  val xcframeworkName = "state"
+  val xcframeworkName = project.name
   val xcf = XCFramework(xcframeworkName)
   listOf(
     iosX64(),
@@ -48,4 +48,3 @@ kotlin {
 
 description = "prosemirror-state"
 ext.set("pomDescription", "ProseMirror editor state")
-ext.set("srcUrl", "https://github.com/atlassian-labs/prosemirror-kotlin/tree/main/state/")

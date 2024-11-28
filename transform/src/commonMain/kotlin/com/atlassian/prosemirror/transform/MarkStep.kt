@@ -6,6 +6,8 @@ import com.atlassian.prosemirror.model.Node
 import com.atlassian.prosemirror.model.RangeError
 import com.atlassian.prosemirror.model.Schema
 import com.atlassian.prosemirror.model.Slice
+import kotlin.math.max
+import kotlin.math.min
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.int
@@ -13,8 +15,6 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
-import kotlin.math.max
-import kotlin.math.min
 
 fun mapFragment(fragment: Fragment, f: (child: Node, parent: Node, i: Int) -> Node, parent: Node): Fragment {
     val mapped = mutableListOf<Node>()
@@ -174,6 +174,122 @@ class RemoveMarkStep(
                 throw RangeError("Invalid input for RemoveMarkStep.fromJSON")
             }
             return RemoveMarkStep(from, to, schema.markFromJSON(json["mark"]?.jsonObject))
+        }
+    }
+}
+
+// Add a mark to a specific node.
+class AddNodeMarkStep(
+    // The position of the target node.
+    val pos: Int,
+    // The mark to add.
+    val mark: Mark
+) : Step() {
+    override val from: Int
+        get() = 0
+    override val to: Int
+        get() = 0
+
+    override fun apply(doc: Node): StepResult {
+        val node = doc.nodeAt(pos) ?: return StepResult.fail("No node at mark step's position")
+        val updated = node.type.create(node.attrs, null as Fragment?, mark.addToSet(node.marks))
+        return StepResult.fromReplace(
+            doc,
+            pos,
+            pos + 1,
+            Slice(Fragment.from(updated), 0, if (node.isLeaf) 0 else 1)
+        )
+    }
+
+    override fun invert(doc: Node): Step {
+        val node = doc.nodeAt(pos)
+        if (node != null) {
+            val newSet = mark.addToSet(node.marks)
+            if (newSet.size == node.marks.size) {
+                for (i in node.marks.indices) {
+                    if (!node.marks[i].isInSet(newSet)) {
+                        return AddNodeMarkStep(pos, node.marks[i])
+                    }
+                }
+                return AddNodeMarkStep(pos, mark)
+            }
+        }
+        return RemoveNodeMarkStep(pos, mark)
+    }
+
+    override fun map(mapping: Mappable): Step? {
+        val pos = mapping.mapResult(this.pos, 1)
+        return if (pos.deletedAfter) null else AddNodeMarkStep(pos.pos, this.mark)
+    }
+
+    override fun toJSON() = buildJsonObject {
+        put("stepType", "addNodeMark")
+        put("pos", pos)
+        put("mark", mark.toJSON())
+    }
+
+    companion object : StepJsonParser<AddNodeMarkStep> {
+        init {
+            jsonID("addNodeMark", this)
+        }
+
+        override fun fromJSON(schema: Schema, json: JsonObject): AddNodeMarkStep {
+            val pos = json.get("pos")?.jsonPrimitive?.intOrNull
+                ?: throw RangeError("Invalid input for AddNodeMarkStep.fromJSON")
+            return AddNodeMarkStep(pos, schema.markFromJSON(json["mark"]?.jsonObject))
+        }
+    }
+}
+
+// Remove a mark from a specific node.
+class RemoveNodeMarkStep(
+    // The position of the target node.
+    val pos: Int,
+    // The mark to remove.
+    val mark: Mark
+) : Step() {
+    override val from: Int
+        get() = 0
+    override val to: Int
+        get() = 0
+
+    override fun apply(doc: Node): StepResult {
+        val node = doc.nodeAt(pos) ?: return StepResult.fail("No node at mark step's position")
+        val updated = node.type.create(node.attrs, null as Fragment?, mark.removeFromSet(node.marks))
+        return StepResult.fromReplace(
+            doc,
+            pos,
+            pos + 1,
+            Slice(Fragment.from(updated), 0, if (node.isLeaf) 0 else 1)
+        )
+    }
+
+    override fun invert(doc: Node): Step {
+        val node = doc.nodeAt(pos)
+        if (node == null || !mark.isInSet(node.marks)) return this
+        return AddNodeMarkStep(pos, mark)
+    }
+
+    override fun map(mapping: Mappable): Step? {
+        val pos = mapping.mapResult(this.pos, 1)
+        return if (pos.deletedAfter) null else RemoveNodeMarkStep(pos.pos, this.mark)
+    }
+
+    override fun toJSON() = buildJsonObject {
+        put("stepType", "removeNodeMark")
+        put("pos", pos)
+        put("mark", mark.toJSON())
+    }
+
+    companion object : StepJsonParser<RemoveNodeMarkStep> {
+        init {
+            jsonID("removeNodeMark", this)
+        }
+
+        override fun fromJSON(schema: Schema, json: JsonObject): RemoveNodeMarkStep {
+            val pos = json.get("pos")?.jsonPrimitive?.intOrNull
+                ?: throw RangeError("Invalid input for RemoveNodeMarkStep.fromJSON")
+            return RemoveNodeMarkStep(pos, schema.markFromJSON(json["mark"]?.jsonObject))
         }
     }
 }

@@ -41,63 +41,63 @@ fun mk(vararg args: List<Int>, mirror: Pair<Int, Int>? = null): Mapping {
 
 class MappingTest {
     @Test
-    fun `can map through a single insertion`() =
-        testMapping(mk(listOf(2, 0, 4)), Case(0, 0), Case(2, 6), Case(2, 2, -1), Case(3, 7))
+    fun `can map through a single insertion`() = testMapping(
+        mk(listOf(2, 0, 4)),
+        Case(0, 0),
+        Case(2, 6),
+        Case(2, 2, -1),
+        Case(3, 7)
+    )
 
     @Test
-    fun `can map through a single deletion`() =
-        testMapping(
-            mk(listOf(2, 4, 0)),
-            Case(0, 0),
-            Case(2, 2, -1),
-            Case(3, 2, 1, true),
-            Case(6, 2, 1),
-            Case(6, 2, -1, true),
-            Case(7, 3)
-        )
+    fun `can map through a single deletion`() = testMapping(
+        mk(listOf(2, 4, 0)),
+        Case(0, 0),
+        Case(2, 2, -1),
+        Case(3, 2, 1, true),
+        Case(6, 2, 1),
+        Case(6, 2, -1, true),
+        Case(7, 3)
+    )
 
     @Test
-    fun `can map through a single replace`() =
-        testMapping(
-            mk(listOf(2, 4, 4)),
-            Case(0, 0),
-            Case(2, 2, 1),
-            Case(4, 6, 1, true),
-            Case(4, 2, -1, true),
-            Case(6, 6, -1),
-            Case(8, 8)
-        )
+    fun `can map through a single replace`() = testMapping(
+        mk(listOf(2, 4, 4)),
+        Case(0, 0),
+        Case(2, 2, 1),
+        Case(4, 6, 1, true),
+        Case(4, 2, -1, true),
+        Case(6, 6, -1),
+        Case(8, 8)
+    )
 
     @Test
-    fun `can map through a mirrorred delete-insert`() =
-        testMapping(
-            mk(listOf(2, 4, 0), listOf(2, 0, 4), mirror = Pair(0, 1)),
-            Case(0, 0),
-            Case(2, 2),
-            Case(4, 4),
-            Case(6, 6),
-            Case(7, 7)
-        )
+    fun `can map through a mirrorred delete-insert`() = testMapping(
+        mk(listOf(2, 4, 0), listOf(2, 0, 4), mirror = Pair(0, 1)),
+        Case(0, 0),
+        Case(2, 2),
+        Case(4, 4),
+        Case(6, 6),
+        Case(7, 7)
+    )
 
     @Test
-    fun `cap map through a mirrorred insert-delete`() =
-        testMapping(
-            mk(listOf(2, 0, 4), listOf(2, 4, 0), mirror = Pair(0, 1)),
-            Case(0, 0),
-            Case(2, 2),
-            Case(3, 3)
-        )
+    fun `cap map through a mirrorred insert-delete`() = testMapping(
+        mk(listOf(2, 0, 4), listOf(2, 4, 0), mirror = Pair(0, 1)),
+        Case(0, 0),
+        Case(2, 2),
+        Case(3, 3)
+    )
 
     @Test
-    fun `can map through an delete-insert with an insert in between`() =
-        testMapping(
-            mk(listOf(2, 4, 0), listOf(1, 0, 1), listOf(3, 0, 4), mirror = Pair(0, 2)),
-            Case(0, 0),
-            Case(1, 2),
-            Case(4, 5),
-            Case(6, 7),
-            Case(7, 8)
-        )
+    fun `can map through an delete-insert with an insert in between`() = testMapping(
+        mk(listOf(2, 4, 0), listOf(1, 0, 1), listOf(3, 0, 4), mirror = Pair(0, 2)),
+        Case(0, 0),
+        Case(1, 2),
+        Case(4, 5),
+        Case(6, 7),
+        Case(7, 8)
+    )
 
     @Test
     fun `assigns the correct deleted flags when deletions happen before`() {

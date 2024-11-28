@@ -8,6 +8,7 @@ import com.atlassian.prosemirror.model.NodeType
 import com.atlassian.prosemirror.model.ResolvedPos
 import com.atlassian.prosemirror.model.Slice
 import com.atlassian.prosemirror.model.util.resolveSafe
+import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
@@ -92,6 +93,7 @@ class Fitter(
     val depth: Int
         get() = this.frontier.size - 1
 
+    @Suppress("ktlint:standard:property-naming")
     fun fit(): Step? {
         // As long as there's unplaced content, try to place some of it.
         // If that fails, either increase the open score of the unplaced
@@ -136,10 +138,26 @@ class Fitter(
     // depths, one for the slice and one for the frontier.
     @Suppress("NestedBlockDepth", "ComplexMethod", "ComplexCondition")
     fun findFittable(): Fittable? {
+        var startDepth = this.unplaced.openStart
+        var cur = this.unplaced.content
+        var d = 0
+        var openEnd = this.unplaced.openEnd
+        while (d < startDepth) {
+            val node = cur.firstChild!!
+            if (cur.childCount > 1) openEnd = 0
+            if (node.type.spec.isolating == true && openEnd <= d) {
+                startDepth = d
+                break
+            }
+            cur = node.content
+            d++
+        }
+
         // Only try wrapping nodes (pass 2) after finding a place without
         // wrapping failed.
         for (pass in 1..2) {
-            for (sliceDepth in this.unplaced.openStart downTo 0) {
+            val start = if (pass == 1) startDepth else this.unplaced.openStart
+            for (sliceDepth in start downTo 0) {
                 var parent: Node? = null
                 val fragment = if (sliceDepth != 0) {
                     parent = contentAt(this.unplaced.content, sliceDepth - 1).firstChild!!
@@ -165,10 +183,11 @@ class Fitter(
                             )
                     ) {
                         return FittableImpl(sliceDepth, frontierDepth, parent, inject)
-                    }
-                    // In pass 2, look for a set of wrapping nodes that make
-                    // `first` fit here.
-                    else if (pass == 2 && first != null && match?.findWrapping(first.type).also { wrap = it } != null) {
+                    } else if (
+                        pass == 2 && first != null && match?.findWrapping(first.type).also { wrap = it } != null
+                    ) {
+                        // In pass 2, look for a set of wrapping nodes that make
+                        // `first` fit here.
                         return FittableImpl(sliceDepth, frontierDepth, parent, wrap = wrap)
                     }
                     // Don't continue looking further up if the parent node
@@ -343,6 +362,7 @@ class Fitter(
 
     data class CloseLevelResult(val depth: Int, val fit: Fragment, val move: ResolvedPos)
 
+    @Suppress("ktlint:standard:property-naming")
     fun close(_to: ResolvedPos): ResolvedPos? {
         val close = this.findCloseLevel(_to) ?: return null
 
@@ -472,26 +492,26 @@ fun replaceRange(tr: Transform, from: Int, to: Int, slice: Slice): Transform? {
     // target depth, starting with the preferred depths.
     val preferredTargetIndex = targetDepths.indexOf(preferredTarget)
 
-    val leftNodes = mutableListOf<Node>()
+    val leftNodes = mutableListOf<Node?>()
     var preferredDepth = slice.openStart
     var content = slice.content
     var i = 0
     while (true) {
-        val node = content.firstChild!!
+        val node = content.firstChild
         leftNodes.add(node)
         if (i == slice.openStart) break
-        content = node.content
+        content = node!!.content
         i++
     }
 
     // Back up preferredDepth to cover defining textblocks directly
     // above it, possibly skipping a non-defining textblock.
     for (d in preferredDepth - 1 downTo 0) {
-        val type = leftNodes[d].type
-        val def = definesContent(type)
-        if (def && _from.node(preferredTargetIndex).type != type) {
+        val leftNode = leftNodes[d] ?: continue
+        val def = definesContent(leftNode.type)
+        if (def && !leftNode.sameMarkup(_from.node(abs(preferredTarget) - 1))) {
             preferredDepth = d
-        } else if (def || !type.isTextblock) {
+        } else if (def || !leftNode.type.isTextblock) {
             break
         }
     }

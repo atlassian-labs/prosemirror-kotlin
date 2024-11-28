@@ -38,7 +38,7 @@ abstract class NodeBuildCompanion<T : NodeBuilder<T>>(
 
     fun tags() = tags.keys.toList()
 
-    fun tags(node: Node) = tagsByNode[node]!!.keys.toList()
+    fun tags(node: Node) = tagsByNode[node]?.keys?.toList() ?: emptyList()
 
     abstract fun create(): NodeBuilder<T>
 

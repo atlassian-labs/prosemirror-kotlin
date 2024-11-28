@@ -41,26 +41,34 @@ class RopeSequenceTest {
     fun checkForEach(rope: RopeSequence<Int>, name: String, start: Int, end: Int, offset: Int) {
         var cur = start
         rope.forEach({ elt, i ->
-            assertThat(elt, displayActual = { "Proper element at $cur in $name. Expected ${cur + offset} but was $it." })
-                .isEqualTo(cur + offset)
+            assertThat(
+                elt,
+                displayActual = { "Proper element at $cur in $name. Expected ${cur + offset} but was $it." }
+            ).isEqualTo(cur + offset)
             assertThat(cur, displayActual = { "Accurate index passed. Expected $i but was $it." }).isEqualTo(i)
             cur += 1
             true
         }, start, end)
-        assertThat(cur, displayActual = { "Enough elements iterated in $name. Expected $end but was $it." }).isEqualTo(end)
+        assertThat(
+            cur,
+            displayActual = { "Enough elements iterated in $name. Expected $end but was $it." }
+        ).isEqualTo(end)
         rope.forEach({ elt, i ->
             cur -= 1
             assertThat(
                 elt,
-                displayActual = { "Proper element during reverse iter at $cur in $name. Expected ${cur + offset} but was $it." }
-            )
-            .isEqualTo(cur + offset)
+                displayActual = {
+                    "Proper element during reverse iter at $cur in $name. Expected ${cur + offset} but was $it."
+                }
+            ).isEqualTo(cur + offset)
             assertThat(cur, displayActual = { "Accurate index passed by reverse iter. Expected $i but was $it." })
                 .isEqualTo(i)
             true
         }, end, start)
-        assertThat(cur, displayActual = { "Enough elements reverse-iterated in $name -- $cur $start. Expected $start but was $it." })
-            .isEqualTo(start)
+        assertThat(
+            cur,
+            displayActual = { "Enough elements reverse-iterated in $name -- $cur $start. Expected $start but was $it." }
+        ).isEqualTo(start)
     }
 
     fun check(rope: RopeSequence<Int>, size: Int, name: String, offset: Int = 0) {
@@ -101,9 +109,12 @@ class RopeSequenceTest {
     fun checkSmalAndEmpty() {
         val small = RopeSequence.from(listOf(1, 2, 4))
         val empty = RopeSequence.empty<Int>()
-        assertThat(small.append(empty), displayActual = { "ID append. Expected $small but was $it." }).isEqualTo(small)
-        assertThat(small.prepend(empty), displayActual = { "ID prepend. Expected $small but was $it." }).isEqualTo(small)
-        assertThat(empty.append(empty), displayActual = { "Empty append. Expected $empty but was $it." }).isEqualTo(empty)
+        assertThat(small.append(empty), displayActual = { "ID append. Expected $small but was $it." })
+            .isEqualTo(small)
+        assertThat(small.prepend(empty), displayActual = { "ID prepend. Expected $small but was $it." })
+            .isEqualTo(small)
+        assertThat(empty.append(empty), displayActual = { "Empty append. Expected $empty but was $it." })
+            .isEqualTo(empty)
         assertThat(small.slice(0, 0), displayActual = { "Empty slice. Expected $empty but was $it." }).isEqualTo(empty)
 
         var sum = 0

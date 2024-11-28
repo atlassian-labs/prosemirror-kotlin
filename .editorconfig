@@ -18,23 +18,19 @@ charset = utf-8
 trim_trailing_whitespace = true
 insert_final_newline = true
 
-# To override IDEA default 120 columns
-max_line_length = 160
-ij_visual_guides = 140, 160
+max_line_length = 120
 
 [*.md]
 trim_trailing_whitespace = false
 
-
 [*.{kt,java}]
 ij_kotlin_imports_layout = *
-indent_size = 4
 ij_kotlin_name_count_to_use_star_import = 999
 ij_kotlin_name_count_to_use_star_import_for_members = 999
 ij_java_class_count_to_use_import_on_demand = 999
 ktlint_standard_trailing-comma-on-call-site=disabled
 ktlint_standard_trailing-comma-on-declaration-site=disabled
-ktlint_function_signature_wrapping_rule_always_with_minimum_parameters = 3
+ktlint_code_style = android_studio
 
 [*.kts]
 ij_kotlin_imports_layout = *

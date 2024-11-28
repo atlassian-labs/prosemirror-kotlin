@@ -15,7 +15,7 @@ kotlin {
   }
 
   // iOS
-  val xcframeworkName = "history"
+  val xcframeworkName = project.name
   val xcf = XCFramework(xcframeworkName)
   listOf(
     iosX64(),
@@ -48,4 +48,3 @@ kotlin {
 
 description = "prosemirror-history"
 ext.set("pomDescription", "Undo history for ProseMirror")
-ext.set("srcUrl", "https://github.com/atlassian-labs/prosemirror-kotlin/tree/main/history/")

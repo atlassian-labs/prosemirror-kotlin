@@ -2,6 +2,7 @@ import {Slice, Fragment, NodeRange, NodeType, Node, Mark, Attrs, ContentMatch} f
 
 import {Transform} from "./transform"
 import {ReplaceStep, ReplaceAroundStep} from "./replace_step"
+import {clearIncompatible} from "./mark"
 
 function canCut(node: Node, start: number, end: number) {
   return (start == 0 || node.canReplace(start, node.childCount)) &&
@@ -116,13 +117,42 @@ export function setBlockType(tr: Transform, from: number, to: number, type: Node
   let mapFrom = tr.steps.length
   tr.doc.nodesBetween(from, to, (node, pos) => {
     if (node.isTextblock && !node.hasMarkup(type, attrs) && canChangeType(tr.doc, tr.mapping.slice(mapFrom).map(pos), type)) {
+      let convertNewlines = null
+      if (type.schema.linebreakReplacement) {
+        let pre = type.whitespace == "pre", supportLinebreak = !!type.contentMatch.matchType(type.schema.linebreakReplacement)
+        if (pre && !supportLinebreak) convertNewlines = false
+        else if (!pre && supportLinebreak) convertNewlines = true
+      }
       // Ensure all markup that isn't allowed in the new node type is cleared
-      tr.clearIncompatible(tr.mapping.slice(mapFrom).map(pos, 1), type)
+      if (convertNewlines === false) replaceLinebreaks(tr, node, pos, mapFrom)
+      clearIncompatible(tr, tr.mapping.slice(mapFrom).map(pos, 1), type, undefined, convertNewlines === null)
       let mapping = tr.mapping.slice(mapFrom)
       let startM = mapping.map(pos, 1), endM = mapping.map(pos + node.nodeSize, 1)
       tr.step(new ReplaceAroundStep(startM, endM, startM + 1, endM - 1,
                                       new Slice(Fragment.from(type.create(attrs, null, node.marks)), 0, 0), 1, true))
+      if (convertNewlines === true) replaceNewlines(tr, node, pos, mapFrom)
       return false
+    }
+  })
+}
+
+function replaceNewlines(tr: Transform, node: Node, pos: number, mapFrom: number) {
+  node.forEach((child, offset) => {
+    if (child.isText) {
+      let m, newline = /\r?\n|\r/g
+      while (m = newline.exec(child.text!)) {
+        let start = tr.mapping.slice(mapFrom).map(pos + 1 + offset + m.index)
+        tr.replaceWith(start, start + 1, node.type.schema.linebreakReplacement!.create())
+      }
+    }
+  })
+}
+
+function replaceLinebreaks(tr: Transform, node: Node, pos: number, mapFrom: number) {
+  node.forEach((child, offset) => {
+    if (child.type == child.type.schema.linebreakReplacement) {
+      let start = tr.mapping.slice(mapFrom).map(pos + 1 + offset)
+      tr.replaceWith(start, start + 1, node.type.schema.text("\n"))
     }
   })
 }
@@ -135,7 +165,7 @@ function canChangeType(doc: Node, pos: number, type: NodeType) {
 /// Change the type, attributes, and/or marks of the node at `pos`.
 /// When `type` isn't given, the existing node type is preserved,
 export function setNodeMarkup(tr: Transform, pos: number, type: NodeType | undefined | null,
-                              attrs: Attrs | null, marks: readonly Mark[]) {
+                              attrs: Attrs | null, marks: readonly Mark[] | undefined) {
   let node = tr.doc.nodeAt(pos)
   if (!node) throw new RangeError("No node at given position")
   if (!type) type = node.type
@@ -163,8 +193,10 @@ export function canSplit(doc: Node, pos: number, depth = 1,
     let node = $pos.node(d), index = $pos.index(d)
     if (node.type.spec.isolating) return false
     let rest = node.content.cutByIndex(index, node.childCount)
+    let overrideChild = typesAfter && typesAfter[i + 1]
+    if (overrideChild)
+      rest = rest.replaceChild(0, overrideChild.type.create(overrideChild.attrs))
     let after = (typesAfter && typesAfter[i]) || node
-    if (after != node) rest = rest.replaceChild(0, after.type.create(after.attrs))
     if (!node.canReplace(index + 1, node.childCount) || !after.type.validContent(rest))
       return false
   }

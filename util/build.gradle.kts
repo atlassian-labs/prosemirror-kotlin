@@ -15,7 +15,7 @@ kotlin {
   }
 
   // iOS
-  val xcframeworkName = "util"
+  val xcframeworkName = project.name
   val xcf = XCFramework(xcframeworkName)
   listOf(
     iosX64(),
@@ -43,4 +43,3 @@ kotlin {
 
 description = "prosemirror-util"
 ext.set("pomDescription", "ProseMirror utilities")
-ext.set("srcUrl", "https://github.com/atlassian-labs/prosemirror-kotlin/tree/main/util/")

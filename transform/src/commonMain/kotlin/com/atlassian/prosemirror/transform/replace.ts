@@ -110,10 +110,21 @@ class Fitter {
   // content that can be moved somewhere on the frontier. Returns two
   // depths, one for the slice and one for the frontier.
   findFittable(): Fittable | undefined {
+    let startDepth = this.unplaced.openStart
+    for (let cur = this.unplaced.content, d = 0, openEnd = this.unplaced.openEnd; d < startDepth; d++) {
+      let node = cur.firstChild!
+      if (cur.childCount > 1) openEnd = 0
+      if (node.type.spec.isolating && openEnd <= d) {
+        startDepth = d
+        break
+      }
+      cur = node.content
+    }
+
     // Only try wrapping nodes (pass 2) after finding a place without
     // wrapping failed.
     for (let pass = 1; pass <= 2; pass++) {
-      for (let sliceDepth = this.unplaced.openStart; sliceDepth >= 0; sliceDepth--) {
+      for (let sliceDepth = pass == 1 ? startDepth : this.unplaced.openStart; sliceDepth >= 0; sliceDepth--) {
         let fragment, parent = null
         if (sliceDepth) {
           parent = contentAt(this.unplaced.content, sliceDepth - 1).firstChild
@@ -348,7 +359,7 @@ export function replaceRange(tr: Transform, from: number, to: number, slice: Sli
   // target depth, starting with the preferred depths.
   let preferredTargetIndex = targetDepths.indexOf(preferredTarget)
 
-  let leftNodes = [], preferredDepth = slice.openStart
+  let leftNodes: Node[] = [], preferredDepth = slice.openStart
   for (let content = slice.content, i = 0;; i++) {
     let node = content.firstChild!
     leftNodes.push(node)
@@ -359,9 +370,9 @@ export function replaceRange(tr: Transform, from: number, to: number, slice: Sli
   // Back up preferredDepth to cover defining textblocks directly
   // above it, possibly skipping a non-defining textblock.
   for (let d = preferredDepth - 1; d >= 0; d--) {
-    let type = leftNodes[d].type, def = definesContent(type)
-    if (def && $from.node(preferredTargetIndex).type != type) preferredDepth = d
-    else if (def || !type.isTextblock) break
+    let leftNode = leftNodes[d], def = definesContent(leftNode.type)
+    if (def && !leftNode.sameMarkup($from.node(Math.abs(preferredTarget) - 1))) preferredDepth = d
+    else if (def || !leftNode.type.isTextblock) break
   }
 
   for (let j = slice.openStart; j >= 0; j--) {
@@ -432,7 +443,7 @@ export function deleteRange(tr: Transform, from: number, to: number) {
 // Returns an array of all depths for which $from - $to spans the
 // whole content of the nodes at that depth.
 function coveredDepths($from: ResolvedPos, $to: ResolvedPos) {
-  let result = [], minDepth = Math.min($from.depth, $to.depth)
+  let result: number[] = [], minDepth = Math.min($from.depth, $to.depth)
   for (let d = minDepth; d >= 0; d--) {
     let start = $from.start(d)
     if (start < $from.pos - ($from.depth - d) ||

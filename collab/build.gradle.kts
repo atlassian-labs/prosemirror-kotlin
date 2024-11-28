@@ -15,7 +15,7 @@ kotlin {
   }
 
   // iOS
-  val xcframeworkName = "collab"
+  val xcframeworkName = project.name
   val xcf = XCFramework(xcframeworkName)
   listOf(
     iosX64(),
@@ -37,6 +37,7 @@ kotlin {
       implementation(project(":transform"))
     }
     commonTest.dependencies {
+      implementation(project(":history"))
       implementation(project(":test-builder"))
       implementation(libs.kotlin.test)
       implementation(libs.test.assertk)
@@ -44,6 +45,5 @@ kotlin {
   }
 }
 
-description = "prosemirror-state"
+description = "prosemirror-collab"
 ext.set("pomDescription", "Collaborative editing for ProseMirror")
-ext.set("srcUrl", "https://github.com/atlassian-labs/prosemirror-kotlin/tree/main/collab/")

@@ -64,8 +64,7 @@ fun rebase_(doc: Node, vararg clients: ((tr: Transform) -> Transform), expected:
         .forEach { transforms -> runRebase(transforms, expected) }
 }
 
-fun type(tr: Transform, pos: Int, text: String) =
-    tr.replaceWith(pos, pos, schema.text(text))
+fun type(tr: Transform, pos: Int, text: String) = tr.replaceWith(pos, pos, schema.text(text))
 
 fun wrap(tr: Transform, pos: Int, type: String): Transform {
     val resolvedPos = tr.doc.resolve(pos)

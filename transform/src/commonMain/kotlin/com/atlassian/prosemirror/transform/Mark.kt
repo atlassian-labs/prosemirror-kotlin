@@ -7,6 +7,7 @@ import com.atlassian.prosemirror.model.MarkType
 import com.atlassian.prosemirror.model.Node
 import com.atlassian.prosemirror.model.NodeType
 import com.atlassian.prosemirror.model.Slice
+import com.atlassian.prosemirror.model.Whitespace
 import kotlin.math.max
 import kotlin.math.min
 
@@ -126,23 +127,44 @@ fun removeMark(tr: Transform, from: Int, to: Int, mark: MarkType?) {
     }
 }
 
-fun clearIncompatible(tr: Transform, pos: Int, parentType: NodeType, match: ContentMatch? = parentType.contentMatch) {
+fun clearIncompatible(
+    tr: Transform,
+    pos: Int,
+    parentType: NodeType,
+    match: ContentMatch? = parentType.contentMatch,
+    clearNewlines: Boolean = true
+) {
     var match = match ?: parentType.contentMatch
     val node = tr.doc.nodeAt(pos)!!
-    val delSteps = mutableListOf<Step>()
+    val replSteps = mutableListOf<Step>()
     var cur = pos + 1
     for (i in 0 until node.childCount) {
         val child = node.child(i)
         val end = cur + child.nodeSize
         val allowed = match.matchType(child.type)
         if (allowed == null) {
-            delSteps.add(ReplaceStep(cur, end, Slice.empty))
+            replSteps.add(ReplaceStep(cur, end, Slice.empty))
         } else {
             match = allowed
             for (j in 0 until child.marks.size)
                 if (!parentType.allowsMarkType(child.marks[j].type)) {
                     tr.step(RemoveMarkStep(cur, end, child.marks[j]))
                 }
+            if (clearNewlines && child.isText && parentType.whitespace != Whitespace.PRE) {
+                val newline = Regex("\r?\n|\r")
+                var slice: Slice? = null
+                val text = child.text ?: ""
+                newline.findAll(text).forEach {
+                    if (slice == null) {
+                        slice = Slice(
+                            Fragment.from(parentType.schema.text(" ", parentType.allowedMarks(child.marks))),
+                            0,
+                            0
+                        )
+                    }
+                    replSteps.add(ReplaceStep(cur + it.range.first, cur + it.range.last + 1, slice!!))
+                }
+            }
         }
         cur = end
     }
@@ -150,7 +172,7 @@ fun clearIncompatible(tr: Transform, pos: Int, parentType: NodeType, match: Cont
         val fill = match.fillBefore(Fragment.empty, true)
         tr.replace(cur, cur, Slice(fill!!, 0, 0))
     }
-    for (i in delSteps.size - 1 downTo 0) {
-        tr.step(delSteps[i])
+    for (i in replSteps.size - 1 downTo 0) {
+        tr.step(replSteps[i])
     }
 }

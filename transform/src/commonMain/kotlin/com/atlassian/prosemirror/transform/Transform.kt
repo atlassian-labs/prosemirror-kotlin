@@ -9,6 +9,7 @@ import com.atlassian.prosemirror.model.Node
 import com.atlassian.prosemirror.model.NodeBase
 import com.atlassian.prosemirror.model.NodeRange
 import com.atlassian.prosemirror.model.NodeType
+import com.atlassian.prosemirror.model.RangeError
 import com.atlassian.prosemirror.model.Slice
 import com.atlassian.prosemirror.util.safeMode
 
@@ -160,6 +161,35 @@ open class Transform(
     // existing node type is preserved,
     fun setNodeMarkup(pos: Int, type: NodeType?, attrs: Attrs? = null, marks: List<Mark>? = null) = this.apply {
         setNodeMarkup(this, pos, type, attrs, marks)
+    }
+
+    // Set a single attribute on a given node to a new value.
+    // The `pos` addresses the document content. Use `setDocAttribute`
+    // to set attributes on the document itself.
+    fun setNodeAttribute(pos: Int, attr: String, value: Any) = this.apply {
+        step(AttrStep(pos, attr, value))
+    }
+
+    // Set a single attribute on the document to a new value.
+    fun setDocAttribute(attr: String, value: Any) = this.apply {
+        step(DocAttrStep(attr, value))
+    }
+
+    // Add a mark to the node at position `pos`.
+    fun addNodeMark(pos: Int, mark: Mark) = this.apply {
+        step(AddNodeMarkStep(pos, mark))
+    }
+
+    // Remove a mark (or a mark of the given type) from the node at
+    // position `pos`.
+    fun removeNodeMark(pos: Int, mark: Mark) = this.apply {
+        step(RemoveNodeMarkStep(pos, mark))
+    }
+
+    fun removeNodeMark(pos: Int, mark: MarkType) = this.apply {
+        val node = doc.nodeAt(pos) ?: throw RangeError("No node at position $pos")
+        val mark = mark.isInSet(node.marks) ?: return this
+        step(RemoveNodeMarkStep(pos, mark))
     }
 
     // Split the node at the given position, and optionally, if `depth` is greater than one, any

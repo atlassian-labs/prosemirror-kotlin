@@ -17,7 +17,7 @@ kotlin {
   }
 
   // iOS
-  val xcframeworkName = "model"
+  val xcframeworkName = project.name
   val xcf = XCFramework(xcframeworkName)
   listOf(
     iosX64(),
@@ -49,4 +49,3 @@ kotlin {
 
 description = "prosemirror-model"
 ext.set("pomDescription", "ProseMirror document model")
-ext.set("srcUrl", "https://github.com/atlassian-labs/prosemirror-kotlin/tree/main/model/")

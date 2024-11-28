@@ -26,7 +26,7 @@ dependencies {
 }
 
 val versionProperties = Properties()
-versionProperties.load(FileInputStream("version.properties"))
+versionProperties.load(FileInputStream("$projectDir/version.properties"))
 
 allprojects {
   group = "com.atlassian.prosemirror"
@@ -38,17 +38,17 @@ subprojects {
   apply(plugin = "signing")
   apply(plugin = "org.jetbrains.dokka") // TODO: use alias
 
+  val srcUrl = "https://github.com/atlassian-labs/prosemirror-kotlin/tree/main/${project.name}/"
   afterEvaluate { // afterEvaluate so that project.ext values will be available
     project.tasks.dokkaHtml {
       dokkaSourceSets {
-        val urlPrefix = project.ext.get("srcUrl") as String
         val commonMain by getting {
           sourceLink {
             // Unix based directory relative path to the root of the project (where you execute gradle respectively).
             localDirectory.set(file("src/commonMain/kotlin"))
 
             // URL showing where the source code can be accessed through the web browser
-            remoteUrl.set(URL("${urlPrefix}src/main/src/commonMain/kotlin"))
+            remoteUrl.set(URL("${srcUrl}src/main/src/commonMain/kotlin"))
 
             // Suffix which is used to append the line number to the URL. Use #L for GitHub
             remoteLineSuffix.set("#lines-")
@@ -61,7 +61,7 @@ subprojects {
             localDirectory.set(file("src/jvmMain/kotlin"))
 
             // URL showing where the source code can be accessed through the web browser
-            remoteUrl.set(URL("${urlPrefix}src/main/src/jvmMain/kotlin"))
+            remoteUrl.set(URL("${srcUrl}src/main/src/jvmMain/kotlin"))
 
             // Suffix which is used to append the line number to the URL. Use #L for GitHub
             remoteLineSuffix.set("#lines-")
@@ -74,7 +74,7 @@ subprojects {
             localDirectory.set(file("src/nativeMain/kotlin"))
 
             // URL showing where the source code can be accessed through the web browser
-            remoteUrl.set(URL("${urlPrefix}src/main/src/nativeMain/kotlin"))
+            remoteUrl.set(URL("${srcUrl}src/main/src/nativeMain/kotlin"))
 
             // Suffix which is used to append the line number to the URL. Use #L for GitHub
             remoteLineSuffix.set("#lines-")
@@ -89,7 +89,7 @@ subprojects {
           pom {
             name.set(project.name)
             description.set(project.ext.get("pomDescription") as String)
-            url.set(project.ext.get("srcUrl") as String)
+            url.set(srcUrl)
 
             scm {
               connection.set("git@github.com:atlassian-labs/prosemirror-kotlin.git")
