@@ -67,25 +67,29 @@ subprojects {
             remoteLineSuffix.set("#lines-")
           }
         }
+      }
+    }
 
-        val nativeMain by getting {
-          sourceLink {
-            // Unix based directory relative path to the root of the project (where you execute gradle respectively).
-            localDirectory.set(file("src/nativeMain/kotlin"))
+    val dokkaHtml by project.tasks.getting(org.jetbrains.dokka.gradle.DokkaTask::class)
+    val javadocJar: TaskProvider<Jar> by project.tasks.registering(Jar::class) {
+      dependsOn(dokkaHtml)
+      archiveClassifier.set("javadoc")
+      from(dokkaHtml.outputDirectory)
+    }
 
-            // URL showing where the source code can be accessed through the web browser
-            remoteUrl.set(URL("${srcUrl}src/main/src/nativeMain/kotlin"))
-
-            // Suffix which is used to append the line number to the URL. Use #L for GitHub
-            remoteLineSuffix.set("#lines-")
-          }
-        }
+    project.tasks {
+      build {
+        dependsOn(javadocJar)
+      }
+      assemble {
+        dependsOn(javadocJar)
       }
     }
 
     publishing {
       publications {
         publications.withType<MavenPublication> {
+          artifact(javadocJar)
           pom {
             name.set(project.name)
             description.set(project.ext.get("pomDescription") as String)
