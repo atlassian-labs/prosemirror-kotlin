@@ -522,7 +522,7 @@ class NodeContext(
     val marks: List<Mark>,
     val solid: Boolean,
     match: ContentMatch?,
-    val options: Int
+    var options: Int
 ) {
     var match: ContentMatch? = match ?: if ((options and OPT_OPEN_LEFT) != 0) null else type!!.contentMatch
     val content = mutableListOf<Node>()
@@ -552,7 +552,7 @@ class NodeContext(
     }
 
     @Suppress("NestedBlockDepth")
-    fun finish(openEnd: Boolean?): Any { // Node | Fragment
+    fun finish(openEnd: Boolean): Any { // Node | Fragment
         if ((this.options and OPT_PRESERVE_WS) == 0) { // Strip trailing whitespace
             val last = this.content.lastOrNull()
             val regex = "[ \\t\\r\\n\\u000c]+\$".toRegex()
@@ -572,7 +572,7 @@ class NodeContext(
             }
         }
         var content = Fragment.Companion.from(this.content)
-        if (openEnd != true) {
+        if (!openEnd) {
             this.match?.let {
                 content = content.append(it.fillBefore(Fragment.empty, true)!!)
             }
@@ -600,6 +600,7 @@ class ParseContext(
     val find: List<ParseOptionPosition>?
     var needsBlock: Boolean
     var nodes: MutableList<NodeContext>
+    var localPreserveWS = false
 
     val top: NodeContext
         get() = this.nodes[this.open]
@@ -639,13 +640,15 @@ class ParseContext(
     fun addTextNode(dom: com.fleeksoft.ksoup.nodes.TextNode, marks: List<Mark>) {
         var value = dom.getWholeText()
         val top = this.top
+        val preserveWSFull = (top.options and OPT_PRESERVE_WS_FULL) != 0
+        val preserveWS = this.localPreserveWS || (top.options and OPT_PRESERVE_WS) > 0
         if (
-            (top.options and OPT_PRESERVE_WS_FULL) != 0 ||
+            preserveWSFull ||
             top.inlineContext(dom) ||
             // /[^ \t\r\n\u000c]/.test(value)
             "[^ \\t\\r\\n\\u000c]".toRegex().containsMatchIn(value)
         ) {
-            if ((top.options and OPT_PRESERVE_WS) == 0) {
+            if (!preserveWS) {
                 // value = value.replace(/[ \t\r\n\u000c]+/g, " ")
                 value = value.replace("[ \\t\\r\\n\\u000c]+".toRegex(), " ")
                 // If this starts with whitespace, and there is no node before it, or
@@ -662,7 +665,7 @@ class ParseContext(
                         value = value.substring(1)
                     }
                 }
-            } else if ((top.options and OPT_PRESERVE_WS_FULL) == 0) {
+            } else if (!preserveWSFull) {
                 // value = value.replace(/\r?\n|\r/g, " ")
                 value = value.replace("\\r?\\n|\\r".toRegex(), " ")
             } else {
@@ -682,6 +685,12 @@ class ParseContext(
     // none is found, the element's content nodes are added directly.
     @Suppress("ComplexMethod")
     fun addElement(dom: Element, marks: List<Mark>, matchAfter: TagParseRule? = null) {
+        val outerWS = this.localPreserveWS
+        var top = this.top
+        val hasStyleWhitespace = dom.styles()?.get("white-space")?.let { "pre".toRegex().containsMatchIn(it) } == true
+        if (dom.tagName().uppercase() == "PRE" || hasStyleWhitespace) {
+            this.localPreserveWS = true
+        }
         var current = dom
         val name = current.nodeName().lowercase()
         var ruleID: TagParseRule? = null
@@ -699,7 +708,6 @@ class ParseContext(
                 current = ruleSkip
             }
             var sync = false
-            var top = this.top
             val oldNeedsBlock = this.needsBlock
             if (blockTags.contains(name)) {
                 if (top.content.size > 0 && top.content[0].isInline && this.open != 0) {
@@ -712,6 +720,7 @@ class ParseContext(
                 }
             } else if (current.firstChild() == null) {
                 this.leafFallback(current, marks)
+                this.localPreserveWS = outerWS
                 return
             }
             val innerMarks = if (rule != null && rule.hasSkip()) {
@@ -737,6 +746,7 @@ class ParseContext(
                 )
             }
         }
+        this.localPreserveWS = outerWS
     }
 
     // Called for leaf DOM nodes that would otherwise be ignored
@@ -841,6 +851,7 @@ class ParseContext(
             }
             this.findAround(dom, contentDOM, true)
             this.addAll(contentDOM, updatedMarks)
+            this.findAround(dom, contentDOM, false)
         }
         if (sync && this.sync(startIn)) this.open--
     }
@@ -980,6 +991,8 @@ class ParseContext(
             if (this.nodes[i] == to) {
                 this.open = i
                 return true
+            } else if (this.localPreserveWS) {
+                this.nodes[i].options = this.nodes[i].options or OPT_PRESERVE_WS
             }
         }
         return false
@@ -1075,7 +1088,7 @@ class ParseContext(
                     } else {
                         null
                     }
-                    if (next == null || (next.name != part && next.groups.indexOf(part) == -1)) {
+                    if (next == null || (next.name != part && !next.isInGroup(part))) {
                         return false
                     }
                     depth--

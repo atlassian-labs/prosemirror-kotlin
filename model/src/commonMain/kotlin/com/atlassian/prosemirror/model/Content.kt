@@ -268,7 +268,7 @@ fun resolveName(stream: TokenStream, name: String): List<NodeType> {
     val result = mutableListOf<NodeType>()
     for (typeName in types.keys) {
         types[typeName]?.let {
-            if (it.groups.indexOf(name) > -1) {
+            if (it.isInGroup(name)) {
                 result.add(it)
             }
         }
@@ -304,12 +304,14 @@ fun parseExprAtom(stream: TokenStream): Expr {
 // https://swtch.com/~rsc/regexp/regexp1.html
 class Edge(val term: NodeType?, var to: Int?)
 
-// Construct an NFA from an expression as returned by the parser. The NFA is represented as an array
-// of states, which are themselves arrays of edges, which are `{term, to}` objects. The first state
-// is the entry state and the last node is the success state.
+// Construct an NFA from an expression as returned by the parser. The
+// NFA is represented as an array of states, which are themselves
+// arrays of edges, which are `{term, to}` objects. The first state is
+// the entry state and the last node is the success state.
 //
-// Note that unlike typical NFAs, the edge ordering in this one is significant, in that it is used
-// to contruct filler content when necessary.
+// Note that unlike typical NFAs, the edge ordering in this one is
+// significant, in that it is used to contruct filler content when
+// necessary.
 fun nfa(expr: Expr): List<List<Edge>> {
     val nfa = mutableListOf<MutableList<Edge>>(mutableListOf())
     connect(compile(nfa, expr, 0), node(nfa))

@@ -71,6 +71,10 @@ open class Node constructor(
     // A container holding the node's children.
     val content: Fragment
 
+    // The array of this node's child nodes.
+    val children: List<Node>
+        get() = this.content.content
+
     // For text nodes, this contains the node's text content.
     open val text: String? = null
 

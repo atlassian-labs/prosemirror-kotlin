@@ -90,6 +90,10 @@ class NodeType internal constructor(
     val isAtom: Boolean
         get() = this.isLeaf || spec.atom
 
+    // Return true when this node type is part of the given
+    // [group](#model.NodeSpec.group).
+    fun isInGroup(group: String) = this.groups.indexOf(group) > -1
+
     // If this is a node of the top level type (default: "doc")
     val isTopType: Boolean
         get() = this.name == (schema.spec.topNode ?: "doc")
