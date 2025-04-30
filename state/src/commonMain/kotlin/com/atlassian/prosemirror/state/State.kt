@@ -153,7 +153,6 @@ class PMEditorState internal constructor(
         return this.applyTransaction(tr.apply { f() }).state
     }
 
-    // @ignore
     @Suppress("UnusedPrivateMember", "FunctionOnlyReturningConstant")
     fun filterTransaction(tr: Transaction, ignore: Int = -1): Boolean {
         for (i in this.config.plugins.indices) {
