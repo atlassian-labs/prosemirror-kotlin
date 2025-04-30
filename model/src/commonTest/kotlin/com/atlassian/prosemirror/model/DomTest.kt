@@ -1059,13 +1059,6 @@ class DomTest {
             doc { p { +"  okay  then " } + p { +"x" } }
         )
     }
-
-//
-//    it("preserves whitespace in nodes styled with white-space", () => {
-//        recover("  <div style='white-space: pre'>  okay  then </div>  <p> x</p>",
-//            doc(p("  okay  then "), p("x")))
-//    })
-
     //endregion
 
     //region schemaRules
