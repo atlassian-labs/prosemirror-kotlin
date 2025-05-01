@@ -117,7 +117,7 @@ abstract class NodeBuilder<T : NodeBuilder<T>>(
 
     operator fun Node.unaryPlus() {
         pos += this.nodeSize + if (isLeaf) 1 else 2
-        children.add(this)
+        this@NodeBuilder.children.add(this)
     }
 
     operator fun Unit.plus(img: Unit) {

@@ -15,7 +15,9 @@ import kotlinx.serialization.json.jsonObject
 class Fragment {
     // The size of the fragment, which is the total of the size of its content nodes.
     val size: Int
-    internal val content: List<Node>
+
+    // The child nodes in this fragment.
+    val content: List<Node>
 
     // The first child of the fragment, or `null` if it is empty.
     val firstChild: Node?
