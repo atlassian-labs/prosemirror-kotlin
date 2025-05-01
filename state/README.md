@@ -42,5 +42,5 @@ ProseMirror has a plugin system.
 @PluginKey
 
 ## Versioning
-This module is a port of version [1.4.0](https://github.com/ProseMirror/prosemirror-state/releases/tag/1.4.0)
+This module is a port of version [1.4.3](https://github.com/ProseMirror/prosemirror-state/releases/tag/1.4.3)
 of prosemirror-state
