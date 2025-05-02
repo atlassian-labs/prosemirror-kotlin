@@ -369,10 +369,10 @@ class TransformTest {
         doc { pre { +"fo<a>o" } + p { em { +"b<b>ar" } } },
         doc { pre { +"fo" } + p { em { +"ar" } } }
     )
-// endregion
+    // endregion
 
     // region join
-    fun join(doc: Node, expect: Node) {
+    private fun join(doc: Node, expect: Node, pos: ((Node, String) -> Int?) = PMNodeBuilder.Companion::pos) {
         testTransform(Transform(doc).join(pos(doc, "a")!!), expect)
     }
 
@@ -422,6 +422,34 @@ class TransformTest {
         doc { p { +"foo" } + "<a>" + p { +"bar" } },
         doc { p { +"foo<a>bar" } }
     )
+
+    @Test
+    fun `converts newlines to line breaks`() {
+        val builder = CustomNodeBuildCompanion(linebreakSchema)
+        join(
+            builder.doc {
+                p { +"one" } + "<a>" + pre { +"two\nthree" }
+            },
+            builder.doc {
+                p { +"one<a>two" + br {} + "three" }
+            },
+            pos = builder::pos
+        )
+    }
+
+    @Test
+    fun `converts line breaks to newlines`() {
+        val builder = CustomNodeBuildCompanion(linebreakSchema)
+        join(
+            builder.doc {
+                pre { +"one" } + "<a>" + p { +"two" + br {} + "three" }
+            },
+            builder.doc {
+                pre { +"one<a>two\nthree" }
+            },
+            pos = builder::pos
+        )
+    }
 // endregion
 
     // region split
@@ -692,6 +720,25 @@ class TransformTest {
         )
     }
 
+    private fun type(
+        doc: Node,
+        expect: Node,
+        nodeType: String,
+        attrs: (Node) -> Attrs,
+        pos: ((Node, String) -> Int?) = PMNodeBuilder.Companion::pos,
+        useSchema: Schema = schema
+    ) {
+        testTransform(
+            Transform(doc).setBlockType(
+                pos.invoke(doc, "a")!!,
+                pos.invoke(doc, "b") ?: pos.invoke(doc, "a")!!,
+                useSchema.nodes[nodeType]!!,
+                attrs
+            ),
+            expect
+        )
+    }
+
     @Test
     fun `can change a single textblock`() = type(
         doc { p { +"am<a> i" } },
@@ -818,6 +865,14 @@ class TransformTest {
             useSchema = linebreakSchema
         )
     }
+
+    @Test
+    fun `can base attributes on previous attributes`() = type(
+        doc { +"<a>" + h1 { +"a" } + p { +"b" } + "<b>" },
+        doc { h2 { +"a" } + h1 { +"b" } },
+        "heading",
+        { node -> mapOf("level" to ((node.attrs["level"] as? Int) ?: 0) + 1) }
+    )
     // endregion
 
     // region setNodeMarkup
@@ -1841,6 +1896,12 @@ class TransformTest {
     fun `doesn't delete the open token when the range end is at end of its own block`() = delRange(
         doc { p { +"one" } + h1 { +"<a>two" } + blockquote { p { +"three<b>" } } + p { +"four" } },
         doc { p { +"one" } + h1 {} + p { +"four" } }
+    )
+
+    @Test
+    fun `doesn't break text-joining by inappropriate expansion`() = delRange(
+        doc { ol { li { p { +"<a>One" } + ol { li { p { +"Tw<b>o" } } } } } },
+        doc { ol { li { p { +"o" } } } }
     )
     // endregion
 
