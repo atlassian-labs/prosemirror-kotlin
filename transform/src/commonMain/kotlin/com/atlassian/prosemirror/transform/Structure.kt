@@ -146,13 +146,17 @@ fun wrap(tr: Transform, range: NodeRange, wrappers: List<NodeBase>) {
     tr.step(ReplaceAroundStep(start, end, start, end, Slice(content, 0, 0), wrappers.size, true))
 }
 
-fun setBlockType(tr: Transform, from: Int, to: Int, type: NodeType, attrs: Attrs?) {
+fun setBlockType(tr: Transform, from: Int, to: Int, type: NodeType, attrs: Attrs?) =
+    setBlockType(tr, from, to, type, { attrs })
+
+fun setBlockType(tr: Transform, from: Int, to: Int, type: NodeType, attrs: (Node) -> Attrs?) {
     if (!type.isTextblock) throw RangeError("Type given to setBlockType should be a textblock")
     val mapFrom = tr.steps.size
     tr.doc.nodesBetween(from, to, { node, pos, parent, index ->
+        val attrsHere = attrs(node)
         if (
             node.isTextblock &&
-            !node.hasMarkup(type, attrs) &&
+            !node.hasMarkup(type, attrsHere) &&
             canChangeType(tr.doc, tr.mapping.slice(mapFrom).map(pos), type)
         ) {
             var convertNewlines: Boolean? = null
@@ -178,7 +182,7 @@ fun setBlockType(tr: Transform, from: Int, to: Int, type: NodeType, attrs: Attrs
                     to = endM,
                     gapFrom = startM + 1,
                     gapTo = endM - 1,
-                    slice = Slice(Fragment.from(type.create(attrs, null as Fragment?, node.marks)), 0, 0),
+                    slice = Slice(Fragment.from(type.create(attrsHere, null as Fragment?, node.marks)), 0, 0),
                     insert = 1,
                     structure = true
                 )
@@ -313,7 +317,23 @@ fun canJoin(doc: Node, pos: Int): Boolean {
     return joinable(thisPos.nodeBefore, thisPos.nodeAfter) && thisPos.parent.canReplace(index, index + 1)
 }
 
-fun joinable(a: Node?, b: Node?) = a != null && b != null && !a.isLeaf && a.canAppend(b)
+fun canAppendWithSubstitutedLinebreaks(a: Node, b: Node): Boolean {
+    if (b.content.size == 0) {
+        return a.type.compatibleContent(b.type)
+    }
+    var match: ContentMatch? = a.contentMatchAt(a.childCount)
+    val linebreakReplacement = a.type.schema.linebreakReplacement
+    for (i in 0 until b.childCount) {
+        val child = b.child(i)
+        val type = if (child.type == linebreakReplacement) a.type.schema.nodeType("text") else child.type
+        match = match?.matchType(type)
+        if (match == null) return false
+        if (!a.type.allowsMarks(child.marks)) return false
+    }
+    return match?.validEnd ?: false
+}
+
+fun joinable(a: Node?, b: Node?) = a != null && b != null && !a.isLeaf && canAppendWithSubstitutedLinebreaks(a, b)
 
 // Find an ancestor of the given position that can be joined to the block before (or after if `dir`
 // is positive). Returns the joinable point, if any.
@@ -349,8 +369,48 @@ fun joinPoint(doc: Node, pos: Int, dir: Int = -1): Int? {
 }
 
 fun join(tr: Transform, pos: Int, depth: Int): Transform {
-    val step = ReplaceStep(pos - depth, pos + depth, Slice.empty, true)
-    return tr.step(step)
+    var convertNewlines: Boolean? = null
+    val linebreakReplacement = tr.doc.type.schema.linebreakReplacement
+    val before = tr.doc.resolve(pos - depth)
+    val beforeType = before.node().type
+    if (linebreakReplacement != null && beforeType.inlineContent) {
+        val pre = beforeType.whitespace == Whitespace.PRE
+        val supportLinebreak = beforeType.contentMatch.matchType(linebreakReplacement) != null
+        if (pre && !supportLinebreak) {
+            convertNewlines = false
+        } else if (!pre && supportLinebreak) {
+            convertNewlines = true
+        }
+    }
+    val mapFrom = tr.steps.size
+    if (convertNewlines == false) {
+        val after = tr.doc.resolve(pos + depth)
+        replaceLineBreaks(tr, after.node(), after.before(), mapFrom)
+    }
+    if (beforeType.inlineContent) {
+        clearIncompatible(
+            tr,
+            pos + depth - 1,
+            beforeType,
+            before.node().contentMatchAt(before.index()),
+            convertNewlines == null
+        )
+    }
+    val mapping = tr.mapping.slice(mapFrom)
+    val start = mapping.map(pos - depth)
+    tr.step(
+        ReplaceStep(
+            start,
+            mapping.map(pos + depth, -1),
+            Slice.empty,
+            true
+        )
+    )
+    if (convertNewlines == true) {
+        val full = tr.doc.resolve(start)
+        replaceNewlines(tr, full.node(), full.before(), tr.steps.size)
+    }
+    return tr
 }
 
 // Try to find a point where a node of the given type can be inserted near `pos`, by searching up

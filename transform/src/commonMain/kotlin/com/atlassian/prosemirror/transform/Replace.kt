@@ -610,7 +610,12 @@ fun deleteRange(tr: Transform, from: Int, to: Int): Transform {
     var d = 1
 
     while (d <= _from.depth && d <= _to.depth) {
-        if (from - _from.start(d) == _from.depth - d && to > _from.end(d) && _to.end(d) - to != _to.depth - d) {
+        if (
+            from - _from.start(d) == _from.depth - d &&
+            to > _from.end(d) && _to.end(d) - to != _to.depth - d &&
+            _from.start(d - 1) == _to.start(d - 1) &&
+            _from.node(d - 1).canReplace(_from.index(d - 1), _to.index(d - 1))
+        ) {
             return tr.delete(_from.before(d), to)
         }
         d++

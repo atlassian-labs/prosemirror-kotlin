@@ -157,6 +157,10 @@ open class Transform(
         setBlockType(this, from, to, type, attrs)
     }
 
+    fun setBlockType(from: Int, to: Int = from, type: NodeType, attrs: (Node) -> Attrs?) = this.apply {
+        setBlockType(this, from, to, type, attrs)
+    }
+
     // Change the type, attributes, and/or marks of the node at `pos`. When `type` isn't given, the
     // existing node type is preserved,
     fun setNodeMarkup(pos: Int, type: NodeType?, attrs: Attrs? = null, marks: List<Mark>? = null) = this.apply {
