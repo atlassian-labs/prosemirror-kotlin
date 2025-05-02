@@ -369,14 +369,10 @@ class TransformTest {
         doc { pre { +"fo<a>o" } + p { em { +"b<b>ar" } } },
         doc { pre { +"fo" } + p { em { +"ar" } } }
     )
-// endregion
+    // endregion
 
     // region join
-    fun join(
-        doc: Node,
-        expect: Node,
-        pos: ((Node, String) -> Int?) = PMNodeBuilder.Companion::pos,
-    ) {
+    private fun join(doc: Node, expect: Node, pos: ((Node, String) -> Int?) = PMNodeBuilder.Companion::pos) {
         testTransform(Transform(doc).join(pos(doc, "a")!!), expect)
     }
 
@@ -432,7 +428,7 @@ class TransformTest {
         val builder = CustomNodeBuildCompanion(linebreakSchema)
         join(
             builder.doc {
-                p { +"one" } + "<a>" + pre { +"two\nthree"}
+                p { +"one" } + "<a>" + pre { +"two\nthree" }
             },
             builder.doc {
                 p { +"one<a>two" + br {} + "three" }
@@ -446,7 +442,7 @@ class TransformTest {
         val builder = CustomNodeBuildCompanion(linebreakSchema)
         join(
             builder.doc {
-                pre { +"one" } + "<a>" + p { +"two" + br {} +"three"}
+                pre { +"one" } + "<a>" + p { +"two" + br {} + "three" }
             },
             builder.doc {
                 pre { +"one<a>two\nthree" }
@@ -872,7 +868,7 @@ class TransformTest {
 
     @Test
     fun `can base attributes on previous attributes`() = type(
-        doc {+"<a>" + h1 { +"a" } + p { +"b" } + "<b>" },
+        doc { +"<a>" + h1 { +"a" } + p { +"b" } + "<b>" },
         doc { h2 { +"a" } + h1 { +"b" } },
         "heading",
         { node -> mapOf("level" to ((node.attrs["level"] as? Int) ?: 0) + 1) }
