@@ -55,5 +55,5 @@ transformations or determining whether they are even possible.
 @dropPoint
 
 ## Versioning
-This module is a port of version [1.9.0](https://github.com/ProseMirror/prosemirror-transform/releases/tag/1.9.0)
+This module is a port of version [1.10.2](https://github.com/ProseMirror/prosemirror-transform/releases/tag/1.10.2)
 of prosemirror-transform

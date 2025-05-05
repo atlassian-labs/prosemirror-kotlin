@@ -1034,6 +1034,31 @@ class DomTest {
         val expected = doc { p { +"abc def" } }
         assertThat(result).isEqualTo(expected)
     }
+
+    @Test
+    fun `preserves whitespace in pre elements`() {
+        val schema = Schema(
+            SchemaSpec(
+                nodes = mapOf(
+                    "doc" to NodeSpecImpl(content = "block+"),
+                    "text" to NodeSpecImpl(group = "inline"),
+                    "p" to NodeSpecImpl(group = "block", content = "inline*")
+                )
+            )
+        )
+        val result = DOMParser.fromSchema(schema).parse(domFrom("<pre>  hello </pre>   "))
+        assertThat(result).isEqualTo(
+            schema.node("doc", null, listOf(schema.node("p", null, listOf(schema.text("  hello ")))))
+        )
+    }
+
+    @Test
+    fun `preserves whitespace in nodes styled with white-space`() {
+        recover(
+            "  <div style='white-space: pre'>  okay  then </div>  <p> x</p>",
+            doc { p { +"  okay  then " } + p { +"x" } }
+        )
+    }
     //endregion
 
     //region schemaRules

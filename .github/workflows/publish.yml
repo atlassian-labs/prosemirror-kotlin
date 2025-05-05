@@ -68,7 +68,7 @@ jobs:
 
       # Android: Publishes to Artifactory
       - name: "Publish to artifactory"
-        run: ./gradlew javadocJar assemble --no-configuration-cache && ./gradlew publish --no-configuration-cache --stacktrace
+        run: ./gradlew assemble --no-configuration-cache && ./gradlew publish --no-configuration-cache --stacktrace
 
       # iOS: Build and publish xcframeworks to the GitHub release
       - name: "Build xcframework"

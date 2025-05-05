@@ -249,7 +249,7 @@ function resolveName(stream: TokenStream, name: string): readonly NodeType[] {
   let result: NodeType[] = []
   for (let typeName in types) {
     let type = types[typeName]
-    if (type.groups.indexOf(name) > -1) result.push(type)
+    if (type.isInGroup(name)) result.push(type)
   }
   if (result.length == 0) stream.err("No node type or group '" + name + "' found")
   return result
@@ -279,14 +279,14 @@ function parseExprAtom(stream: TokenStream): Expr {
 
 type Edge = {term: NodeType | undefined, to: number | undefined}
 
-/// Construct an NFA from an expression as returned by the parser. The
-/// NFA is represented as an array of states, which are themselves
-/// arrays of edges, which are `{term, to}` objects. The first state is
-/// the entry state and the last node is the success state.
-///
-/// Note that unlike typical NFAs, the edge ordering in this one is
-/// significant, in that it is used to contruct filler content when
-/// necessary.
+// Construct an NFA from an expression as returned by the parser. The
+// NFA is represented as an array of states, which are themselves
+// arrays of edges, which are `{term, to}` objects. The first state is
+// the entry state and the last node is the success state.
+//
+// Note that unlike typical NFAs, the edge ordering in this one is
+// significant, in that it is used to contruct filler content when
+// necessary.
 function nfa(expr: Expr): Edge[][] {
   let nfa: Edge[][] = [[]]
   connect(compile(expr, 0), node())
