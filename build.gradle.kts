@@ -38,6 +38,24 @@ subprojects {
   apply(plugin = "signing")
   apply(plugin = "org.jetbrains.dokka") // TODO: use alias
 
+  plugins.withId("maven-publish") {
+    // Register an empty javadoc jar for Maven Central compliance
+    val emptyJavadocJar by tasks.registering(Jar::class) {
+      archiveClassifier.set("javadoc")
+      // No content needed
+    }
+
+    afterEvaluate {
+      publishing {
+        publications.withType<MavenPublication>().configureEach {
+          if (name == "jvm") {
+            artifact(tasks.named("emptyJavadocJar"))
+          }
+        }
+      }
+    }
+  }
+
   val srcUrl = "https://github.com/atlassian-labs/prosemirror-kotlin/tree/main/${project.name}/"
   afterEvaluate { // afterEvaluate so that project.ext values will be available
     project.tasks.dokkaHtml {
