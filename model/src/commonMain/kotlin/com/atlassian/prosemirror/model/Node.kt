@@ -363,15 +363,6 @@ open class Node constructor(
             Mark.sameSet(this.marks, marks ?: Mark.none)
     }
 
-    // Create a new node with the same markup as this node, containing the given content
-    // (or empty, if no content is given).
-    fun copy(content: Fragment? = null): Node {
-        if (content == this.content) return this
-        return this.type.creator.create(this.type, this.attrs, content, this.marks).also {
-            it.unknownFields = this.unknownFields
-        }
-    }
-
     // Always create a new node with the same markup and attributes as this node, containing the given content
     // (or empty, if no content is given).
     fun copy(content: Fragment? = null, attrs: Attrs? = null): Node {
