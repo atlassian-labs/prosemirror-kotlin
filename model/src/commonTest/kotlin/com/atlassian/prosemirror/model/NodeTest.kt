@@ -5,6 +5,7 @@ package com.atlassian.prosemirror.model
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
+import assertk.assertions.isNotEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import assertk.assertions.isTrue
@@ -342,6 +343,13 @@ class NodeTest {
 
     @Test
     fun `accepts null`() = from(null, p {})
+
+    @Test
+    fun `empty to empty copy has new nodeId`() {
+        val input = p {}
+        val output = input.copy(Fragment.empty)
+        assertThat(input.nodeId).isNotEqualTo(output.nodeId)
+    }
 
     @Test
     fun `joins adjacent text`() = from(listOf(schema.text("a"), schema.text("b")), p { +"ab" })
