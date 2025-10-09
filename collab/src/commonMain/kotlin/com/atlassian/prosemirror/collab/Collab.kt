@@ -95,7 +95,7 @@ fun collab(config: CollabConfig = CollabConfig(0, null)): CollabPlugin {
     return CollabPlugin(config)
 }
 
-class CollabPlugin(
+open class CollabPlugin(
     override val spec: CollabPluginSpec
 ) : Plugin<CollabState>(spec) {
     constructor(config: CollabConfig) : this(
@@ -112,7 +112,7 @@ class CollabPlugin(
     }
 }
 
-class CollabPluginSpec(conf: CollabConfig) : PluginSpec<CollabState>() {
+open class CollabPluginSpec(conf: CollabConfig) : PluginSpec<CollabState>() {
     override val key = collabKey
     override val state: StateField<CollabState> = object : StateField<CollabState> {
         override fun init(config: EditorStateConfig, instance: PMEditorState): CollabState {
@@ -128,7 +128,7 @@ class CollabPluginSpec(conf: CollabConfig) : PluginSpec<CollabState>() {
             val state = tr.getMeta(collabKey)
             return when {
                 state != null -> state as CollabState
-                tr.docChanged -> CollabState(value.version, value.unconfirmed + unconfirmedFrom(tr))
+                shouldUpdateState(tr) -> CollabState(value.version, value.unconfirmed + unconfirmedFrom(tr))
                 else -> value
             }
         }
@@ -143,6 +143,8 @@ class CollabPluginSpec(conf: CollabConfig) : PluginSpec<CollabState>() {
 
     val config: CollabConfig by additionalProps
     val historyPreserveItems: Boolean by additionalProps
+
+    protected fun shouldUpdateState(tr: Transaction) = tr.docChanged
 }
 
 /**
