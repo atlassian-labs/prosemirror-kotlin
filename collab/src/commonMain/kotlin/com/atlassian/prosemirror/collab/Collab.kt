@@ -10,7 +10,8 @@ import com.atlassian.prosemirror.state.TextSelection
 import com.atlassian.prosemirror.state.Transaction
 import com.atlassian.prosemirror.transform.Step
 import com.atlassian.prosemirror.transform.Transform
-import kotlin.random.Random
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 data class Rebaseable(
     val step: Step,
@@ -98,11 +99,12 @@ fun collab(config: CollabConfig = CollabConfig(0, null)): CollabPlugin {
 open class CollabPlugin(
     override val spec: CollabPluginSpec
 ) : Plugin<CollabState>(spec) {
+    @OptIn(ExperimentalUuidApi::class)
     constructor(config: CollabConfig) : this(
         CollabPluginSpec(
             CollabConfig(
                 version = config.version,
-                clientID = config.clientID ?: Random.nextInt().toString()
+                clientID = config.clientID ?: Uuid.random().toString()
             )
         )
     )
@@ -144,7 +146,7 @@ open class CollabPluginSpec(conf: CollabConfig) : PluginSpec<CollabState>() {
     val config: CollabConfig by additionalProps
     val historyPreserveItems: Boolean by additionalProps
 
-    protected fun shouldUpdateState(tr: Transaction) = tr.docChanged
+    protected open fun shouldUpdateState(tr: Transaction) = tr.docChanged
 }
 
 /**
