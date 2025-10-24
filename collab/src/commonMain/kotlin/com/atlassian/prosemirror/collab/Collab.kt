@@ -234,11 +234,7 @@ fun sendableSteps(state: PMEditorState): SendableSteps? {
         version = collabState.version,
         steps = collabState.unconfirmed.map { it.step },
         clientID = (collabKey.get(state) as CollabPlugin).spec.config.clientID,
-        // TODO Aleksei - what is going on here?
-        origins = emptyList()
-//        get origins() {
-//            return (this as any)._origins || ((this as any)._origins = collabState.unconfirmed.map{ s -> s.origin})
-//        }
+        origins = collabState.unconfirmed.map { s -> s.origin as Transaction }
     )
 }
 
