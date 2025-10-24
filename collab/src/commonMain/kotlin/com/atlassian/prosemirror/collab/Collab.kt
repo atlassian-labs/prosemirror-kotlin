@@ -234,7 +234,7 @@ fun sendableSteps(state: PMEditorState): SendableSteps? {
         version = collabState.version,
         steps = collabState.unconfirmed.map { it.step },
         clientID = (collabKey.get(state) as CollabPlugin).spec.config.clientID,
-        origins = collabState.unconfirmed.map { s -> s.origin as Transaction }
+        collabState = collabState
     )
 }
 
@@ -242,8 +242,17 @@ data class SendableSteps(
     val version: Int,
     val steps: List<Step>,
     val clientID: String?,
+    private val collabState: CollabState
+) {
+    private var _origins: List<Transaction>? = null
+
     val origins: List<Transaction>
-)
+        get() = _origins ?: run {
+            val computed = collabState.unconfirmed.mapNotNull { it.origin as? Transaction }
+            _origins = computed
+            computed
+        }
+}
 
 /**
  * Get the version up to which the collab plugin has synced with the central authority.
