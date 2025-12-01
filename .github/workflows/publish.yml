@@ -24,7 +24,7 @@ jobs:
           distribution: 'adopt'
 
       - name: "Checkout sources"
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       # Read the version from the version.properties file
       - name: Get version for creating release
