@@ -2,7 +2,7 @@
 
 package com.atlassian.prosemirror.model
 
-import co.touchlab.stately.collections.ConcurrentMutableMap
+import com.atlassian.prosemirror.util.ConcurrentMutableMap
 import com.atlassian.prosemirror.util.slice
 import com.atlassian.prosemirror.util.verbose
 import kotlinx.serialization.json.JsonObject
