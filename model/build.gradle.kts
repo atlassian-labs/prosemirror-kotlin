@@ -35,7 +35,6 @@ kotlin {
   sourceSets {
     commonMain.dependencies {
       implementation(libs.kotlinx.serialization.json)
-      implementation(libs.stately.concurrent.collections)
       implementation(project(":util"))
       api(libs.ksoup)
     }

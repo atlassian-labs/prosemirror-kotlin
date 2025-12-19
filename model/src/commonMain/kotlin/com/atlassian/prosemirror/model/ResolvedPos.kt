@@ -1,6 +1,6 @@
 package com.atlassian.prosemirror.model
 
-import co.touchlab.stately.collections.ConcurrentMutableList
+import com.atlassian.prosemirror.util.ConcurrentMutableList
 import kotlinx.atomicfu.atomic
 import kotlinx.atomicfu.update
 

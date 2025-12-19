@@ -32,7 +32,8 @@ kotlin {
   }
 
   sourceSets {
-    commonMain.dependencies {
+    nativeMain.dependencies {
+      implementation(libs.stately.concurrent.collections)
     }
     commonTest.dependencies {
       implementation(libs.kotlin.test)
