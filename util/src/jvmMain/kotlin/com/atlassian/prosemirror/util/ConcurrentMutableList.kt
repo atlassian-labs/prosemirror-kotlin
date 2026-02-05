@@ -1,9 +1,9 @@
 package com.atlassian.prosemirror.util
 
-import java.util.Collections
+import java.util.concurrent.CopyOnWriteArrayList
 
 actual class ConcurrentMutableList<T : Any> : MutableList<T> {
-    private val list = Collections.synchronizedList(mutableListOf<T>())
+    private val list = CopyOnWriteArrayList<T>()
 
     actual override val size: Int
         get() = list.size
