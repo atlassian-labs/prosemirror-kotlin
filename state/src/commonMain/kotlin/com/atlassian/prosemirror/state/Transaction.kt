@@ -7,7 +7,7 @@ import com.atlassian.prosemirror.model.RangeError
 import com.atlassian.prosemirror.model.Slice
 import com.atlassian.prosemirror.transform.Step
 import com.atlassian.prosemirror.transform.Transform
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 
 //  Commands are functions that take a state and a an optional transaction dispatch function and...
 //
