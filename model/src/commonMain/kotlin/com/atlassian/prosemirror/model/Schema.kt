@@ -5,6 +5,7 @@ package com.atlassian.prosemirror.model
 import com.atlassian.prosemirror.util.ConcurrentMutableMap
 import com.atlassian.prosemirror.util.slice
 import com.atlassian.prosemirror.util.verbose
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 
 // An object holding the attributes of a node.
@@ -463,12 +464,19 @@ data class SchemaSpec(
     val topNode: String? = null,
 
     // The name of the node for the schema to fall back whenever we encounter unknown node type.
-    // The node will have original name saved into originalNodeName field if creator returned UnsupportedNode type
     val unsupportedNode: String = "unsupportedBlock",
 
+    // The name of the leaf node for the schema to fall back whenever we encounter unknown node type.
+    val unsupportedLeafNode: String = "unsupportedLeaf",
+
     // The name of the inline node for the schema to fall back whenever we encounter unknown node type.
-    // The node will have original name saved into originalNodeName field if creator returned UnsupportedNode type
     val unsupportedInlineNode: String = "unsupportedInline",
+
+    // Allows schemas to choose which fallback node type should represent an unknown node.
+    val unknownNodeFallback: ((unknownNodeType: String, content: JsonArray?) -> String?)? = null,
+
+    // Allows schemas to add or rewrite attrs before an unknown node is constructed as a fallback node.
+    val unknownNodeAttrs: ((unknownNodeType: String, attrs: Attrs?) -> Attrs?)? = null,
 
     // The name of the mark for the schema to fall back whenever we encounter unknown mark type.
     // The mark will have original name saved into originalMarkName field if creator returned UnsupportedMark type

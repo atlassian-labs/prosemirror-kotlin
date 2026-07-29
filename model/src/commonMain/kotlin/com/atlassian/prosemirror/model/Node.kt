@@ -33,10 +33,6 @@ open class NodeBase(open val type: NodeType, open val attrs: Attrs? = null) {
     }
 }
 
-interface UnsupportedNode {
-    var originalNodeName: String?
-}
-
 @JvmInline
 @kotlinx.serialization.Serializable
 value class NodeId(val id: String)
@@ -628,7 +624,8 @@ open class Node constructor(
                 if (text?.isString != true) throw RangeError("Invalid text node in JSON")
                 return schema.text(text.content, marks)
             }
-            val content = Fragment.fromJSON(schema, json["content"]?.jsonArray, withId, check)
+            val jsonContent = json["content"]?.jsonArray
+            val content = Fragment.fromJSON(schema, jsonContent, withId, check)
             val attrs = json["attrs"]?.jsonObject?.mapValues {
                 if (it.value is JsonNull) null else JSON.decodeFromJsonElement<Any>(it.value)
             }
@@ -640,17 +637,17 @@ open class Node constructor(
                     }
                 }
             } catch (ex: RangeError) {
-                val unsupportedNodeType = if (json["content"] == null) {
-                    schema.spec.unsupportedInlineNode
-                } else {
-                    schema.spec.unsupportedNode
-                }
-                schema.nodeType(unsupportedNodeType).create(attrs, content, marks).also {
+                val unknownNodeType = type ?: throw RangeError("Invalid input for Node.fromJSON")
+                val unsupportedNodeType = schema.spec.unknownNodeFallback?.invoke(unknownNodeType, jsonContent)
+                    ?: if (jsonContent != null) {
+                        schema.spec.unsupportedNode
+                    } else {
+                        schema.spec.unsupportedInlineNode
+                    }
+                val unsupportedAttrs = schema.spec.unknownNodeAttrs?.invoke(unknownNodeType, attrs) ?: attrs
+                schema.nodeType(unsupportedNodeType).create(unsupportedAttrs, content, marks).also {
                     if (withId && id != null) {
                         it.nodeId = NodeId(id)
-                    }
-                    (it as? UnsupportedNode)?.let { unsupportedNode ->
-                        unsupportedNode.originalNodeName = type
                     }
                 }
             }.also { node ->
