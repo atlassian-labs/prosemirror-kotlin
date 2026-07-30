@@ -43,7 +43,10 @@ fun initAttrs(typeName: String, attrs: Map<String, AttributeSpec>?): Map<String,
     } ?: emptyMap()
 }
 
-class RangeError(message: String) : IllegalArgumentException("Range Error: $message")
+open class RangeError(message: String) : IllegalArgumentException("Range Error: $message")
+
+/** Thrown when a node's content does not match its content expression (illegal nesting). */
+class InvalidContentError(message: String) : RangeError(message)
 
 // Node types are objects allocated once per `Schema` and used to [tag](#model.Node.type) `Node`
 // instances. They contain information about the node type, such as its name and what kind of nod
@@ -158,7 +161,7 @@ class NodeType internal constructor(
     fun createChecked(attrs: Attrs? = null, content: Node?, marks: List<Mark>? = null): Node {
         val thisContent = Fragment.from(content)
         if (!this.validContent(thisContent)) {
-            throw RangeError(
+            throw InvalidContentError(
                 if (verbose) {
                     "Invalid content for node type $name: $thisContent"
                 } else {
@@ -172,7 +175,7 @@ class NodeType internal constructor(
     fun createChecked(attrs: Attrs? = null, content: List<Node>?, marks: List<Mark>? = null): Node {
         val thisContent = Fragment.from(content)
         if (!this.validContent(thisContent)) {
-            throw RangeError(
+            throw InvalidContentError(
                 if (verbose) {
                     "Invalid content for node type $name: $thisContent"
                 } else {
@@ -238,11 +241,11 @@ class NodeType internal constructor(
         return true
     }
 
-    // Throws a RangeError if the given fragment is not valid content for this
+    // Throws an InvalidContentError if the given fragment is not valid content for this
     // node type.
-    internal fun checkContent(content: Fragment) {
+    fun checkContent(content: Fragment) {
         if (!this.validContent(content)) {
-            throw RangeError(
+            throw InvalidContentError(
                 if (verbose) {
                     "Invalid content for node $name: ${content.toString().slice(0, 50)}"
                 } else {

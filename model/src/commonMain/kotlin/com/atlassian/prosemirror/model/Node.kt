@@ -542,9 +542,18 @@ open class Node constructor(
         }
     }
 
+    /**
+     * Validates only the content-nesting rules of this node and all its descendants, without
+     * checking mark attributes or node attributes. Throws [InvalidContentError] if any nodes
+     * children violate its content expression.
+     */
+    fun checkNesting() {
+        this.type.checkContent(this.content)
+        this.content.forEach { node, _, _ -> node.checkNesting() }
+    }
+
     // Check whether this node and its descendants conform to the
     // schema, and raise an exception when they do not.
-    @Suppress("MagicNumber")
     fun check() {
         this.type.checkContent(this.content)
         this.type.checkAttrs(this.attrs)

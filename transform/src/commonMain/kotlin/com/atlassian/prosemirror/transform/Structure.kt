@@ -3,6 +3,7 @@ package com.atlassian.prosemirror.transform
 import com.atlassian.prosemirror.model.Attrs
 import com.atlassian.prosemirror.model.ContentMatch
 import com.atlassian.prosemirror.model.Fragment
+import com.atlassian.prosemirror.model.InvalidContentError
 import com.atlassian.prosemirror.model.Mark
 import com.atlassian.prosemirror.model.Node
 import com.atlassian.prosemirror.model.NodeBase
@@ -234,7 +235,7 @@ fun setNodeMarkup(tr: Transform, pos: Int, type: NodeType?, attrs: Attrs?, marks
     }
 
     if (!thisType.validContent(node.content)) {
-        throw RangeError(
+        throw InvalidContentError(
             if (verbose) {
                 "Invalid content for node type ${thisType.name}: ${node.content}"
             } else {
