@@ -469,9 +469,6 @@ data class SchemaSpec(
     // The name of the node for the schema to fall back whenever we encounter unknown node type.
     val unsupportedNode: String = "unsupportedBlock",
 
-    // The name of the leaf node for the schema to fall back whenever we encounter unknown node type.
-    val unsupportedLeafNode: String = "unsupportedLeaf",
-
     // The name of the inline node for the schema to fall back whenever we encounter unknown node type.
     val unsupportedInlineNode: String = "unsupportedInline",
 
