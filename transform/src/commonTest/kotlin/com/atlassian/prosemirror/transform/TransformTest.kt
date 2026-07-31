@@ -5,6 +5,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isTrue
 import com.atlassian.prosemirror.model.Attrs
 import com.atlassian.prosemirror.model.Fragment
+import com.atlassian.prosemirror.model.InvalidContentError
 import com.atlassian.prosemirror.model.Mark
 import com.atlassian.prosemirror.model.Node
 import com.atlassian.prosemirror.model.NodeBase
@@ -956,6 +957,41 @@ class TransformTest {
             expect,
             useExpectFirstChild
         )
+    }
+
+    @Test
+    fun `preserves invalid content cause in failed replace step result`() {
+        val targetDoc = doc { pre { +"<a>" } }
+        val sourceDoc = doc { p { +"invalid" } }
+        val result = ReplaceStep(
+            pos(targetDoc, "a")!!,
+            pos(targetDoc, "a")!!,
+            sourceDoc.slice(0, sourceDoc.content.size),
+        ).apply(targetDoc)
+
+        assertThat(result.failedCause is InvalidContentError).isTrue()
+    }
+
+    @Test
+    fun `preserves invalid content cause in transform error`() {
+        safeMode = false
+        try {
+            val targetDoc = doc { pre { +"<a>" } }
+            val sourceDoc = doc { p { +"invalid" } }
+            val error = assertFailsWith(TransformError::class) {
+                Transform(targetDoc).step(
+                    ReplaceStep(
+                        pos(targetDoc, "a")!!,
+                        pos(targetDoc, "a")!!,
+                        sourceDoc.slice(0, sourceDoc.content.size),
+                    )
+                )
+            }
+
+            assertThat(error.cause is InvalidContentError).isTrue()
+        } finally {
+            safeMode = true
+        }
     }
 
     @Test

@@ -47,7 +47,7 @@ open class Transform(
     fun step(step: Step): Transform {
         val result = this.maybeStep(step)
         if (result.failed != null) {
-            val exception = TransformError(result.failed)
+            val exception = TransformError(result.failed, result.failedCause)
             this.error = exception
             if (!safeMode) throw exception
         }

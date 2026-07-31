@@ -1,5 +1,6 @@
 package com.atlassian.prosemirror.transform
 
+import com.atlassian.prosemirror.model.InvalidContentError
 import com.atlassian.prosemirror.model.Node
 import com.atlassian.prosemirror.model.RangeError
 import com.atlassian.prosemirror.model.ReplaceError
@@ -88,7 +89,9 @@ class StepResult internal constructor(
     // The transformed document, if successful.
     val doc: Node?,
     // The failure message, if unsuccessful.
-    val failed: String?
+    val failed: String?,
+    // The original failure cause, when a step failed by catching an exception.
+    val failedCause: Throwable? = null,
 ) {
 
     companion object {
@@ -96,7 +99,7 @@ class StepResult internal constructor(
         fun ok(doc: Node) = StepResult(doc, null)
 
         // Create a failed step result.
-        fun fail(message: String) = StepResult(null, message)
+        fun fail(message: String, cause: Throwable? = null) = StepResult(null, message, cause)
 
         // Call [`Node.replace`](#model.Node.replace) with the given arguments. Create a successful
         // result if it succeeds, and a failed one if it throws a `ReplaceError`.
@@ -105,6 +108,8 @@ class StepResult internal constructor(
                 ok(doc.replace(from, to, slice))
             } catch (e: ReplaceError) {
                 fail(e.message)
+            } catch (e: InvalidContentError) {
+                fail(e.message ?: "RangeError", e)
             } catch (e: RangeError) {
                 // TODO: check if still need this catch after updating to latest prosemirror-transform
                 fail(e.message ?: "RangeError")
