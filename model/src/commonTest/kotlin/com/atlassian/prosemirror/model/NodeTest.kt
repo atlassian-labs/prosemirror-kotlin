@@ -25,6 +25,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.fail
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
 
 val customSchemaSpec = SchemaSpec(
     nodes = mapOf(
@@ -353,6 +354,62 @@ class NodeTest {
 
     @Test
     fun `joins adjacent text`() = from(listOf(schema.text("a"), schema.text("b")), p { +"ab" })
+
+    @Test
+    fun `unknown node fallback can inspect raw content`() {
+        val seenContentSizes = mutableMapOf<String, Int?>()
+        val fallbackSchema = Schema(
+            SchemaSpec(
+                nodes = mapOf(
+                    "doc" to NodeSpecImpl(content = "block+"),
+                    "paragraph" to NodeSpecImpl(content = "inline*", group = "block"),
+                    "text" to NodeSpecImpl(),
+                    "fallbackInline" to NodeSpecImpl(inline = true, group = "inline"),
+                    "fallbackLeaf" to NodeSpecImpl(group = "block"),
+                    "fallbackContainer" to NodeSpecImpl(content = "block*", group = "block")
+                ),
+                unsupportedNode = "fallbackContainer",
+                unsupportedInlineNode = "fallbackInline",
+                unknownNodeFallback = { unknownNodeType, content ->
+                    seenContentSizes[unknownNodeType] = content?.size
+                    when (unknownNodeType) {
+                        "unknownLeaf" -> "fallbackLeaf"
+                        "unknownContainer" -> "fallbackContainer"
+                        else -> null
+                    }
+                }
+            )
+        )
+        val doc = Node.fromJSON(
+            fallbackSchema,
+            Json.parseToJsonElement(
+                """
+                    {
+                      "type": "doc",
+                      "content": [
+                        { "type": "paragraph", "content": [{ "type": "unknownInline" }] },
+                        { "type": "unknownLeaf" },
+                        { "type": "unknownContainer", "content": [] },
+                        { "type": "unknownContainerWithChild", "content": [{ "type": "paragraph" }] }
+                      ]
+                    }
+                """.trimIndent()
+            ).jsonObject
+        )
+
+        assertThat(doc.child(0).child(0).type.name).isEqualTo("fallbackInline")
+        assertThat(doc.child(1).type.name).isEqualTo("fallbackLeaf")
+        assertThat(doc.child(2).type.name).isEqualTo("fallbackContainer")
+        assertThat(doc.child(3).type.name).isEqualTo("fallbackContainer")
+        assertThat(seenContentSizes).isEqualTo(
+            mapOf(
+                "unknownInline" to null,
+                "unknownLeaf" to null,
+                "unknownContainer" to 0,
+                "unknownContainerWithChild" to 1
+            )
+        )
+    }
     // endregion
 
     // region Node - toJSON

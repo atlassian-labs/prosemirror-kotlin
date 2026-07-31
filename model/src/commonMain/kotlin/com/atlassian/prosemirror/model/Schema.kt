@@ -5,6 +5,7 @@ package com.atlassian.prosemirror.model
 import com.atlassian.prosemirror.util.ConcurrentMutableMap
 import com.atlassian.prosemirror.util.slice
 import com.atlassian.prosemirror.util.verbose
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 
 // An object holding the attributes of a node.
@@ -42,7 +43,10 @@ fun initAttrs(typeName: String, attrs: Map<String, AttributeSpec>?): Map<String,
     } ?: emptyMap()
 }
 
-class RangeError(message: String) : IllegalArgumentException("Range Error: $message")
+open class RangeError(message: String) : IllegalArgumentException("Range Error: $message")
+
+/** Thrown when a node's content does not match its content expression (illegal nesting). */
+class InvalidContentError(message: String) : RangeError(message)
 
 // Node types are objects allocated once per `Schema` and used to [tag](#model.Node.type) `Node`
 // instances. They contain information about the node type, such as its name and what kind of nod
@@ -157,7 +161,7 @@ class NodeType internal constructor(
     fun createChecked(attrs: Attrs? = null, content: Node?, marks: List<Mark>? = null): Node {
         val thisContent = Fragment.from(content)
         if (!this.validContent(thisContent)) {
-            throw RangeError(
+            throw InvalidContentError(
                 if (verbose) {
                     "Invalid content for node type $name: $thisContent"
                 } else {
@@ -171,7 +175,7 @@ class NodeType internal constructor(
     fun createChecked(attrs: Attrs? = null, content: List<Node>?, marks: List<Mark>? = null): Node {
         val thisContent = Fragment.from(content)
         if (!this.validContent(thisContent)) {
-            throw RangeError(
+            throw InvalidContentError(
                 if (verbose) {
                     "Invalid content for node type $name: $thisContent"
                 } else {
@@ -237,11 +241,11 @@ class NodeType internal constructor(
         return true
     }
 
-    // Throws a RangeError if the given fragment is not valid content for this
+    // Throws an InvalidContentError if the given fragment is not valid content for this
     // node type.
-    internal fun checkContent(content: Fragment) {
+    fun checkContent(content: Fragment) {
         if (!this.validContent(content)) {
-            throw RangeError(
+            throw InvalidContentError(
                 if (verbose) {
                     "Invalid content for node $name: ${content.toString().slice(0, 50)}"
                 } else {
@@ -463,12 +467,16 @@ data class SchemaSpec(
     val topNode: String? = null,
 
     // The name of the node for the schema to fall back whenever we encounter unknown node type.
-    // The node will have original name saved into originalNodeName field if creator returned UnsupportedNode type
     val unsupportedNode: String = "unsupportedBlock",
 
     // The name of the inline node for the schema to fall back whenever we encounter unknown node type.
-    // The node will have original name saved into originalNodeName field if creator returned UnsupportedNode type
     val unsupportedInlineNode: String = "unsupportedInline",
+
+    // Allows schemas to choose which fallback node type should represent an unknown node.
+    val unknownNodeFallback: ((unknownNodeType: String, content: JsonArray?) -> String?)? = null,
+
+    // Allows schemas to add or rewrite attrs before an unknown node is constructed as a fallback node.
+    val unknownNodeAttrs: ((unknownNodeType: String, attrs: Attrs?) -> Attrs?)? = null,
 
     // The name of the mark for the schema to fall back whenever we encounter unknown mark type.
     // The mark will have original name saved into originalMarkName field if creator returned UnsupportedMark type
