@@ -108,7 +108,7 @@ class NodeType internal constructor(
     var creator: NodeCreator<out Node> = NodeCreator.DEFAULT
 
     init {
-        this.groups = spec.group?.let { listOf(it) } ?: emptyList()
+        this.groups = spec.group?.split(" ") ?: emptyList()
         this.attrs = initAttrs(name, spec.attrs)
         this.defaultAttrs = defaultAttrs(this.attrs)
         this.defaultAttrsIncludingNullValues = defaultAttrs(this.attrs, includeNullValues = true)
