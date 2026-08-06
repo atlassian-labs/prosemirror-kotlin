@@ -13,10 +13,6 @@ import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 
-interface UnsupportedMark {
-    var originalMarkName: String?
-}
-
 @JvmInline
 @kotlinx.serialization.Serializable
 value class MarkId(val id: String)
@@ -104,21 +100,23 @@ open class Mark constructor(
         fun fromJSON(schema: Schema, json: JsonObject?, withId: Boolean = false, check: Boolean = false): Mark {
             if (json == null) throw RangeError("Invalid input for Mark.fromJSON")
             val jsonType = json["type"]?.jsonPrimitive?.contentOrNull
-            val type = schema.marks[jsonType]
+            val directType = schema.marks[jsonType]
                 ?: schema.marks[jsonType?.lowercase()]
+            val type = directType
                 ?: schema.marks[schema.spec.unsupportedMark]
                 ?: throw RangeError(
                     "There is no mark type '$jsonType' in this schema and 'unsupportedMark' not defined as well"
                 )
-            val attrs: Attrs? = json["attrs"]?.let { JSON.decodeFromJsonElement(it) }
-            val id = json["id"]?.jsonPrimitive?.contentOrNull
-            val mark = if (withId && id != null) {
-                type.create(attrs).also {
-                    it.markId = MarkId(id)
-                    (it as? UnsupportedMark)?.originalMarkName = jsonType
-                }
+            val rawAttrs: Attrs? = json["attrs"]?.let { JSON.decodeFromJsonElement(it) }
+            val attrs = if (directType == null && jsonType != null) {
+                schema.spec.unknownMarkAttrs?.invoke(jsonType, rawAttrs) ?: rawAttrs
             } else {
-                type.create(attrs).also { (it as? UnsupportedMark)?.originalMarkName = jsonType }
+                rawAttrs
+            }
+            val id = json["id"]?.jsonPrimitive?.contentOrNull
+            val mark = type.create(attrs)
+            if (withId && id != null) {
+                mark.markId = MarkId(id)
             }
             if (check) {
                 type.checkAttrs(mark.attrs)
