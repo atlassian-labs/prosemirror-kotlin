@@ -13,6 +13,7 @@ import com.atlassian.prosemirror.testbuilder.PMNodeBuilder.Companion.pos
 import com.atlassian.prosemirror.testbuilder.schema
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlinx.serialization.json.jsonObject
 
 val em_ = schema.mark("em")
 val strong = schema.mark("strong")
@@ -313,5 +314,36 @@ class MarkTest {
     @Test
     fun `excludes non-inclusive marks at a point where mark attrs change`() {
         assertThat(Mark.sameSet(customDoc.resolve(25).marks(), emptyList())).isTrue()
+    }
+
+    @Test
+    fun `applies unknown mark attrs to unsupported mark fallback`() {
+        val fallbackAttr = "fallbackAttr"
+        val unsupportedMarkSchema = Schema(
+            SchemaSpec(
+                nodes = mapOf(
+                    "doc" to NodeSpecImpl(content = "paragraph+"),
+                    "paragraph" to NodeSpecImpl(content = "text*"),
+                    "text" to NodeSpecImpl()
+                ),
+                marks = mapOf(
+                    "unsupportedMark" to MarkSpecImpl(
+                        attrs = mapOf(fallbackAttr to AttributeSpecImpl(default = null)),
+                        excludes = ""
+                    )
+                ),
+                unknownMarkAttrs = { unknownMarkType, attrs ->
+                    attrs.orEmpty() + (fallbackAttr to unknownMarkType)
+                }
+            )
+        )
+
+        val mark = Mark.fromJSON(
+            unsupportedMarkSchema,
+            com.atlassian.prosemirror.model.parser.JSON.parseToJsonElement("""{"type":"missing"}""").jsonObject
+        )
+
+        assertThat(mark.type.name).isEqualTo("unsupportedMark")
+        assertThat(mark.attrs[fallbackAttr]).isEqualTo("missing")
     }
 }

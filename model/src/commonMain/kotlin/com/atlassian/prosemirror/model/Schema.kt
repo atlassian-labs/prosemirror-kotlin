@@ -479,8 +479,10 @@ data class SchemaSpec(
     val unknownNodeAttrs: ((unknownNodeType: String, attrs: Attrs?) -> Attrs?)? = null,
 
     // The name of the mark for the schema to fall back whenever we encounter unknown mark type.
-    // The mark will have original name saved into originalMarkName field if creator returned UnsupportedMark type
-    val unsupportedMark: String = "unsupportedMark"
+    val unsupportedMark: String = "unsupportedMark",
+
+    // Allows schemas to add or rewrite attrs before an unknown mark is constructed as a fallback mark.
+    val unknownMarkAttrs: ((unknownMarkType: String, attrs: Attrs?) -> Attrs?)? = null
 )
 
 // A description of a node type, used when defining a schema.
