@@ -620,7 +620,19 @@ open class Node constructor(
 
         // Deserialize a node from its JSON representation.
         @Suppress("ThrowsCount", "SwallowedException", "ComplexMethod")
-        fun fromJSON(schema: Schema, json: JsonObject?, withId: Boolean = false, check: Boolean = false): Node {
+        fun fromJSON(schema: Schema, json: JsonObject?, withId: Boolean = false, check: Boolean = false): Node =
+            fromJSON(schema, json, withId, check, null)
+
+        fun fromJSON(schema: Schema, json: JsonObject?, unknownNodeFallback: UnknownNodeFallback?): Node =
+            fromJSON(schema, json, false, false, unknownNodeFallback)
+
+        fun fromJSON(
+            schema: Schema,
+            json: JsonObject?,
+            withId: Boolean,
+            check: Boolean,
+            unknownNodeFallback: UnknownNodeFallback?,
+        ): Node {
             if (json == null) throw RangeError("Invalid input for Node.fromJSON")
             var marks: List<Mark>? = null
             if (json.containsKey("marks")) {
@@ -634,7 +646,7 @@ open class Node constructor(
                 return schema.text(text.content, marks)
             }
             val jsonContent = json["content"]?.jsonArray
-            val content = Fragment.fromJSON(schema, jsonContent, withId, check)
+            val content = Fragment.fromJSON(schema, jsonContent, withId, check, unknownNodeFallback)
             val attrs = json["attrs"]?.jsonObject?.mapValues {
                 if (it.value is JsonNull) null else JSON.decodeFromJsonElement<Any>(it.value)
             }
@@ -647,7 +659,8 @@ open class Node constructor(
                 }
             } catch (ex: RangeError) {
                 val unknownNodeType = type ?: throw RangeError("Invalid input for Node.fromJSON")
-                val unsupportedNodeType = schema.spec.unknownNodeFallback?.invoke(unknownNodeType, jsonContent)
+                val unsupportedNodeType = (unknownNodeFallback ?: schema.spec.unknownNodeFallback)
+                    ?.invoke(unknownNodeType, jsonContent)
                     ?: if (jsonContent != null) {
                         schema.spec.unsupportedNode
                     } else {
