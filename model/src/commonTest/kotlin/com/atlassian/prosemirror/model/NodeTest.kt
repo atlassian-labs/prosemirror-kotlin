@@ -410,6 +410,53 @@ class NodeTest {
             )
         )
     }
+
+    @Test
+    fun `per-call unknown node fallback overrides schema fallback recursively`() {
+        val fallbackSchema = Schema(
+            SchemaSpec(
+                nodes = mapOf(
+                    "doc" to NodeSpecImpl(content = "block+"),
+                    "paragraph" to NodeSpecImpl(content = "inline*", group = "block"),
+                    "text" to NodeSpecImpl(),
+                    "fallbackInline" to NodeSpecImpl(inline = true, group = "inline"),
+                    "fallbackLeaf" to NodeSpecImpl(group = "block"),
+                    "fallbackContainer" to NodeSpecImpl(content = "block*", group = "block")
+                ),
+                unsupportedNode = "fallbackContainer",
+                unsupportedInlineNode = "fallbackInline",
+                unknownNodeFallback = { _, _ -> "fallbackContainer" }
+            )
+        )
+        val seenNodeTypes = mutableListOf<String>()
+        val doc = Node.fromJSON(
+            fallbackSchema,
+            Json.parseToJsonElement(
+                """
+                    {
+                      "type": "doc",
+                      "content": [
+                        {
+                          "type": "unknownContainer",
+                          "content": [{ "type": "unknownLeaf" }]
+                        }
+                      ]
+                    }
+                """.trimIndent()
+            ).jsonObject,
+            unknownNodeFallback = { unknownNodeType, _ ->
+                seenNodeTypes += unknownNodeType
+                when (unknownNodeType) {
+                    "unknownLeaf" -> "fallbackLeaf"
+                    else -> "fallbackContainer"
+                }
+            }
+        )
+
+        assertThat(doc.child(0).type.name).isEqualTo("fallbackContainer")
+        assertThat(doc.child(0).child(0).type.name).isEqualTo("fallbackLeaf")
+        assertThat(seenNodeTypes).isEqualTo(listOf("unknownLeaf", "unknownContainer"))
+    }
     // endregion
 
     // region Node - toJSON

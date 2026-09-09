@@ -301,10 +301,24 @@ class Fragment {
 
     companion object {
         // Deserialize a fragment from its JSON representation.
-        fun fromJSON(schema: Schema, value: JsonArray?, withId: Boolean = false, check: Boolean = false): Fragment {
+        fun fromJSON(schema: Schema, value: JsonArray?, withId: Boolean = false, check: Boolean = false): Fragment =
+            fromJSON(schema, value, withId, check, null)
+
+        fun fromJSON(schema: Schema, value: JsonArray?, unknownNodeFallback: UnknownNodeFallback?): Fragment =
+            fromJSON(schema, value, false, false, unknownNodeFallback)
+
+        fun fromJSON(
+            schema: Schema,
+            value: JsonArray?,
+            withId: Boolean,
+            check: Boolean,
+            unknownNodeFallback: UnknownNodeFallback?,
+        ): Fragment {
             if (value == null) return empty
 //            if (!Array.isArray(value)) throw RangeError("Invalid input for Fragment.fromJSON")
-            return Fragment(value.map { el -> schema.nodeFromJSON(el.jsonObject, withId, check) })
+            return Fragment(
+                value.map { el -> schema.nodeFromJSON(el.jsonObject, withId, check, unknownNodeFallback) }
+            )
         }
 
         // Build a fragment from an array of nodes. Ensures that adjacent text nodes with the same

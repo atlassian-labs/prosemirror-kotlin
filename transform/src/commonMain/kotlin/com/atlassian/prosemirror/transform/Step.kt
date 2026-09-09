@@ -6,6 +6,7 @@ import com.atlassian.prosemirror.model.RangeError
 import com.atlassian.prosemirror.model.ReplaceError
 import com.atlassian.prosemirror.model.Schema
 import com.atlassian.prosemirror.model.Slice
+import com.atlassian.prosemirror.model.UnknownNodeFallback
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
@@ -13,6 +14,10 @@ val stepsByID = mutableMapOf<String, StepJsonParser<*>>()
 
 interface StepJsonParser<T : Step> {
     fun fromJSON(schema: Schema, json: JsonObject): T
+}
+
+interface StepJsonParserWithUnknownNodeFallback<T : Step> : StepJsonParser<T> {
+    fun fromJSON(schema: Schema, json: JsonObject, unknownNodeFallback: UnknownNodeFallback?): T
 }
 
 // A step object represents an atomic change. It generally applies only to the document it was
@@ -63,14 +68,20 @@ abstract class Step {
         // Deserialize a step from its JSON representation. Will call through to the step class' own
         // implementation of this method.
         @Suppress("UnusedPrivateMember")
-        fun fromJSON(schema: Schema, json: JsonObject?): Step? {
+        fun fromJSON(schema: Schema, json: JsonObject?): Step? = fromJSON(schema, json, null)
+
+        fun fromJSON(schema: Schema, json: JsonObject?, unknownNodeFallback: UnknownNodeFallback?): Step? {
             if (json?.containsKey("stepType") != true) throw RangeError("Invalid input for Step.fromJSON")
             val stepType = json["stepType"]!!.jsonPrimitive.content
             val stepJsonParser: StepJsonParser<*> =
                 stepsByID[stepType] ?: return null
             // TODO log error or throw
             // throw RangeError("No step type $stepType defined")
-            return stepJsonParser.fromJSON(schema, json)
+            return if (stepJsonParser is StepJsonParserWithUnknownNodeFallback<*>) {
+                stepJsonParser.fromJSON(schema, json, unknownNodeFallback)
+            } else {
+                stepJsonParser.fromJSON(schema, json)
+            }
         }
 
         // To be able to serialize steps to JSON, each step needs a string ID to attach to its JSON
