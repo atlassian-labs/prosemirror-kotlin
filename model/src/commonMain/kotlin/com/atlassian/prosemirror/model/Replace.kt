@@ -78,11 +78,21 @@ data class Slice(
         val empty = Slice(Fragment.empty, 0, 0)
 
         // Deserialize a slice from its JSON representation.
-        fun fromJSON(schema: Schema, json: JsonObject?): Slice {
+        fun fromJSON(schema: Schema, json: JsonObject?): Slice = fromJSON(schema, json, null)
+
+        fun fromJSON(schema: Schema, json: JsonObject?, unknownNodeFallback: UnknownNodeFallback?): Slice {
             if (json == null) return empty
             val openStart: Int = json["openStart"]?.jsonPrimitive?.int ?: 0
             val openEnd: Int = json["openEnd"]?.jsonPrimitive?.int ?: 0
-            return Slice(Fragment.fromJSON(schema, json["content"]!!.jsonArray), openStart, openEnd)
+            return Slice(
+                Fragment.fromJSON(
+                    schema,
+                    json["content"]!!.jsonArray,
+                    unknownNodeFallback = unknownNodeFallback,
+                ),
+                openStart,
+                openEnd,
+            )
         }
 
         // Create a slice from a fragment by taking the maximum possible open value on both side of

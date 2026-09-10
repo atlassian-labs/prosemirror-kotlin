@@ -450,6 +450,8 @@ class MarkType internal constructor(
     }
 }
 
+typealias UnknownNodeFallback = (unknownNodeType: String, content: JsonArray?) -> String?
+
 // An object describing a schema, as passed to the [`Schema`](#model.Schema) constructor.
 data class SchemaSpec(
     // The node types in this schema. Maps names to [`NodeSpec`](#model.NodeSpec) objects that
@@ -473,7 +475,7 @@ data class SchemaSpec(
     val unsupportedInlineNode: String = "unsupportedInline",
 
     // Allows schemas to choose which fallback node type should represent an unknown node.
-    val unknownNodeFallback: ((unknownNodeType: String, content: JsonArray?) -> String?)? = null,
+    val unknownNodeFallback: UnknownNodeFallback? = null,
 
     // Allows schemas to add or rewrite attrs before an unknown node is constructed as a fallback node.
     val unknownNodeAttrs: ((unknownNodeType: String, attrs: Attrs?) -> Attrs?)? = null,
@@ -802,6 +804,19 @@ class Schema {
     // Deserialize a node from its JSON representation. This method is bound.
     fun nodeFromJSON(json: JsonObject?, withId: Boolean = false, check: Boolean = false): Node {
         return Node.fromJSON(this, json, withId, check)
+    }
+
+    fun nodeFromJSON(json: JsonObject?, unknownNodeFallback: UnknownNodeFallback?): Node {
+        return Node.fromJSON(this, json, unknownNodeFallback)
+    }
+
+    fun nodeFromJSON(
+        json: JsonObject?,
+        withId: Boolean,
+        check: Boolean,
+        unknownNodeFallback: UnknownNodeFallback?,
+    ): Node {
+        return Node.fromJSON(this, json, withId, check, unknownNodeFallback)
     }
 
     // Deserialize a mark from its JSON representation. This method is bound.

@@ -4,6 +4,7 @@ import com.atlassian.prosemirror.model.Node
 import com.atlassian.prosemirror.model.RangeError
 import com.atlassian.prosemirror.model.Schema
 import com.atlassian.prosemirror.model.Slice
+import com.atlassian.prosemirror.model.UnknownNodeFallback
 import kotlin.math.max
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.booleanOrNull
@@ -82,12 +83,18 @@ data class ReplaceStep(
         }
     }
 
-    companion object : StepJsonParser<ReplaceStep> {
+    companion object : StepJsonParserWithUnknownNodeFallback<ReplaceStep> {
         init {
             jsonID("replace", this)
         }
 
-        override fun fromJSON(schema: Schema, json: JsonObject): ReplaceStep {
+        override fun fromJSON(schema: Schema, json: JsonObject): ReplaceStep = fromJSON(schema, json, null)
+
+        override fun fromJSON(
+            schema: Schema,
+            json: JsonObject,
+            unknownNodeFallback: UnknownNodeFallback?,
+        ): ReplaceStep {
             val from = json["from"]?.jsonPrimitive?.int
             val to = json["to"]?.jsonPrimitive?.int
             if (from == null || to == null) {
@@ -95,7 +102,7 @@ data class ReplaceStep(
             }
             val slice = json["slice"]?.jsonObject
             val structure = json["structure"]?.jsonPrimitive?.booleanOrNull ?: false
-            return ReplaceStep(from, to, Slice.fromJSON(schema, slice), structure)
+            return ReplaceStep(from, to, Slice.fromJSON(schema, slice, unknownNodeFallback), structure)
         }
     }
 }
@@ -184,12 +191,18 @@ class ReplaceAroundStep(
         if (structure) put("structure", true)
     }
 
-    companion object : StepJsonParser<ReplaceAroundStep> {
+    companion object : StepJsonParserWithUnknownNodeFallback<ReplaceAroundStep> {
         init {
             jsonID("replaceAround", this)
         }
 
-        override fun fromJSON(schema: Schema, json: JsonObject): ReplaceAroundStep {
+        override fun fromJSON(schema: Schema, json: JsonObject): ReplaceAroundStep = fromJSON(schema, json, null)
+
+        override fun fromJSON(
+            schema: Schema,
+            json: JsonObject,
+            unknownNodeFallback: UnknownNodeFallback?,
+        ): ReplaceAroundStep {
             val from = json["from"]?.jsonPrimitive?.int ?: 0
             val to = json["to"]?.jsonPrimitive?.int ?: 0
             val gapFrom = json["gapFrom"]?.jsonPrimitive?.int ?: 0
@@ -202,7 +215,7 @@ class ReplaceAroundStep(
                 to,
                 gapFrom,
                 gapTo,
-                Slice.fromJSON(schema, slice),
+                Slice.fromJSON(schema, slice, unknownNodeFallback),
                 insert,
                 structure
             )
