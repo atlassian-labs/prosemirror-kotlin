@@ -102,24 +102,35 @@ open class Mark constructor(
             val jsonType = json["type"]?.jsonPrimitive?.contentOrNull
             val directType = schema.marks[jsonType]
                 ?: schema.marks[jsonType?.lowercase()]
-            val type = directType
+            val recovery = schema.jsonParseRecovery
+            val needsFallback = directType == null || recovery?.isValidMark(directType, json) == false
+            val type = directType?.takeUnless { needsFallback }
                 ?: schema.marks[schema.spec.unsupportedMark]
                 ?: throw RangeError(
-                    "There is no mark type '$jsonType' in this schema and 'unsupportedMark' not defined as well"
+                    if (directType != null) {
+                        "Cannot recover mark '$jsonType': fallback '${schema.spec.unsupportedMark}' is not defined"
+                    } else {
+                        "There is no mark type '$jsonType' in this schema and 'unsupportedMark' not defined as well"
+                    }
                 )
-            val rawAttrs: Attrs? = json["attrs"]?.let { JSON.decodeFromJsonElement(it) }
-            val attrs = if (directType == null && jsonType != null) {
-                schema.spec.unknownMarkAttrs?.invoke(jsonType, rawAttrs) ?: rawAttrs
-            } else {
-                rawAttrs
-            }
             val id = json["id"]?.jsonPrimitive?.contentOrNull
-            val mark = type.create(attrs)
+            val mark = if (needsFallback && recovery != null) {
+                recovery.createMark(type, json)
+            } else {
+                val rawAttrs: Attrs? = json["attrs"]?.let { JSON.decodeFromJsonElement(it) }
+                val attrs = if (directType == null && jsonType != null) {
+                    schema.spec.unknownMarkAttrs?.invoke(jsonType, rawAttrs) ?: rawAttrs
+                } else {
+                    rawAttrs
+                }
+                type.create(attrs)
+            }
             if (withId && id != null) {
                 mark.markId = MarkId(id)
             }
             if (check) {
-                type.checkAttrs(mark.attrs)
+                val checkedType = if (needsFallback && recovery != null) mark.type else type
+                checkedType.checkAttrs(mark.attrs)
             }
             return mark
         }

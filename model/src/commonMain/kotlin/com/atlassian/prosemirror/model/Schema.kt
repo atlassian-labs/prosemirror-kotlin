@@ -474,16 +474,16 @@ data class SchemaSpec(
     // The name of the inline node for the schema to fall back whenever we encounter unknown node type.
     val unsupportedInlineNode: String = "unsupportedInline",
 
-    // Allows schemas to choose which fallback node type should represent an unknown node.
+    // Selects a fallback for unknown nodes and, with JsonParseRecovery, invalid known nodes.
     val unknownNodeFallback: UnknownNodeFallback? = null,
 
-    // Allows schemas to add or rewrite attrs before an unknown node is constructed as a fallback node.
+    // Rewrites fallback node attrs, also used by the default JsonParseRecovery.createNode factory.
     val unknownNodeAttrs: ((unknownNodeType: String, attrs: Attrs?) -> Attrs?)? = null,
 
     // The name of the mark for the schema to fall back whenever we encounter unknown mark type.
     val unsupportedMark: String = "unsupportedMark",
 
-    // Allows schemas to add or rewrite attrs before an unknown mark is constructed as a fallback mark.
+    // Rewrites fallback mark attrs, also used by the default JsonParseRecovery.createMark factory.
     val unknownMarkAttrs: ((unknownMarkType: String, attrs: Attrs?) -> Attrs?)? = null
 )
 
@@ -670,6 +670,9 @@ class Schema {
     // instances (not raw objects).
     val spec: SchemaSpec
 
+    /** Optional attribute recovery shared by all JSON node and mark parsing, including steps. */
+    val jsonParseRecovery: JsonParseRecovery?
+
     // An object mapping the schema's node names to node type objects.
     val nodes: Map<String, NodeType> // {readonly [name in Nodes]: NodeType} & {readonly [key: string]: NodeType}
 
@@ -690,7 +693,11 @@ class Schema {
     val resolveCache = ConcurrentMutableMap<NodeId, ResolveCache>()
 
     // Construct a schema from a schema [specification](#model.SchemaSpec).
-    constructor(spec: SchemaSpec) {
+    constructor(spec: SchemaSpec) : this(spec, null)
+
+    /** Construct a schema with opt-in recovery for nodes and marks with invalid input attributes. */
+    constructor(spec: SchemaSpec, jsonParseRecovery: JsonParseRecovery?) {
+        this.jsonParseRecovery = jsonParseRecovery
         this.spec = spec.copy(nodes = spec.nodes.toMap(), marks = spec.marks.toMap())
         this.nodes = NodeType.compile(this.spec.nodes, this)
         this.marks = MarkType.compile(this.spec.marks, this)
