@@ -16,6 +16,12 @@ Java/Kotlin implementation of [Prosemirror](https://prosemirror.net/)
 
 Contributions to prosemirror-kotlin are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
+## Building
+
+Install JDK 17 before running Gradle. The build JVM is pinned to version 17 in
+[`gradle/gradle-daemon-jvm.properties`](gradle/gradle-daemon-jvm.properties), including when a newer JDK
+launches the Gradle wrapper. This keeps local builds, CI, and CodeQL autobuild compatible with Gradle 8.9.
+
 ## Maven / Gradle dependency
 Add prosemirror-kotlin dependencies using prosemirror.<moduleIdentifier> in place of the normal artifact specifier.
 
