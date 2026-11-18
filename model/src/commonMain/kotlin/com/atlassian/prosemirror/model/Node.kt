@@ -10,6 +10,7 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
@@ -640,42 +641,45 @@ open class Node constructor(
                 marks = marksArray.map { schema.markFromJSON(it.jsonObject, withId, check) }
             }
             val type = json["type"]?.jsonPrimitive?.contentOrNull
-            if (type == "text") {
+            val directType = schema.nodes[type]
+            val recovery = schema.jsonParseRecovery
+            val needsRecovery = directType != null && recovery?.isValidNode(directType, json) == false
+            if (type == "text" && !needsRecovery) {
                 val text = json["text"]?.jsonPrimitive
                 if (text?.isString != true) throw RangeError("Invalid text node in JSON")
                 return schema.text(text.content, marks)
             }
             val jsonContent = json["content"]?.jsonArray
             val content = Fragment.fromJSON(schema, jsonContent, withId, check, unknownNodeFallback)
-            val attrs = json["attrs"]?.jsonObject?.mapValues {
-                if (it.value is JsonNull) null else JSON.decodeFromJsonElement<Any>(it.value)
-            }
             val id = json["id"]?.jsonPrimitive?.contentOrNull
-            val node = try {
-                schema.nodeType(type!!).create(attrs, content, marks).also {
-                    if (withId && id != null) {
-                        it.nodeId = NodeId(id)
-                    }
+            val node = if (recovery != null && (needsRecovery || directType == null)) {
+                val fallbackType = schema.unsupportedNodeType(type!!, jsonContent, directType, unknownNodeFallback)
+                recovery.createNode(fallbackType, json, content, marks ?: Mark.none)
+            } else {
+                val attrs = json["attrs"]?.jsonObject?.mapValues {
+                    if (it.value is JsonNull) null else JSON.decodeFromJsonElement<Any>(it.value)
                 }
-            } catch (ex: RangeError) {
-                val unknownNodeType = type ?: throw RangeError("Invalid input for Node.fromJSON")
-                val unsupportedNodeType = (unknownNodeFallback ?: schema.spec.unknownNodeFallback)
-                    ?.invoke(unknownNodeType, jsonContent)
-                    ?: if (jsonContent != null) {
-                        schema.spec.unsupportedNode
-                    } else {
-                        schema.spec.unsupportedInlineNode
-                    }
-                val unsupportedAttrs = schema.spec.unknownNodeAttrs?.invoke(unknownNodeType, attrs) ?: attrs
-                schema.nodeType(unsupportedNodeType).create(unsupportedAttrs, content, marks).also {
-                    if (withId && id != null) {
-                        it.nodeId = NodeId(id)
-                    }
+                try {
+                    schema.nodeType(type!!).create(attrs, content, marks)
+                } catch (ex: RangeError) {
+                    // A configured policy requests recovery explicitly; creator failures stay visible.
+                    if (recovery != null) throw ex
+                    val unknownNodeType = type ?: throw RangeError("Invalid input for Node.fromJSON")
+                    val fallbackType = schema.unsupportedNodeType(
+                        unknownNodeType,
+                        jsonContent,
+                        null,
+                        unknownNodeFallback
+                    )
+                    val unsupportedAttrs = schema.spec.unknownNodeAttrs?.invoke(unknownNodeType, attrs) ?: attrs
+                    fallbackType.create(unsupportedAttrs, content, marks)
                 }
-            }.also { node ->
-                // for round tripping
-                node.unknownFields = json.fieldsExcept("marks", "type", "content", "attrs")
             }
+            if (withId && id != null) {
+                node.nodeId = NodeId(id)
+            }
+            // for round tripping
+            node.unknownFields = json.fieldsExcept("marks", "type", "content", "attrs")
             if (check) {
                 node.type.checkAttrs(node.attrs)
             }
@@ -686,6 +690,20 @@ open class Node constructor(
 
 private fun JsonObject.fieldsExcept(vararg fieldNames: String): Map<String, JsonElement>? {
     return this.filter { !fieldNames.contains(it.key) }.takeIf { it.isNotEmpty() }
+}
+
+private fun Schema.unsupportedNodeType(
+    name: String,
+    content: JsonArray?,
+    knownType: NodeType?,
+    fallback: UnknownNodeFallback?
+): NodeType {
+    val fallbackName = (fallback ?: spec.unknownNodeFallback)?.invoke(name, content) ?: when {
+        knownType != null -> if (knownType.isInline) spec.unsupportedInlineNode else spec.unsupportedNode
+        content != null -> spec.unsupportedNode
+        else -> spec.unsupportedInlineNode
+    }
+    return nodeType(fallbackName)
 }
 
 class TextNode : Node {
